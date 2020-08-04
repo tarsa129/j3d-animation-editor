@@ -3,6 +3,7 @@ import struct
 
 BTPFILEMAGIC = b"J3D1btp1"
 BTKFILEMAGIC = b"J3D1btk1"
+BRKFILEMAGIC = b"J3D1brk1"
 PADDING = b"This is padding data to align"
 
 def read_uint32(f):
@@ -40,6 +41,7 @@ def write_padding(f, multiple):
     for i in range(diff):
         pos = i%len(PADDING)
         f.write(PADDING[pos:pos+1])
+
 
 class basic_animation(object):
     def __init__(self):
@@ -122,7 +124,56 @@ class StringTable(object):
             write_uint16(f, offset-start)
 
         f.seek(end)
+        
+# Optional rounding
+def opt_round(val, digits):
+    if digits is None:
+        return val
+    else:
+        return round(val, digits)
 
+# Find the start of the sequence seq in the list in_list, if the sequence exists
+def find_sequence(in_list, seq):
+    matchup = 0
+    start = -1
+
+    found = False
+    started = False
+
+    for i, val in enumerate(in_list):
+        if val == seq[matchup]:
+            if not started:
+                start = i
+                started = True
+
+            matchup += 1
+            if matchup == len(seq):
+                #start = i-matchup
+                found = True
+                break
+        else:
+            matchup = 0
+            start = -1
+            started = False
+    if not found:
+        start = -1
+
+
+    return start
+
+def find_single_value(in_list, value):
+    
+    return find_sequence(in_list, [value])
+    
+def fix_array(info):
+    for i in range( len( info )):
+        while info[i][-1] == "":
+            info[i].pop( len( info[i]) - 1 )
+    for i in range( len( info )):
+        if len( info[i]) == 0:
+            info.pop(i)  
+    print(info)
+    return info 
 
 def sort_file(filepath):
     with open(filepath, "rb") as f:
@@ -132,15 +183,27 @@ def sort_file(filepath):
             return btp_file.btp.from_anim(f)
         f.seek(0)
         if f.read(8) == BTKFILEMAGIC:
-            print("what")
             from animations.btk import btk
             import animations.btk as btk_file
             return btk_file.btk.from_anim(f)
+        f.seek(0)
+        if f.read(8) == BRKFILEMAGIC:
+            from animations.brk import brk
+            import animations.brk as brk_file
+            return brk_file.brk.from_anim(f)
+            
+        f.close()
             
 def sort_filepath(filepath, information):
     if filepath.endswith(".btp"):
         from animations.btp import btp
         import animations.btp as btp_file
         return btp_file.btp.from_table(filepath, information)
-        
-            
+    elif filepath.endswith(".btk"):
+        from animations.btk import btk
+        import animations.btk as btk_file
+        return btk_file.btk.from_table(filepath, information)  
+    elif filepath.endswith(".brk"):
+         from animations.brk import brk
+         import animations.brk as brk_file
+         return brk_file.brk.from_table(filepath, information)  

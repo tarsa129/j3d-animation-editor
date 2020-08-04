@@ -67,20 +67,27 @@ class GenEditor(QMainWindow):
         self.menubar.addAction(self.file_menu.menuAction())
         self.setMenuBar(self.menubar)
         
-        #left sidebar
+        #main splitter
         
         self.horizontalLayout = QSplitter()
         self.centralwidget = self.horizontalLayout
         self.setCentralWidget(self.horizontalLayout)
         
-        self.animation_bar = QTreeWidget(self)
+        #left sidebar
+        self.workaroundl = QWidget(self)
+        self.left_vbox = QVBoxLayout(self.workaroundl)
         
+        #tree view
+        
+        self.animation_bar = QTreeWidget(self.workaroundl)       
         self.animation_bar.setColumnCount(1)
         self.animation_bar.setHeaderLabel("animations")
         self.animation_bar.setGeometry(0, 50, 200, 850)
         self.animation_bar.resize(800, self.height())
         
         self.animation_bar.itemSelectionChanged.connect(self.selected_animation_changed) 
+        
+        self.left_vbox.addWidget(self.animation_bar)
         
         #middle table
         
@@ -95,38 +102,61 @@ class GenEditor(QMainWindow):
         #bottom bar
         
         self.workaround = QWidget(self)
-        self.bottom_actions = QVBoxLayout(self.workaround)
+        self.bottom_actions = QGridLayout(self.workaround)
         self.workaround.setGeometry(50, 50, 50, 50)
-        #self.bottom_actions.setGeometry(QRect(800, 0, self.width(), self.height()) )    
+        #self.bottom_actions.setGeometry(QRect(800, 0, self.width(), self.height()) )            
         
+        self.bt_addc_here = QPushButton(self)
+        self.bt_addc_here.setText("Add Column Next")
+        self.bt_addc_here.clicked.connect(self.add_col_here)
         
         self.bt_add_col = QPushButton(self)
-        self.bt_add_col.setText("Add Column")
+        self.bt_add_col.setText("Add Column To End")
         self.bt_add_col.clicked.connect(self.add_column)
         
-        self.bt_add_row = QPushButton(self)
-        self.bt_add_row.setText("Add Row")
-        self.bt_add_row.clicked.connect(self.add_row)
+        self.bt_remc_here = QPushButton(self)
+        self.bt_remc_here.setText("Remove Column Next")
+        self.bt_remc_here.clicked.connect(self.rem_col_here)
         
         self.bt_rm_col = QPushButton(self)
         self.bt_rm_col.setText("Remove Column")
         self.bt_rm_col.clicked.connect(self.rem_column)
         
-        self.bt_rm_row= QPushButton(self)
+        self.bt_add_row = QPushButton(self)
+        self.bt_add_row.setText("Add Row To End")
+        self.bt_add_row.clicked.connect(self.add_row)
+        
+        self.bt_addr_here = QPushButton(self)
+        self.bt_addr_here.setText("Add Row Next")
+        self.bt_addr_here.clicked.connect(self.add_row_here)  
+             
+        self.bt_rm_row = QPushButton(self)
         self.bt_rm_row.setText("Remove Row")
-        self.bt_rm_row.clicked.connect(self.rem_row)
+        self.bt_rm_row.clicked.connect(self.rem_row) 
+
+        self.bt_remr_here = QPushButton(self)
+        self.bt_remr_here.setText("Remove Row Next")
+        self.bt_remr_here.clicked.connect(self.rem_row_here)        
         
-        self.bottom_actions.addWidget(self.bt_add_col)
-        self.bottom_actions.addWidget(self.bt_add_row)
-        self.bottom_actions.addWidget(self.bt_rm_col)
-        self.bottom_actions.addWidget(self.bt_rm_row)
+        self.bottom_actions.addWidget(self.bt_addc_here, 0, 0)       
+        self.bottom_actions.addWidget(self.bt_addr_here, 0, 1)
+        self.bottom_actions.addWidget(self.bt_add_col, 1 ,0)
+        self.bottom_actions.addWidget(self.bt_add_row, 1, 1)
+        self.bottom_actions.addWidget(self.bt_remc_here, 2, 0)
+        self.bottom_actions.addWidget(self.bt_remr_here, 2, 1)
+        self.bottom_actions.addWidget(self.bt_rm_col, 3, 0)
+        self.bottom_actions.addWidget(self.bt_rm_row, 3, 1)
+               
+        self.left_vbox.addWidget(self.workaround)
         
-        self.horizontalLayout.addWidget(self.animation_bar)
-        self.horizontalLayout.addWidget(self.workaround)
+        #self.horizontalLayout.addWidget(self.animation_bar)
+        self.horizontalLayout.addWidget(self.workaroundl)
         self.horizontalLayout.addWidget(self.table_display)     
-       
+    
+    #file stuff
+      
     def button_load_level(self):
-        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,".btk files (*.btk);;.btp files (*.btp)")
+        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,".brk files (*.brk);;.btk files (*.btk);;.btp files (*.btp)")
             
 
         if filepath:
@@ -146,13 +176,29 @@ class GenEditor(QMainWindow):
                 child.setText(0, name)
                 child.setDisabled(True)
             self.animation_bar.addTopLevelItem(loaded_animation)
+            
+            
           
             self.load_animation_to_middle(len(list_of_animations) - 1)
 
-            
-    def load_animation_to_middle(self, index):
+    def button_save_level(self):
+        index = self.animation_bar.currentIndex().row()      
+
+        info = j3d.fix_array(list_of_animations[index].display_info)
+  
+        j3d.sort_filepath(list_of_animations[index].filepath, info) 
+
+    #table info stuff
+    
+    def load_animation_to_middle(self, index):      
         information = list_of_animations[index].display_info;
-        col_count = max( len(information[1]), len(information[0]) )
+        
+        self.table_display.setColumnCount(0)
+        self.table_display.setRowCount(0)
+        
+        col_count = 1
+        for i in range(len (information) - 1):
+            col_count = max(col_count, len( information [i] ) )
         self.table_display.setColumnCount(col_count)
         self.table_display.setRowCount(len(information))
         
@@ -167,8 +213,7 @@ class GenEditor(QMainWindow):
         index = self.animation_bar.currentIndex().row()
         #print(index)
         
-        self.load_animation_to_middle(index)
-        
+        self.load_animation_to_middle(index)       
                 
     def display_info_changes(self):
         index = self.animation_bar.currentIndex().row()
@@ -187,24 +232,111 @@ class GenEditor(QMainWindow):
         #print(collected_info)
         list_of_animations[index].display_info = collected_info
                 
-        
-    def button_save_level(self):
-        index = self.animation_bar.currentIndex().row()
-        
-        j3d.sort_filepath(list_of_animations[index].filepath, list_of_animations[index].display_info) 
+    #table button stuff   
    
     def add_column(self):
         self.table_display.setColumnCount(self.table_display.columnCount() + 1)
+        if len(list_of_animations) > 0:
+            index = self.animation_bar.currentIndex().row()
+            minimum = len (list_of_animations[index].display_info[0] )
+            if self.table_display.columnCount() > minimum:
+                self.bt_rm_col.setDisabled(False)
         
     def rem_column(self):
-        self.table_display.setColumnCount(self.table_display.columnCount() - 1)
-        
+        if len(list_of_animations) > 0:
+            index = self.animation_bar.currentIndex().row()
+            minimum = len (list_of_animations[index].display_info[0] )
+            if self.table_display.columnCount() > minimum:
+                self.table_display.setColumnCount(self.table_display.columnCount() - 1)
+        else:
+            self.table_display.setColumnCount(self.table_display.columnCount() - 1)
+    
+    def add_col_here(self):
+        curcol = self.table_display.currentColumn() + 2
+        print(self.table_display.currentColumn())
+        self.add_column()
+        if curcol > 2:
+            print("at least 2")
+            for i in range( 0, self.table_display.rowCount() ):
+                for j in reversed( range( curcol, self.table_display.columnCount() ) ):
+                    old = self.table_display.item(i, j-1)
+                    try:
+                        new = QTableWidgetItem(old.text())
+                        old.setText("")
+                    except:
+                        new = QTableWidgetItem("")
+                        self.table_display.setItem(i, j-1, QTableWidgetItem(""))
+                    self.table_display.setItem(i, j, new)
+    
+    def rem_col_here(self):
+        curcol = self.table_display.currentColumn() + 2      
+        if len(list_of_animations) > 0:          
+            index = self.animation_bar.currentIndex().row()
+            minimum = len (list_of_animations[index].display_info[0] )
+            
+            if self.table_display.columnCount() > minimum: #if you can remove a col          
+                for i in range( 0, self.table_display.rowCount() ):
+                    for j in range( curcol, self.table_display.columnCount() ):
+                        old = self.table_display.item(i, j)
+                        try:
+                            new = QTableWidgetItem(old.text())
+                            old.setText("")
+                        except:
+                            new = QTableWidgetItem("")
+                            self.table_display.setItem(i, j, QTableWidgetItem(""))
+                        self.table_display.setItem(i, j - 1, new)
+                self.rem_column()
+        else:
+            self.rem_column()
+    
     def add_row(self):
         self.table_display.setRowCount(self.table_display.rowCount() + 1)
+        if self.table_display.rowCount() > 2:
+            self.bt_rm_row.setDisabled(False)
     
     def rem_row(self):
-        self.table_display.setRowCount(self.table_display.rowCount() - 1)
-                    
+        if self.table_display.rowCount() > 2:
+            self.table_display.setRowCount(self.table_display.rowCount() - 1)
+        if self.table_display.rowCount() == 2:
+            self.bt_rm_row.setDisabled(True)
+    
+    def add_row_here(self):
+        currow = self.table_display.currentRow() + 2
+        print(self.table_display.currentRow())
+        self.add_row()
+        if currow > 2:
+            for i in reversed( range( currow, self.table_display.rowCount() ) ):
+                for j in range( 0, self.table_display.columnCount() ):
+                    old = self.table_display.item(i - 1, j)
+                    try:
+                        new = QTableWidgetItem(old.text())
+                        old.setText("")
+                    except:
+                        new = QTableWidgetItem("")
+                        self.table_display.setItem(i - 1, j, QTableWidgetItem(""))
+                    self.table_display.setItem(i, j, new)
+    
+    def rem_row_here(self):
+        currow = self.table_display.currentRow() + 2      
+        if len(list_of_animations) > 0:          
+            index = self.animation_bar.currentIndex().row()
+            minimum = len (list_of_animations[index].display_info[0] )
+            
+            if self.table_display.rowCount() > minimum: #if you can remove a col          
+                for i in range( currow, self.table_display.rowCount() ):
+                    for j in range( 0, self.table_display.columnCount() ):
+                        old = self.table_display.item(i, j)
+                        try:
+                            new = QTableWidgetItem(old.text())
+                            old.setText("")
+                        except:
+                            new = QTableWidgetItem("")
+                            self.table_display.setItem(i, j, QTableWidgetItem(""))
+                        self.table_display.setItem(i - 1, j, new)
+                self.rem_row()
+        else:
+            self.rem_row()
+    
 import sys
 def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)

@@ -150,9 +150,10 @@ class btp(j3d.basic_animation):
                     pass
                 elif j in keyframes_dictionary: 
                     keyframes_dictionary[j].append(thismat_kf[j])
-                else:
+                else: #new keyframe
                     to_add = []
-                    for k in range(i-1):
+                    #for k in range(i-1):
+                    for k in range( len(keyframes_dictionary[0] ) - 1):
                         to_add.append("")
                     to_add.append(thismat_kf[j])
                     keyframes_dictionary[j] = (to_add)
@@ -161,7 +162,14 @@ class btp(j3d.basic_animation):
             
             information.append(curr_info)
         
-        for i in keyframes_dictionary.keys(): #i is the frame, so for each keyframe
+        keys = []
+
+        for i in keyframes_dictionary.keys():
+            keys.append(i)
+       
+        keys.sort()
+        
+        for i in keys: #i is the frame, so for each keyframe
             information[1].append("Frame " + str(i)) #add the header
             
             k = 2 #k in the row index in the table
@@ -206,7 +214,7 @@ class btp(j3d.basic_animation):
         for i in range( 2, len(info) ): #i is the index of the material in info
             current_duration = info[i][1]   
             
-            assert current_duration.isnumeric()
+            
             current_duration = int(current_duration)
             largest_duration = max(largest_duration, current_duration )                 
             
@@ -240,7 +248,7 @@ class btp(j3d.basic_animation):
             
             entry = btp_facial_entry(info[i][0], frames)
             btp.animations.append(entry)
-        
+            
        
         
         with open(f, "wb") as f:
@@ -271,10 +279,11 @@ class btp(j3d.basic_animation):
             facial_animation_entries_os = f.tell()
             
             total_frames = 0;
+           
             for i in range( len (btp.animations) ):
-                j3d.write_uint16(f, len ( btp.animations[1].frames ))
+                j3d.write_uint16(f, len ( btp.animations[i].frames ))
                 j3d.write_uint16(f, total_frames)
-                total_frames += len (btp.animations[1].frames )
+                total_frames += len (btp.animations[i].frames )
                 j3d.write_uint16(f, 0x00FF)
                 j3d.write_uint16(f, 0xFFFF)
             
