@@ -7,41 +7,6 @@ import animations.general_animation as j3d
 
 BTKFILEMAGIC = b"J3D1btk1"
 
-# Optional rounding
-def opt_round(val, digits):
-    if digits is None:
-        return val
-    else:
-        return round(val, digits)
-
-
-        
-def make_tangents(array):
-    if len( array ) == 1:
-        return array
-    for i in range( len( array ) - 1):
-        this_comp = array[i]
-        next_comp = array[i+ 1]
-        
-        tangent = (next_comp.value - this_comp.value) / (next_comp.time - this_comp.time)
-        
-        array[i].tangentOut = tangent
-        array[i+1].tangentIn = tangent
-    
-    this_comp = array[-1]
-    next_comp = array[0]
-    
-    tangent = (next_comp.value - this_comp.value) / (next_comp.time - this_comp.time)
-        
-    array[-1].tangentOut = tangent
-    array[0].tangentIn = tangent
-    
-    #print( array)
-    
-    return array
-    
-    
-        
 class AnimComponent(object):
     def __init__(self, time, value, tangentIn = 0, tangentOut=None):
         self.time = time 
@@ -143,12 +108,12 @@ class btk(j3d.basic_animation):
         ttk_start = f.tell()
         
         ttk_magic = f.read(4)
-        ttk_sectionsize = read_uint32(f)
+        ttk_sectionsize = j3d.read_uint32(f)
 
-        loop_mode = read_uint8(f)
-        angle_scale = read_sint8(f) 
+        loop_mode = j3d.read_uint8(f)
+        angle_scale = j3d.read_sint8(f) 
         rotscale = (2.0**angle_scale) * (180.0 / 32768.0);
-        duration = read_uint16(f)
+        duration = j3d.read_uint16(f)
         btk = cls(loop_mode, angle_scale, duration)
 
 
@@ -396,7 +361,7 @@ class btk(j3d.basic_animation):
                 uvw = "UVW"
                 uvw = uvw[j%3: j%3 + 1]
                               
-                for k in range(4, len(info[1])): #for each keyframe
+                for k in range(4, len(info[line + j])): #for each keyframe
                     if info[line + j][k] != "":
                         comp = AnimComponent( keyframes[k-4], float(info[line + j][k]))
                                        
@@ -416,11 +381,11 @@ class btk(j3d.basic_animation):
                 uvw = uvw[j%3: j%3 + 1]
                 
                 if j < 3:
-                    current_anim.scale[uvw] = make_tangents(current_anim.scale[uvw])
+                    current_anim.scale[uvw] = j3d.make_tangents(current_anim.scale[uvw])
                 if j < 6:
-                    current_anim.rotation[uvw] = make_tangents(current_anim.rotation[uvw])
+                    current_anim.rotation[uvw] = j3d.make_tangents(current_anim.rotation[uvw])
                 else:
-                    current_anim.translation[uvw] = make_tangents(current_anim.translation[uvw])
+                    current_anim.translation[uvw] = j3d.make_tangents(current_anim.translation[uvw])
             
             
             btk.animations.append(current_anim)

@@ -4,6 +4,8 @@ import struct
 BTPFILEMAGIC = b"J3D1btp1"
 BTKFILEMAGIC = b"J3D1btk1"
 BRKFILEMAGIC = b"J3D1brk1"
+BCKFILEMAGIC = b"J3D1bck1"
+
 PADDING = b"This is padding data to align"
 
 def read_uint32(f):
@@ -172,8 +174,32 @@ def fix_array(info):
     for i in range( len( info )):
         if len( info[i]) == 0:
             info.pop(i)  
-    print(info)
+    #print(info)
     return info 
+    
+def make_tangents(array):
+    if len( array ) == 1:
+        return array
+    for i in range( len( array ) - 1):
+        this_comp = array[i]
+        next_comp = array[i+ 1]
+        
+        tangent = (next_comp.value - this_comp.value) / (next_comp.time - this_comp.time)
+        
+        array[i].tangentOut = tangent
+        array[i+1].tangentIn = tangent
+    
+    this_comp = array[-1]
+    next_comp = array[0]
+    
+    tangent = (next_comp.value - this_comp.value) / (next_comp.time - this_comp.time)
+        
+    array[-1].tangentOut = tangent
+    array[0].tangentIn = tangent
+    
+    #print( array)
+    
+    return array
 
 def sort_file(filepath):
     with open(filepath, "rb") as f:
@@ -191,6 +217,11 @@ def sort_file(filepath):
             from animations.brk import brk
             import animations.brk as brk_file
             return brk_file.brk.from_anim(f)
+        f.seek(0)
+        if f.read(8) == BCKFILEMAGIC:
+            from animations.bck import bck
+            import animations.bck as bck_file
+            return bck_file.bck.from_anim(f)
             
         f.close()
             
@@ -207,3 +238,7 @@ def sort_filepath(filepath, information):
          from animations.brk import brk
          import animations.brk as brk_file
          return brk_file.brk.from_table(filepath, information)  
+    elif filepath.endswith(".bck"):
+         from animations.bck import bck
+         import animations.bck as bck_file
+         return bck_file.bck.from_table(filepath, information) 

@@ -193,7 +193,7 @@ class brk(object):
             
             brk.constant_animations.append(anim)
         
-        return brk 
+        return brk
 
     def get_children_names(self):
         mat_names = []

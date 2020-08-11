@@ -59,6 +59,7 @@ class GenEditor(QMainWindow):
 
         self.file_load_action.triggered.connect(self.button_load_level)
         self.save_file_action.triggered.connect(self.button_save_level)
+        self.save_file_as_action.triggered.connect(self.button_save_as)
 
         self.file_menu.addAction(self.file_load_action)
         self.file_menu.addAction(self.save_file_action)
@@ -115,7 +116,7 @@ class GenEditor(QMainWindow):
         self.bt_add_col.clicked.connect(self.add_column)
         
         self.bt_remc_here = QPushButton(self)
-        self.bt_remc_here.setText("Remove Column Next")
+        self.bt_remc_here.setText("Remove Current Column")
         self.bt_remc_here.clicked.connect(self.rem_col_here)
         
         self.bt_rm_col = QPushButton(self)
@@ -135,7 +136,7 @@ class GenEditor(QMainWindow):
         self.bt_rm_row.clicked.connect(self.rem_row) 
 
         self.bt_remr_here = QPushButton(self)
-        self.bt_remr_here.setText("Remove Row Next")
+        self.bt_remr_here.setText("Remove Current Row")
         self.bt_remr_here.clicked.connect(self.rem_row_here)        
         
         self.bottom_actions.addWidget(self.bt_addc_here, 0, 0)       
@@ -156,7 +157,7 @@ class GenEditor(QMainWindow):
     #file stuff
       
     def button_load_level(self):
-        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,".brk files (*.brk);;.btk files (*.btk);;.btp files (*.btp)")
+        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,".bck files (*.bck);;.brk files (*.brk);;.btk files (*.btk);;.btp files (*.btp)")
             
 
         if filepath:
@@ -187,7 +188,13 @@ class GenEditor(QMainWindow):
         info = j3d.fix_array(list_of_animations[index].display_info)
   
         j3d.sort_filepath(list_of_animations[index].filepath, info) 
-
+    
+    def button_save_as(self): 
+        filepath, choosentype = QFileDialog.getSaveFileName(self, "Save File", "", ".brk files (*.brk);;.btk files (*.btk);;.btp files (*.btp);;All files (*)")
+        if filepath:
+            info = j3d.fix_array(list_of_animations[index].display_info)
+            j3d.sort_filepath(filepath, info) 
+            
     #table info stuff
     
     def load_animation_to_middle(self, index):      
@@ -197,7 +204,7 @@ class GenEditor(QMainWindow):
         self.table_display.setRowCount(0)
         
         col_count = 1
-        for i in range(len (information) - 1):
+        for i in range(len (information)):
             col_count = max(col_count, len( information [i] ) )
         self.table_display.setColumnCount(col_count)
         self.table_display.setRowCount(len(information))
@@ -211,7 +218,7 @@ class GenEditor(QMainWindow):
     
     def selected_animation_changed(self):
         index = self.animation_bar.currentIndex().row()
-        #print(index)
+        print(index)
         
         self.load_animation_to_middle(index)       
                 
@@ -245,7 +252,13 @@ class GenEditor(QMainWindow):
     def rem_column(self):
         if len(list_of_animations) > 0:
             index = self.animation_bar.currentIndex().row()
-            minimum = len (list_of_animations[index].display_info[0] )
+            vals = list_of_animations[index].display_info[0]
+            
+            minimum = 0;
+            
+            for i in vals:
+                if i != "":
+                    minimum += 1
             if self.table_display.columnCount() > minimum:
                 self.table_display.setColumnCount(self.table_display.columnCount() - 1)
         else:
@@ -253,11 +266,11 @@ class GenEditor(QMainWindow):
     
     def add_col_here(self):
         curcol = self.table_display.currentColumn() + 2
-        print(self.table_display.currentColumn())
+        #print(self.table_display.currentColumn())
         self.add_column()
         if curcol > 2:
-            print("at least 2")
-            for i in range( 0, self.table_display.rowCount() ):
+            #print("at least 2")
+            for i in range( 1, self.table_display.rowCount() ):
                 for j in reversed( range( curcol, self.table_display.columnCount() ) ):
                     old = self.table_display.item(i, j-1)
                     try:
@@ -269,13 +282,23 @@ class GenEditor(QMainWindow):
                     self.table_display.setItem(i, j, new)
     
     def rem_col_here(self):
-        curcol = self.table_display.currentColumn() + 2      
+        curcol = self.table_display.currentColumn() + 1
+        print(curcol)
         if len(list_of_animations) > 0:          
             index = self.animation_bar.currentIndex().row()
-            minimum = len (list_of_animations[index].display_info[0] )
+            vals = list_of_animations[index].display_info[0]
             
-            if self.table_display.columnCount() > minimum: #if you can remove a col          
-                for i in range( 0, self.table_display.rowCount() ):
+            minimum = 0;
+            
+            for i in vals:
+                if i != "":
+                    minimum += 1
+            
+            
+            
+            if self.table_display.columnCount() > minimum: #if you can remove a col
+                print("removing column")
+                for i in range( 1, self.table_display.rowCount() ):
                     for j in range( curcol, self.table_display.columnCount() ):
                         old = self.table_display.item(i, j)
                         try:
@@ -317,8 +340,10 @@ class GenEditor(QMainWindow):
                     self.table_display.setItem(i, j, new)
     
     def rem_row_here(self):
-        currow = self.table_display.currentRow() + 2      
-        if len(list_of_animations) > 0:          
+        currow = self.table_display.currentRow() + 2
+        if currow == 0:
+            self.rem_row()
+        elif len(list_of_animations) > 0:          
             index = self.animation_bar.currentIndex().row()
             minimum = len (list_of_animations[index].display_info[0] )
             
