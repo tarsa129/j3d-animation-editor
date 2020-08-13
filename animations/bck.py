@@ -182,7 +182,7 @@ class bck(j3d.basic_animation):
         
         for anim in self.animations:
             info.append( ["Joint " + str(count)] )
-            things = ["Scale X:", "Scale Y:", "Scale Z:", "Rotation X:", "Rotation Y:", "Rotation X:",
+            things = ["Scale X:", "Scale Y:", "Scale Z:", "Rotation X:", "Rotation Y:", "Rotation Z:",
                 "Translation X:", "Translation Y:", "Translation Z:"]
             
             for j in range (len ( things ) ):    
@@ -414,7 +414,7 @@ class bck(j3d.basic_animation):
 
         translations_start = f.tell()
         for val in all_translations:
-            print(val)
+            #print(val)
             write_float(f, val)
 
         j3d.write_padding(f, 32)
