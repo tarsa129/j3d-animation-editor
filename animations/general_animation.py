@@ -5,6 +5,7 @@ BTPFILEMAGIC = b"J3D1btp1"
 BTKFILEMAGIC = b"J3D1btk1"
 BRKFILEMAGIC = b"J3D1brk1"
 BCKFILEMAGIC = b"J3D1bck1"
+BPKFILEMAGIC = b"J3D1bpk1"
 
 PADDING = b"This is padding data to align"
 
@@ -48,6 +49,27 @@ def write_padding(f, multiple):
 class basic_animation(object):
     def __init__(self):
         pass
+
+def write_values(info, keyframes_dictionary, row):
+    keys = []
+
+    for i in keyframes_dictionary.keys():
+        keys.append(i)
+   
+    keys.sort()
+    
+    for i in keys: #i is the frame, so for each keyframe
+        info[row].append("Frame " + str( (int(i)) ) ) #add the header
+        
+        k = row + 1 #k in the row index in the table
+        for j in keyframes_dictionary[i]: #j is the value
+            #print( len (keyframes_dictionary[i] ) ) 
+            try:
+                info[k].append(j)
+                k += 1      
+            except:
+                pass
+    
 
 class StringTable(object):
     def __init__(self):
@@ -203,26 +225,31 @@ def make_tangents(array):
 
 def sort_file(filepath):
     with open(filepath, "rb") as f:
-        if f.read(8) == BTPFILEMAGIC:
+        magic = f.read(8)
+        if magic == BTPFILEMAGIC:
             from animations.btp import btp
             import animations.btp as btp_file
             return btp_file.btp.from_anim(f)
-        f.seek(0)
-        if f.read(8) == BTKFILEMAGIC:
+        
+        if magic == BTKFILEMAGIC:
             from animations.btk import btk
             import animations.btk as btk_file
             return btk_file.btk.from_anim(f)
-        f.seek(0)
-        if f.read(8) == BRKFILEMAGIC:
+        
+        if magic == BRKFILEMAGIC:
             from animations.brk import brk
             import animations.brk as brk_file
             return brk_file.brk.from_anim(f)
-        f.seek(0)
-        if f.read(8) == BCKFILEMAGIC:
+        
+        if magic == BCKFILEMAGIC:
             from animations.bck import bck
             import animations.bck as bck_file
             return bck_file.bck.from_anim(f)
-            
+        
+        if magic == BPKFILEMAGIC:
+            from animations.bpk import bpk
+            import animations.bpk as bpk_file
+            return bpk_file.bpk.from_anim(f)
         f.close()
             
 def sort_filepath(filepath, information):
@@ -242,3 +269,7 @@ def sort_filepath(filepath, information):
          from animations.bck import bck
          import animations.bck as bck_file
          return bck_file.bck.from_table(filepath, information) 
+    elif filepath.endswith(".bpk"):
+         from animations.bpk import bpk
+         import animations.bpk as bpk_file
+         return bpk_file.bpk.from_table(filepath, information) 

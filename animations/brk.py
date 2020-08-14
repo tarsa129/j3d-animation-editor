@@ -254,19 +254,8 @@ class brk(object):
                     
                 
                 i = len(info)
-                
-            for i in keyframes_dictionary.keys(): #i is the frame, so for each keyframe
-                info[2].append("Frame " + str( (int(i)) ) ) #add the header
-                
-                k = 3 #k in the row index in the table
-                for j in keyframes_dictionary[i]: #j is the value
-                    #print( len (keyframes_dictionary[i] ) ) 
-                    try:
-                        info[k].append(j)
-                        k += 1      
-                    except:
-                        pass
-                        #print("last k: " + str(k))
+            
+            write_values(info, keyframes_dictionary, 2)
             
         else:
             print("there are no register animations")
@@ -321,27 +310,8 @@ class brk(object):
                     
             print( keyframes_dictionary)
             
-            keys = []
-
-            for i in keyframes_dictionary.keys():
-                keys.append(i)
-         
-            keys.sort()
-           
+            write_values(info, keyframes_dictionary, l - 1)
             
-            for i in keys: #i is the frame, so for each keyframe
-                info[l - 1].append("Frame " + str( (int(i)) ) ) #add the header
-                #print(keyframes_dictionary[i] ) 
-                
-                k = l  #k in the row index in the table
-                for j in keyframes_dictionary[i]: #j is the value
-                    #print( len (keyframes_dictionary[i] ) ) 
-                    try:
-                        info[k].append(j)
-                        k += 1      
-                    except:
-                        pass
-                        #print("last k: " + str(k))
         else:
             info[-1].append("None")
         

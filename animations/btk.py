@@ -307,25 +307,7 @@ class btk(j3d.basic_animation):
                         keyframes_dictionary[k] = (to_add) 
             i = len(info)
         
-        keys = []
-
-        for i in keyframes_dictionary.keys():
-            keys.append(i)
-       
-        keys.sort()
-        
-        for i in keys: #i is the frame, so for each keyframe
-            info[1].append("Frame " + str( (int(i)) ) ) #add the header
-            
-            k = 2 #k in the row index in the table
-            for j in keyframes_dictionary[i]: #j is the value
-                #print( len (keyframes_dictionary[i] ) ) 
-                try:
-                    info[k].append(j)
-                    k += 1      
-                except:
-                    pass
-                    #print("last k: " + str(k))
+        write_values(info, keyframes_dictionary, 1)
         return info  
      
     @classmethod

@@ -116,7 +116,7 @@ class GenEditor(QMainWindow):
         self.bt_add_col.clicked.connect(self.add_column)
         
         self.bt_remc_here = QPushButton(self)
-        self.bt_remc_here.setText("Remove Current Column")
+        self.bt_remc_here.setText("Rem. Current Column")
         self.bt_remc_here.clicked.connect(self.rem_col_here)
         
         self.bt_rm_col = QPushButton(self)
@@ -136,7 +136,7 @@ class GenEditor(QMainWindow):
         self.bt_rm_row.clicked.connect(self.rem_row) 
 
         self.bt_remr_here = QPushButton(self)
-        self.bt_remr_here.setText("Remove Current Row")
+        self.bt_remr_here.setText("Rem. Current Row")
         self.bt_remr_here.clicked.connect(self.rem_row_here)        
         
         self.bottom_actions.addWidget(self.bt_addc_here, 0, 0)       
@@ -157,7 +157,9 @@ class GenEditor(QMainWindow):
     #file stuff
       
     def button_load_level(self):
-        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,".bck files (*.bck);;.brk files (*.brk);;.btk files (*.btk);;.btp files (*.btp)")
+        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
+        "All Files(*.*);;.bck files (*.bck);;.brk files (*.brk);;.btk files (*.btk);;.btp files (*.btp)"
+        )
             
 
         if filepath:
