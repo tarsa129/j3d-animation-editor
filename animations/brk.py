@@ -231,26 +231,11 @@ class brk(object):
                     else:
                         info.append( ["", "", comp] )
                 
-                    thismat_kf = {}
+                    
                     array = anim.component[comp[0:1]]
                     
                     #print (array)
-                    for value in array:
-                        thismat_kf[value.time] = value.value
-                        
-                    for k in keyframes_dictionary.keys(): #if there is a keyframe that does not apply to the current material, pad
-                        if not k in thismat_kf.keys():
-                            keyframes_dictionary[k].append("")
-                        
-                    for k in thismat_kf.keys():
-                        if k in keyframes_dictionary: 
-                            keyframes_dictionary[k].append(thismat_kf[k])
-                        else:
-                            to_add = []
-                            for l in range(int( len(keyframes_dictionary[0]) - 1  )):
-                                to_add.append("")
-                            to_add.append(thismat_kf[k])
-                            keyframes_dictionary[k] = (to_add) 
+                    keyframes_dictionary = j3d.combine_dicts(array, keyframes_dictionary)
                     
                 
                 i = len(info)

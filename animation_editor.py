@@ -88,6 +88,9 @@ class GenEditor(QMainWindow):
         
         self.animation_bar.itemSelectionChanged.connect(self.selected_animation_changed) 
         
+        #self.animation_bar.setContextMenuPolicy(Qt.CustomContextMenu)
+        #self.animation_bar.customContextMenuRequested.connect(self.run_context_menu)
+        
         self.left_vbox.addWidget(self.animation_bar)
         
         #middle table
@@ -196,7 +199,42 @@ class GenEditor(QMainWindow):
         if filepath:
             info = j3d.fix_array(list_of_animations[index].display_info)
             j3d.sort_filepath(filepath, info) 
+       
+    #tree view stuff
+    def contextMenuEvent(self, event):
+        
+        if len( list_of_animations ) < 1:
+            return
+        
+        index = self.animation_bar.currentIndex().row()
+        
+        #print("context menu triggered")
+        
+        context_menu = QMenu(self.animation_bar)
+        close_action = QAction("Close", self)
+        copy_action = QAction("Copy", self)
+        
+        def emit_close():
+            items = self.animation_bar.selectedItems()
             
+            if ( len(items) > 1):
+                return
+            
+            self.animation_bar.takeTopLevelItem(index)
+            list_of_animations.pop(index)
+            
+            print( len (list_of_animations ))
+            
+            
+            
+        close_action.triggered.connect(emit_close)       
+       
+        context_menu.addAction(close_action)
+        context_menu.addAction(copy_action)
+        context_menu.exec(self.mapToGlobal(event.pos()))
+        context_menu.destroy()
+        del context_menu
+        
     #table info stuff
     
     def load_animation_to_middle(self, index):      
@@ -221,7 +259,6 @@ class GenEditor(QMainWindow):
     def selected_animation_changed(self):
         index = self.animation_bar.currentIndex().row()
         print(index)
-        
         self.load_animation_to_middle(index)       
                 
     def display_info_changes(self):

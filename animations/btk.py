@@ -288,23 +288,9 @@ class btk(j3d.basic_animation):
                 array = comp_dict[ comp[-2:-1] ]
                 
                 #print(array)                          
-                thismat_kf = {}  
-                for value in array:
-                    thismat_kf[value.time] = value.value
                 
-                for j in keyframes_dictionary.keys(): #if there is a keyframe that does not apply to the current material, pad
-                    if not j in thismat_kf.keys():
-                        keyframes_dictionary[j].append("")
-                    
-                for k in thismat_kf.keys():
-                    if k in keyframes_dictionary: 
-                        keyframes_dictionary[k].append(thismat_kf[k])
-                    else:
-                        to_add = []
-                        for l in range(int( len(keyframes_dictionary[0]) - 1  )):
-                            to_add.append("")
-                        to_add.append(thismat_kf[k])
-                        keyframes_dictionary[k] = (to_add) 
+                
+                keyframes_dictionary = j3d.combine_dicts(array, keyframes_dictionary) 
             i = len(info)
         
         write_values(info, keyframes_dictionary, 1)
