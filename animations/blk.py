@@ -5,7 +5,7 @@ from animations.general_animation import *
 from animations.general_animation import basic_animation
 import animations.general_animation as j3d
 
-BTKFILEMAGIC = b"J3D1bck1"
+BLKFILEMAGIC = b"J3D1blk1"
 
 class bone_entry(object):
     def __init__(self, time, value, tangentIn = 0, tangentOut=None):
@@ -90,25 +90,23 @@ class bck(j3d.basic_animation):
         
         svr_data = f.read(16)
         
-        ank_start = f.tell()
-        ank_magic = f.read(4) #ank1
-        ank_size = j3d.read_uint32(f)
+        clk_start = f.tell()
+        clk_magic = f.read(4) #clk1
+        clk_size = j3d.read_uint32(f)
         
         loop_mode = j3d.read_uint8(f)
         angle_scale = j3d.read_sint8(f) 
         rotscale = (2.0**angle_scale) * (180.0 / 32768.0);
         duration = j3d.read_uint16(f)
-        bck = cls(loop_mode, angle_scale, duration)
+        blk = cls(loop_mode, angle_scale, duration)
         
-        bone_count = read_uint16(f)
-        scale_count = read_uint16(f)
-        rotation_count = read_uint16(f)
-        trans_count = read_uint16(f)
+        unk1_count = read_uint16(f)
+        unk2_count = read_uint16(f)
         
-        bone_offset = read_uint32(f) + ank_start
-        scale_offset = read_uint32(f) + ank_start
-        rotation_offset = read_uint32(f) + ank_start
-        trans_offset = read_uint32(f) + ank_start
+        
+        unk1_offset = read_uint32(f) + clk_start
+        unk2_offset = read_uint32(f) + clk_start
+
         
         # Read scales 
         scales = []
@@ -116,17 +114,15 @@ class bck(j3d.basic_animation):
         for i in range(scale_count):
             scales.append(read_float(f))
         
-        # Read rotations
-        rotations = []
-        f.seek(rotation_offset)
-        for i in range(rotation_count):
-            rotations.append((read_sint16(f)))
+        # Read unknown floats
+        floats = []
+        f.seek(unk2_offset)
+        for i in range(unk2_count):
+            rotations.append(read_float(f))
         
-        # Read translations 
-        trans = []
-        f.seek(trans_offset)
-        for i in range(trans_count):
-            trans.append(read_float(f))
+        
+        
+        
         
         f.seek(bone_offset)
         for i in range(bone_count):
@@ -245,10 +241,6 @@ class bck(j3d.basic_animation):
                             current_anim.add_scale(xyz, comp)
                             #print("scale " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
                         elif j < 6:
-                            """if comp.value < -180 * bck.anglescale:
-                                comp.value = comp.value + 360 * bck.anglescale
-                            elif comp.value > 180 * bck.anglescale:
-                                comp.value = comp.value - 360 * bck.anglescale"""
                             current_anim.add_rotation(xyz, comp)
                             #print("rot " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
                         else:
@@ -256,7 +248,6 @@ class bck(j3d.basic_animation):
                             #print("trans " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
             
              #calculate tangents
-            """
             for j in range(9):
                 xyz = "XYZ"
                 xyz = xyz[j%3: j%3 + 1]
@@ -266,25 +257,22 @@ class bck(j3d.basic_animation):
                 if j < 6:
                     current_anim.rotation[xyz] = j3d.make_tangents(current_anim.rotation[xyz])
                 else:
-                    current_anim.translation[xyz] = j3d.make_tangents(current_anim.translation[xyz]) """
+                    current_anim.translation[xyz] = j3d.make_tangents(current_anim.translation[xyz])
             
             bck.animations.append(current_anim)
-        if f == "":
-            return bca
-        else:
-            with open(f, "wb") as f:
-                bck.write_bck(f)
-                f.close()
+        with open(f, "wb") as f:
+            bck.write_bck(f)
+            f.close()
             
-    def write_bck(self):
+    def write_bck(self, f):
         f.write(BCKFILEMAGIC)
         filesize_offset = f.tell()
         f.write(b"ABCD") # Placeholder for file size
         j3d.write_uint32(f, 1) # Always a section count of 1
         f.write(b"\xFF"*16)
         
-        ank1_start = f.tell()
-        f.write(b"ANK1")
+        clk1_start = f.tell()
+        f.write(b"clk1")
         
         ttk1_size_offset = f.tell()
         f.write(b"EFGH")  # Placeholder for ttk1 size
@@ -421,7 +409,7 @@ class bck(j3d.basic_animation):
         j3d.write_uint32(f, total_size)
 
         f.seek(ttk1_size_offset)
-        j3d.write_uint32(f, total_size - ank1_start)
+        j3d.write_uint32(f, total_size - clk1_start)
 
         f.seek(count_offset)
         j3d.write_uint16(f, len(all_scales))
@@ -429,178 +417,7 @@ class bck(j3d.basic_animation):
         j3d.write_uint16(f, len(all_translations))
         # Next come the section offsets
 
-        j3d.write_uint32(f, bone_anim_start     - ank1_start)
-        j3d.write_uint32(f, scale_start         - ank1_start)
-        j3d.write_uint32(f, rotations_start     - ank1_start)
-        j3d.write_uint32(f, translations_start  - ank1_start)
-    
-    def write_bck(self, f):
-        f.write(BCKFILEMAGIC)
-        filesize_offset = f.tell()
-        f.write(b"ABCD") # Placeholder for file size
-        j3d.write_uint32(f, 1) # Always a section count of 1
-        f.write(b"\xFF"*16)
-        
-        ank1_start = f.tell()
-        f.write(b"ANK1")
-        
-        ttk1_size_offset = f.tell()
-        f.write(b"EFGH")  # Placeholder for ttk1 size
-        j3d.write_uint8(f, self.loop_mode)
-        j3d.write_sint8(f, self.anglescale)
-        
-        rotscale = (2.0**self.anglescale)*(180.0 / 32768.0)
-        
-        j3d.write_uint16(f, self.duration)
-        
-        j3d.write_uint16(f, len( self.animations ))
-        
-        #0x30        
-      
-        count_offset = f.tell()
-        f.write(b"1+1=11")  # Placeholder for scale, rotation and translation count
-        
-        data_offsets = f.tell()
-        f.write(b"toadettebestgirl") #placeholder for offsets
-        
-        write_padding(f, multiple=32)
-        bone_anim_start = f.tell()
-        
-        f.write(b"\x00"*(0x36*len(self.animations))) #placeholder for stuff
-        
-        write_padding(f, multiple=32)
-        
-        all_scales = []
-        all_rotations = []
-        all_translations = []
-        for anim in self.animations:
-            for axis in "XYZ":
-                # Set up offset for scale
-                if len(anim.scale[axis]) == 1:
-                    sequence = [anim.scale[axis][0].value]
-                else:
-                    sequence = []
-                    for comp in anim.scale[axis]:
-                        sequence.append(comp.time)
-                        sequence.append(comp.value)
-                        sequence.append(comp.tangentIn)
-                        sequence.append(comp.tangentOut)
-                    
-                offset = j3d.find_sequence(all_scales,sequence)
-                if offset == -1:
-                    offset = len(all_scales)
-                    all_scales.extend(sequence)
-                    
-                anim._set_scale_offsets(axis, offset)
-
-                # Set up offset for rotation
-                if len(anim.rotation[axis]) == 1:
-                    comp = anim.rotation[axis][0]
-                    #angle = ((comp.value+180) % 360) - 180
-                    sequence = [comp.value/rotscale]
-                    print("seq", sequence)
-                else:
-                    sequence = []
-                    for comp in anim.rotation[axis]:
-                        #angle = ((comp.value+180) % 360) - 180
-                        sequence.append(comp.time)
-                        sequence.append(comp.value/rotscale)
-                        sequence.append(comp.tangentIn/rotscale)
-                        sequence.append(comp.tangentOut/rotscale)
-                    print("seq", sequence)
-                offset = j3d.find_sequence(all_rotations, sequence)
-                if offset == -1:
-                    offset = len(all_rotations)
-                    all_rotations.extend(sequence)
-                anim._set_rot_offsets(axis, offset)
-
-                # Set up offset for translation
-                if len(anim.translation[axis]) == 1:
-                    sequence = [anim.translation[axis][0].value]
-                else:
-                    sequence = []
-                    for comp in anim.translation[axis]:
-                        sequence.append(comp.time)
-                        sequence.append(comp.value)
-                        sequence.append(comp.tangentIn)
-                        sequence.append(comp.tangentOut)
-                    
-                offset = j3d.find_sequence(all_translations, sequence)
-                if offset == -1:
-                    offset = len(all_translations)
-                    all_translations.extend(sequence)
-                anim._set_translation_offsets(axis, offset)
-     
-                
-
-        scale_start = f.tell()
-        for val in all_scales:
-            write_float(f, val)
-
-        j3d.write_padding(f, 32)
-
-        rotations_start = f.tell()
-        for val in all_rotations:
-            
-            val = int(val)
-            if val <= -32767:
-                val = -32767
-            elif val > 32767:
-                val = 32767
-            
-            #try:
-            j3d.write_sint16(f, val )
-            """except:
-                print(val)"""
-
-        j3d.write_padding(f, 32)
-
-        translations_start = f.tell()
-        for val in all_translations:
-            #print(val)
-            write_float(f, val)
-
-        j3d.write_padding(f, 32)
-
-        total_size = f.tell()
-
-        f.seek(bone_anim_start)
-        for anim in self.animations:
-            for axis in "XYZ":
-                j3d.write_uint16(f, len(anim.scale[axis])) # Scale count for this animation
-                j3d.write_uint16(f, anim._scale_offsets[axis]) # Offset into scales
-                j3d.write_uint16(f, 1) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
-
-
-                j3d.write_uint16(f, len(anim.rotation[axis])) # Rotation count for this animation
-                j3d.write_uint16(f, anim._rot_offsets[axis]) # Offset into rotations
-                j3d.write_uint16(f, 1) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
-
-
-                j3d.write_uint16(f, len(anim.translation[axis])) # Translation count for this animation
-                j3d.write_uint16(f, anim._translation_offsets[axis])# offset into translations
-                j3d.write_uint16(f, 1) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
-
-        
-
-        # Fill in all the placeholder values
-        f.seek(filesize_offset)
-        j3d.write_uint32(f, total_size)
-
-        f.seek(ttk1_size_offset)
-        j3d.write_uint32(f, total_size - ank1_start)
-
-        f.seek(count_offset)
-        j3d.write_uint16(f, len(all_scales))
-        j3d.write_uint16(f, len(all_rotations))
-        j3d.write_uint16(f, len(all_translations))
-        # Next come the section offsets
-
-        j3d.write_uint32(f, bone_anim_start     - ank1_start)
-        j3d.write_uint32(f, scale_start         - ank1_start)
-        j3d.write_uint32(f, rotations_start     - ank1_start)
-        j3d.write_uint32(f, translations_start  - ank1_start)
-    
-    @classmethod
-    def convert_to_bca(cls, info):
-        pass
+        j3d.write_uint32(f, bone_anim_start     - clk1_start)
+        j3d.write_uint32(f, scale_start         - clk1_start)
+        j3d.write_uint32(f, rotations_start     - clk1_start)
+        j3d.write_uint32(f, translations_start  - clk1_start)

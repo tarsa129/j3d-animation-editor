@@ -59,9 +59,8 @@ class bone_anim(object):
 class bca(j3d.basic_animation):
     def __init__(self, loop_mode, anglescale, duration):
         self.loop_mode = loop_mode
-        self.anglescale = anglescale
         self.duration = duration
-        
+        self.anglescale = anglescale
         self.animations = []
     
     @classmethod
@@ -80,8 +79,10 @@ class bca(j3d.basic_animation):
         anf_sectionsize = read_uint32(f)
 
         loop_mode = read_uint8(f)
-        anglescale = read_sint8(f)
+        filler = read_sint8(f)
+        anglescale = 0
         rotScale = (2.0**anglescale) * (180.0 / 32768.0);
+        #rotScale = 1
         duration = read_uint16(f)
         
         bca = cls(loop_mode, anglescale, duration)
@@ -146,7 +147,7 @@ class bca(j3d.basic_animation):
             countY, offsetY = y_scale
             countZ, offsetZ = z_scale 
             
-            print("Scale")
+            #print("Scale")
             
             for j in range(countX):
                 jointanim.add_scale("X", bone_entry.from_array(offsetX, j, countX, scaleFloats))
@@ -162,7 +163,7 @@ class bca(j3d.basic_animation):
             countY, offsetY = y_rot
             countZ, offsetZ = z_rot
             
-            print("Rotation")
+            #print("Rotation")
             for j in range(countX):
                 comp = bone_entry.from_array(offsetX, j, countX, rotationShorts)
                 comp.convert_rotation(rotScale)
@@ -183,7 +184,7 @@ class bca(j3d.basic_animation):
             countY, offsetY, = y_trans
             countZ, offsetZ, = z_trans
             
-            print("Translation")
+            #print("Translation")
             for j in range(countX):
                 jointanim.add_translation("X", bone_entry.from_array(offsetX, j, countX, translateFloats))
                 
@@ -268,6 +269,12 @@ class bca(j3d.basic_animation):
                             current_anim.add_scale(xyz, comp)
                             #print("scale " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
                         elif j < 6:
+                            """
+                            if comp.value < -180:
+                                comp = comp + 360
+                            elif comp.value > 180:
+                                comp = comp - 360
+                            """
                             current_anim.add_rotation(xyz, comp)
                             #print("rot " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
                         else:
@@ -275,9 +282,12 @@ class bca(j3d.basic_animation):
                             #print("trans " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
            
             bca.animations.append(current_anim)
-        with open(f, "wb") as f:
-            bca.write_bca(f)
-            f.close()
+        if f == "":
+            return bca
+        else:
+            with open(f, "wb") as f:
+                bca.write_bca(f)
+                f.close()
             
     def write_bca(self, f):
         f.write(BCAFILEMAGIC)
@@ -431,3 +441,7 @@ class bca(j3d.basic_animation):
         j3d.write_uint32(f, scale_start         - anf1_start)
         j3d.write_uint32(f, rotations_start     - anf1_start)
         j3d.write_uint32(f, translations_start  - anf1_start)
+    
+    @classmethod
+    def from_bck(cls, bck):
+        pass

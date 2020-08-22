@@ -68,6 +68,24 @@ class GenEditor(QMainWindow):
         self.menubar.addAction(self.file_menu.menuAction())
         self.setMenuBar(self.menubar)
         
+        
+        #convert menu
+        self.convert = QMenu(self)
+        self.convert.setTitle("Convert")
+        
+        self.convert_to_key = QAction("Save as Keyframes", self)
+        self.convert_to_all = QAction("Convert to All", self)
+        
+        self.convert_to_key.triggered.connect(self.convert_to_k)
+        self.convert_to_all.triggered.connect(self.convert_to_a)
+        
+        self.convert.addAction(self.convert_to_key)
+        self.convert.addAction(self.convert_to_all)
+        
+        self.convert.setDisabled(True)
+        
+        self.menubar.addAction(self.convert.menuAction())
+        
         #main splitter
         
         self.horizontalLayout = QSplitter()
@@ -166,6 +184,9 @@ class GenEditor(QMainWindow):
             
 
         if filepath:
+        
+            self.convert.setDisabled(False)
+            
             actual_animation_object = j3d.sort_file(filepath)
             
             new_anim = all_anim_information(filepath)           
@@ -200,11 +221,36 @@ class GenEditor(QMainWindow):
             info = j3d.fix_array(list_of_animations[index].display_info)
             j3d.sort_filepath(filepath, info) 
        
+    #convert stuff
+
+    def convert_to_k(self):
+        index = self.animation_bar.currentIndex().row()
+        filepath = list_of_animations[index].filepath
+        
+        if filepath.endswith(".bca"):
+            filepath = filepath[:-1] + "k"
+            info = list_of_animations[index].display_info
+            
+            j3d.sort_filepath(filepath, info)
+        
+    def convert_to_a(self):
+        index = self.animation_bar.currentIndex().row()
+        filepath = list_of_animations[index].filepath
+        
+        if filepath.endswith(".bck"):
+            info = list_of_animations[index].display_info
+            bck = bck.from_table("", info)
+            bca = bca
+            
+        
     #tree view stuff
     def contextMenuEvent(self, event):
         
         if len( list_of_animations ) < 1:
             return
+        
+        if len( list_of_animations) == 1:
+            self.convert.setDisabled(True)
         
         index = self.animation_bar.currentIndex().row()
         

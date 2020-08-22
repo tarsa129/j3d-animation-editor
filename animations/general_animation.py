@@ -279,6 +279,7 @@ def sort_file(filepath):
         f.close()
             
 def sort_filepath(filepath, information):
+    print(filepath)
     if filepath.endswith(".btp"):
         from animations.btp import btp
         import animations.btp as btp_file
@@ -303,3 +304,5 @@ def sort_filepath(filepath, information):
          from animations.bca import bca
          import animations.bca as bca_file
          return bca_file.bca.from_table(filepath, information) 
+         
+
