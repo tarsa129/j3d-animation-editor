@@ -230,7 +230,6 @@ class GenEditor(QMainWindow):
         if filepath.endswith(".bca"):
             filepath = filepath[:-1] + "k"
             info = list_of_animations[index].display_info
-            
             j3d.sort_filepath(filepath, info)
         
     def convert_to_a(self):
@@ -239,8 +238,11 @@ class GenEditor(QMainWindow):
         
         if filepath.endswith(".bck"):
             info = list_of_animations[index].display_info
-            bck = bck.from_table("", info)
-            bca = bca
+            info = j3d.convert_k_to_a(info)
+            
+            filepath = filepath[:-1] + "a"
+            
+            j3d.sort_filepath(filepath, info)
             
         
     #tree view stuff
@@ -379,20 +381,22 @@ class GenEditor(QMainWindow):
                 if i != "":
                     minimum += 1
             
+            print(minimum)
+            
+            print("removing column")
+            for i in range( 1, self.table_display.rowCount() ):
+                for j in range( curcol, self.table_display.columnCount() ):
+                    old = self.table_display.item(i, j)
+                    try:
+                        new = QTableWidgetItem(old.text())
+                        old.setText("")
+                    except:
+                        new = QTableWidgetItem("")
+                        self.table_display.setItem(i, j, QTableWidgetItem(""))
+                    self.table_display.setItem(i, j - 1, new)
             
             
-            if self.table_display.columnCount() > minimum: #if you can remove a col
-                print("removing column")
-                for i in range( 1, self.table_display.rowCount() ):
-                    for j in range( curcol, self.table_display.columnCount() ):
-                        old = self.table_display.item(i, j)
-                        try:
-                            new = QTableWidgetItem(old.text())
-                            old.setText("")
-                        except:
-                            new = QTableWidgetItem("")
-                            self.table_display.setItem(i, j, QTableWidgetItem(""))
-                        self.table_display.setItem(i, j - 1, new)
+            if self.table_display.columnCount() > minimum: #if you can remove a col            
                 self.rem_column()
         else:
             self.rem_column()
