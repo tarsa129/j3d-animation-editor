@@ -229,8 +229,8 @@ class GenEditor(QMainWindow):
         
         if filepath.endswith(".bca"):
             filepath = filepath[:-1] + "k"
-            info = list_of_animations[index].display_info
-            j3d.sort_filepath(filepath, info)
+            info = list_of_animations[index].display_info           
+            bck = j3d.sort_filepath(filepath, info)
         
     def convert_to_a(self):
         index = self.animation_bar.currentIndex().row()
@@ -238,12 +238,10 @@ class GenEditor(QMainWindow):
         
         if filepath.endswith(".bck"):
             info = list_of_animations[index].display_info
-            info = j3d.convert_k_to_a(info)
-            
+         
+            bck = j3d.convert_to_k(filepath, info) #this is a pure bck, no saving
             filepath = filepath[:-1] + "a"
-            
-            j3d.sort_filepath(filepath, info)
-            
+                       
         
     #tree view stuff
     def contextMenuEvent(self, event):
@@ -273,9 +271,28 @@ class GenEditor(QMainWindow):
             
             print( len (list_of_animations ))
             
+        def emit_copy():
+            items = self.animation_bar.selectedItems()
+            
+            if ( len(items) > 1):
+                return
+            
+            current_entry = list_of_animations[index]
+            copied_entry = all_anim_information.get_copy(current_entry)
+            list_of_animations.insert(index + 1, copied_entry)
+            
+            #print( len( list_of_animations) )
             
             
-        close_action.triggered.connect(emit_close)       
+            
+            widget = self.animation_bar.selectedItems()
+            widget = widget[0].clone()
+            
+            self.animation_bar.addTopLevelItem(widget)
+            
+            
+        close_action.triggered.connect(emit_close)
+        copy_action.triggered.connect(emit_copy)
        
         context_menu.addAction(close_action)
         context_menu.addAction(copy_action)
@@ -459,6 +476,11 @@ class all_anim_information(object):
     def __init__(self, filepath, current_array = []):
         self.filepath = filepath
         self.display_info = current_array
+    
+    @classmethod
+    def get_copy(cls, entry):
+        copy = cls(entry.filepath, entry.display_info)
+        return copy
 
 if __name__ == "__main__":
     #import sys

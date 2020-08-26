@@ -302,7 +302,8 @@ class bca(j3d.basic_animation):
         anf1_size_offset = f.tell()
         f.write(b"EFGH")  # Placeholder for anf1 size
         j3d.write_uint8(f, self.loop_mode)
-        j3d.write_sint8(f, self.anglescale)
+        #j3d.write_sint8(f, self.anglescale)
+        j3d.write_sint8(f, -1)
         
         rotscale = (2.0**self.anglescale)*(180.0 / 32768.0)
         
@@ -442,6 +443,4 @@ class bca(j3d.basic_animation):
         j3d.write_uint32(f, rotations_start     - anf1_start)
         j3d.write_uint32(f, translations_start  - anf1_start)
     
-    @classmethod
-    def from_bck(cls, bck):
-        pass
+  

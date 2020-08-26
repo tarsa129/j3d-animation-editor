@@ -247,6 +247,13 @@ def make_tangents(array):
     
     return array
 
+def convert_to_k(filepath, info):
+    if filepath.endswith(".bck"):
+        from animations.bck import bck
+        import animations.bck as bck_file
+        bca = bck_file.bck.get_bca(info) 
+        return bca
+
 def sort_file(filepath):
     with open(filepath, "rb") as f:
         magic = f.read(8)
