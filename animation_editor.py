@@ -239,8 +239,13 @@ class GenEditor(QMainWindow):
         if filepath.endswith(".bck"):
             info = list_of_animations[index].display_info
          
-            bck = j3d.convert_to_k(filepath, info) #this is a pure bck, no saving
+            bca = j3d.convert_to_a(filepath, info) #this is a pure bck, no saving
             filepath = filepath[:-1] + "a"
+            print("new filepath is " + filepath)
+            with open(filepath, "wb") as f:
+            
+                bca.write_bca(f)
+                f.close()
                        
         
     #tree view stuff

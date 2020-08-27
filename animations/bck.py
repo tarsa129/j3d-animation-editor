@@ -447,6 +447,6 @@ class bck(j3d.basic_animation):
         j3d.write_uint32(f, translations_start  - ank1_start)
     
     @classmethod
-    def get_bca(cls, info):
-        bck = cls.from_table("", info)
+    def get_bck(cls, info):
+        bck = cls.from_table("", info)    
         return bck

@@ -23,7 +23,9 @@ class bone_entry(object):
         return cls(valarray[offset+index])
         
     def serialize(self):
-        return self.value#[self.time, self.value]
+        return self.value
+    def __repr__(self):
+        return "{0} ".format(self.value).__repr__()
 
 
 class bone_anim(object):
@@ -361,7 +363,7 @@ class bca(j3d.basic_animation):
                     for comp in anim.rotation[axis]:
                         #angle = ((comp.value+180) % 360) - 180
                         sequence.append(comp.value/rotscale)
-                    print("seq", sequence)
+                    #print("seq", sequence)
                 offset = j3d.find_sequence(all_rotations, sequence)
                 if offset == -1:
                     offset = len(all_rotations)
@@ -443,4 +445,72 @@ class bca(j3d.basic_animation):
         j3d.write_uint32(f, rotations_start     - anf1_start)
         j3d.write_uint32(f, translations_start  - anf1_start)
     
-  
+    
+    @classmethod
+    def from_bck(cls, bck):
+        bca = cls(bck.loop_mode, bck.anglescale, bck.duration)
+        
+        for joint_anim in bck.animations:
+            new_bone_anim = bone_anim()
+                     
+            val_array = interpolate( joint_anim.scale["X"] )
+            new_bone_anim.scale["X"] = val_array
+            
+            val_array = interpolate( joint_anim.scale["Y"] )
+            new_bone_anim.scale["Y"] = val_array
+            
+            val_array = interpolate( joint_anim.scale["Z"] )
+            new_bone_anim.scale["Z"] = val_array
+            
+            rotscale = (2.0**bck.anglescale)*(180.0 / 32768.0)
+            
+            val_array = interpolate( joint_anim.rotation["X"] )
+            new_bone_anim.rotation["X"] = val_array
+            for entry in new_bone_anim.rotation["X"]:
+                entry.convert_rotation(rotscale)
+                
+            val_array = interpolate( joint_anim.rotation["Y"] )
+            new_bone_anim.rotation["Y"] = val_array
+            for entry in new_bone_anim.rotation["Y"]:
+                entry.convert_rotation(rotscale)
+                
+            val_array = interpolate( joint_anim.rotation["Z"] )
+            new_bone_anim.rotation["Z"] = val_array
+            for entry in new_bone_anim.rotation["Z"]:
+                entry.convert_rotation(rotscale)     
+            
+            val_array = interpolate( joint_anim.translation["X"] )
+            new_bone_anim.translation["X"] = val_array
+            
+            val_array = interpolate( joint_anim.translation["Y"] )
+            new_bone_anim.translation["Y"] = val_array
+            
+            val_array = interpolate( joint_anim.translation["Z"] )
+            new_bone_anim.translation["Z"] = val_array
+            
+            bca.animations.append(new_bone_anim)
+        
+        return bca
+        
+def interpolate(entry_array):
+
+    all_values = []
+    
+    if len( entry_array) == 1:
+        return entry_array
+    
+    for i in range( len( entry_array ) - 1):
+        some_values = inter_helper(entry_array[i], entry_array[i + 1])
+        
+        for value in some_values:
+            all_values.append(value)
+
+    return all_values
+    
+def inter_helper(start, end):
+    values = []
+    for i in range(end.time - start.time):
+        comp = bone_entry( start.value + (i / (end.time - start.time)) * (end.value - start.value))
+        values.append( comp )
+    #print (values)
+    return values
