@@ -86,6 +86,22 @@ class GenEditor(QMainWindow):
         
         self.menubar.addAction(self.convert.menuAction())
         
+        #load bmd
+        
+        self.model = QMenu(self)
+        self.model.setTitle("Load .bmd")
+        
+        self.load_bones = QAction("Load Bone Names", self)
+        self.load_bones.triggered.connect(self.load_bone_names)
+        self.load_bones.setShortcut("Ctrl+L")
+        
+        
+        self.model.addAction(self.load_bones)
+       
+        self.model.setDisabled(True)
+        
+        self.menubar.addAction(self.model.menuAction())
+        
         #main splitter
         
         self.horizontalLayout = QSplitter()
@@ -113,11 +129,14 @@ class GenEditor(QMainWindow):
         
         #middle table
         
+        
         self.table_display = QTableWidget(self)
         self.table_display.resize(1600, self.height())
         self.table_display.setColumnCount(4)
         self.table_display.setRowCount(4)
         self.table_display.setGeometry(400, 50, self.width(), self.height())
+        
+        
         
         self.table_display.currentItemChanged.connect(self.display_info_changes)
         
@@ -187,6 +206,8 @@ class GenEditor(QMainWindow):
         
             self.convert.setDisabled(False)
             
+            
+            
             actual_animation_object = j3d.sort_file(filepath)
             
             new_anim = all_anim_information(filepath)           
@@ -202,6 +223,7 @@ class GenEditor(QMainWindow):
                 child = QTreeWidgetItem(loaded_animation)
                 child.setText(0, name)
                 child.setDisabled(True)
+               
             self.animation_bar.addTopLevelItem(loaded_animation)
             
             
@@ -246,7 +268,29 @@ class GenEditor(QMainWindow):
             
                 bca.write_bca(f)
                 f.close()
-                       
+      
+    #bmd stuff
+    def load_bone_names(self):
+        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , ".bmd files(*.bmd)")
+        if filepath:    
+            with open(filepath, "rb") as f:
+                s = f.read()
+                a = s.find(b'\x4A\x4E\x54\x31')
+                print(a)
+                f.seek(a + 0x14);
+                address = j3d.read_uint32(f)
+                print(address)
+                f.seek(address + a)
+                strings = j3d.StringTable.from_file(f).strings;
+                print(strings)
+                f.close()
+            index = self.animation_bar.currentIndex().row()
+            information = list_of_animations[index].display_info
+            for i in range( len(strings) ):
+                information[9*i+2][0] = strings[i]
+            list_of_animations[index].display_info = information
+            self.load_animation_to_middle(index)
+            
         
     #tree view stuff
     def contextMenuEvent(self, event):
@@ -310,14 +354,24 @@ class GenEditor(QMainWindow):
     def load_animation_to_middle(self, index):      
         information = list_of_animations[index].display_info;
         
+        
         self.table_display.setColumnCount(0)
         self.table_display.setRowCount(0)
         
+        
         col_count = 1
+        first_vals = []
         for i in range(len (information)):
             col_count = max(col_count, len( information [i] ) )
+            
+            for j in range( len(information[i] )):
+                if information[i][j] != "":
+                     first_vals.append(information[i][j])
+                     break
+
         self.table_display.setColumnCount(col_count)
         self.table_display.setRowCount(len(information))
+        
         
         for row in range(len(information)):
             for col in range(col_count):
@@ -325,7 +379,20 @@ class GenEditor(QMainWindow):
                     self.table_display.setItem(row, col, QTableWidgetItem( str(information[row][col]) ))
                 except:
                     pass
-    
+        
+        
+        self.table_display.setHorizontalHeaderLabels(information[1])
+        self.table_display.setVerticalHeaderLabels(first_vals)
+        
+        filepath =list_of_animations[index].filepath
+        if filepath.endswith(".bck") or filepath.endswith(".bca"):
+            self.model.setDisabled(False)
+            self.convert.setDisabled(False)
+        else:
+            self.model.setDisabled(True)
+            self.convert.setDisabled(False)
+        
+        
     def selected_animation_changed(self):
         index = self.animation_bar.currentIndex().row()
         print(index)
@@ -335,18 +402,32 @@ class GenEditor(QMainWindow):
         index = self.animation_bar.currentIndex().row()
         collected_info = []
         
+        first_vals = []
+        
         for i in range( self.table_display.rowCount() ):
             row_info = []
+               
             for j in range (self.table_display.columnCount() ):
                 item = self.table_display.item(i, j)
                 if isinstance(item, QTableWidgetItem):
                     row_info.append(item.text())
-                    #print(item.text())
+                    
+                    #if j == 0:
+                    if item.text() != "" and len(first_vals) < i:
+                        first_vals.append(item.text())
+                    
+
                 else:
                     row_info.append("")
+                    
+                    if j == 0:
+                        first_vals.append("")
             collected_info.append(row_info)
         #print(collected_info)
         list_of_animations[index].display_info = collected_info
+        
+        self.table_display.setHorizontalHeaderLabels(collected_info[1])
+        self.table_display.setVerticalHeaderLabels(first_vals)
                 
     #table button stuff   
    

@@ -293,7 +293,7 @@ class brk(object):
                             to_add.append(thismat_kf[k])
                             keyframes_dictionary[int(k)] = (to_add) 
                     
-            print( keyframes_dictionary)
+            #print( keyframes_dictionary)
             
             write_values(info, keyframes_dictionary, l - 1)
             
