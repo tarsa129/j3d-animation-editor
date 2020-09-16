@@ -343,7 +343,7 @@ class bck(j3d.basic_animation):
                     comp = anim.rotation[axis][0]
                     #angle = ((comp.value+180) % 360) - 180
                     sequence = [comp.value/rotscale]
-                    print("seq", sequence)
+                    #print("seq", sequence)
                 else:
                     sequence = []
                     for comp in anim.rotation[axis]:
