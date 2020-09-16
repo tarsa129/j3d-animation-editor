@@ -297,12 +297,13 @@ class GenEditor(QMainWindow):
                 strings = j3d.StringTable.from_file(f).strings;
                 print(strings)
                 f.close()
-            index = self.animation_bar.currentIndex().row()
-            information = list_of_animations[index].display_info
+            #index = self.animation_bar.currentIndex().row()
+            information = self.get_on_screen()
+            #information = list_of_animations[index].display_info
             for i in range( len(strings) ):
                 information[9*i+2][0] = strings[i]
-            list_of_animations[index].display_info = information
-            self.load_animation_to_middle(index)
+            #list_of_animations[index].display_info = information
+            self.load_animation_to_middle(0, information)
             
         
     #tree view stuff
@@ -373,15 +374,16 @@ class GenEditor(QMainWindow):
         
     #table info stuff
     
-    def load_animation_to_middle(self, index):      
+    def load_animation_to_middle(self, index, array = None):      
         global count
         print("loading new animation on count " + str(count))
         
-        information = list_of_animations[index].display_info;
-        
-        
+        if array is not None:
+            information = array
+        else:
+            information = list_of_animations[index].display_info;
+                
         self.table_display.clearContents()
-        
         
         col_count = 1
         first_vals = []
@@ -408,13 +410,14 @@ class GenEditor(QMainWindow):
         self.table_display.setHorizontalHeaderLabels(information[1])
         self.table_display.setVerticalHeaderLabels(first_vals)
         
-        filepath = list_of_animations[index].filepath
-        if filepath.endswith(".bck") or filepath.endswith(".bca"):
-            self.model.setDisabled(False)
-            self.convert.setDisabled(False)
-        else:
-            self.model.setDisabled(True)
-            self.convert.setDisabled(False)
+        if array is None:
+            filepath = list_of_animations[index].filepath
+            if filepath.endswith(".bck") or filepath.endswith(".bca"):
+                self.model.setDisabled(False)
+                self.convert.setDisabled(False)
+            else:
+                self.model.setDisabled(True)
+                self.convert.setDisabled(False)
         
         
     def selected_animation_changed(self):
