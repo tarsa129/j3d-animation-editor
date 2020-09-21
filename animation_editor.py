@@ -1,7 +1,7 @@
 
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
-from PyQt5.QtCore import Qt, QRect
+from PyQt5.QtCore import Qt, QRect, QModelIndex
 
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter, 
                              QSpacerItem, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QHBoxLayout,
@@ -16,14 +16,17 @@ import animations.general_animation as j3d
 
 list_of_animations = []
 current_index = 0;
-count = 0
+
 
 class GenEditor(QMainWindow):
     def __init__(self):
+    
         super().__init__()
  
         self.setup_ui()
-
+        
+        self.copied_values = []
+        
 
     def setup_ui(self):
         self.resize(2500, 1000)
@@ -218,9 +221,9 @@ class GenEditor(QMainWindow):
                 print( "this is not the first loaded animation " ) 
                 index = self.animation_bar.currentIndex().row()
                 print( "the old index is " + str(index) )
-                print( list_of_animations[index].display_info ) 
+                print( list_of_animations[index].display_info[0] ) 
                 list_of_animations[index].display_info = self.get_on_screen()
-                print( list_of_animations[index].display_info ) 
+                print( list_of_animations[index].display_info[0] ) 
             
             
             list_of_animations.append(new_anim)            
@@ -320,8 +323,10 @@ class GenEditor(QMainWindow):
         #print("context menu triggered")
         
         context_menu = QMenu(self.animation_bar)
-        close_action = QAction("Close", self)
-        copy_action = QAction("Copy", self)
+        close_action = QAction("Close Current Animation", self)
+        copy_action = QAction("Copy Animation", self)
+        copy_cells_action = QAction("Copy Selected Cells", self)
+        paste_cells_action = QAction("Paste Selected Cells", self)
         
         def emit_close():
             items = self.animation_bar.selectedItems()
@@ -340,9 +345,7 @@ class GenEditor(QMainWindow):
                 self.load_animation_to_middle(0)
             elif len( list_of_animations ) > 0:
                 self.load_animation_to_middle(index)
-            
-                
-            
+                            
         def emit_copy():
             items = self.animation_bar.selectedItems()
             
@@ -352,22 +355,63 @@ class GenEditor(QMainWindow):
             current_entry = list_of_animations[index]
             copied_entry = all_anim_information.get_copy(current_entry)
             list_of_animations.insert(index + 1, copied_entry)
-            
-            #print( len( list_of_animations) )
-            
-            
-            
+             
             widget = self.animation_bar.selectedItems()
             widget = widget[0].clone()
             
             self.animation_bar.addTopLevelItem(widget)
+         
+        def emit_copy_cells():
+            list = self.table_display.selectedIndexes()
+            self.copied_values = []
+            #print( list.column() )
+            lowest_row = list[0].row()
+            lowest_col = list[0].column()
             
+            for cell in list:
+                item = self.table_display.item(cell.row(), cell.column())
+                
+                if isinstance(item, QTableWidgetItem):
+                    self.copied_values.append( [item.text(), cell.row(), cell.column() ] )
+                   
+                else:
+                    self.copied_values.append( ["", cell.row(), cell.column() ] )
+                
+                
+                lowest_row = min(lowest_row, cell.row())
+                lowest_col = min(lowest_col, cell.column())
+            print( len( self.copied_values) )
+            
+            for cell in self.copied_values:
+                cell[1] -= lowest_row
+                cell[2] -= lowest_col
+                     
+        def emit_paste_cells():
+            list = self.table_display.selectedIndexes()
+            if len(list) == 1:
+                row = list[0].row()
+                col = list[0].column()
+                
+                for cell in self.copied_values:
+                    eff_row = cell[1] + row
+                    eff_col = cell[2] + col
+      
+                    
+                    self.table_display.setItem(eff_row, eff_col, QTableWidgetItem( cell[0] ))
             
         close_action.triggered.connect(emit_close)
         copy_action.triggered.connect(emit_copy)
+        copy_cells_action.triggered.connect(emit_copy_cells)
+        paste_cells_action.triggered.connect(emit_paste_cells)
+        
+        copy_cells_action.setShortcut("Ctrl+C")
+        paste_cells_action.setShortcut("Ctrl+V")
        
         context_menu.addAction(close_action)
         context_menu.addAction(copy_action)
+        context_menu.addAction(copy_cells_action)
+        context_menu.addAction(paste_cells_action)
+        
         context_menu.exec(self.mapToGlobal(event.pos()))
         context_menu.destroy()
         del context_menu
@@ -375,8 +419,8 @@ class GenEditor(QMainWindow):
     #table info stuff
     
     def load_animation_to_middle(self, index, array = None):      
-        global count
-        print("loading new animation on count " + str(count))
+
+      
         
         if array is not None:
             information = array
@@ -428,7 +472,7 @@ class GenEditor(QMainWindow):
         index = self.animation_bar.currentIndex().row()
         
         print( "new selected index is " + str(index) )
-        print( list_of_animations[index].display_info )
+        print( list_of_animations[index].display_info[0] )
         current_index = index
         self.load_animation_to_middle(index)       
     
@@ -455,7 +499,7 @@ class GenEditor(QMainWindow):
         return collected_info
             
             
-    def display_info_changes(self):
+    def display_info_changes(self): #not used anymroe
         global count
         index = self.animation_bar.currentIndex().row() 
         
@@ -649,6 +693,7 @@ if __name__ == "__main__":
     import argparse
     from PyQt5.QtCore import QLocale
 
+
     QLocale.setDefault(QLocale(QLocale.English))
     sys.excepthook = except_hook
 
@@ -663,6 +708,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     app = QApplication(sys.argv)
+    
 
     pikmin_gui = GenEditor()
     pikmin_gui.show()
