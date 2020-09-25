@@ -74,6 +74,26 @@ class GenEditor(QMainWindow):
         self.setMenuBar(self.menubar)
         
         
+        #edit menu
+        
+        self.edit_menu = QMenu(self)
+        self.edit_menu.setTitle("Edit")       
+
+        self.copy_cells_action = QAction("Copy Selected Cells", self)
+        self.paste_cells_action = QAction("Paste Selected Cells", self)   
+        
+        self.copy_cells_action.triggered.connect(self.emit_copy_cells)
+        self.paste_cells_action.triggered.connect(self.emit_paste_cells)
+        
+        self.copy_cells_action.setShortcut("Ctrl+C")
+        self.paste_cells_action.setShortcut("Ctrl+V")
+        
+        self.edit_menu.addAction(self.copy_cells_action)
+        self.edit_menu.addAction(self.paste_cells_action)
+        
+        self.menubar.addAction(self.edit_menu.menuAction())
+        
+        
         #convert menu
         self.convert = QMenu(self)
         self.convert.setTitle("Convert")
@@ -197,7 +217,9 @@ class GenEditor(QMainWindow):
         
         #self.horizontalLayout.addWidget(self.animation_bar)
         self.horizontalLayout.addWidget(self.workaroundl)
-        self.horizontalLayout.addWidget(self.table_display)     
+        self.horizontalLayout.addWidget(self.table_display)  
+
+        
     
     #file stuff
       
@@ -325,8 +347,7 @@ class GenEditor(QMainWindow):
         context_menu = QMenu(self.animation_bar)
         close_action = QAction("Close Current Animation", self)
         copy_action = QAction("Copy Animation", self)
-        copy_cells_action = QAction("Copy Selected Cells", self)
-        paste_cells_action = QAction("Paste Selected Cells", self)
+        
         
         def emit_close():
             items = self.animation_bar.selectedItems()
@@ -361,7 +382,21 @@ class GenEditor(QMainWindow):
             
             self.animation_bar.addTopLevelItem(widget)
          
-        def emit_copy_cells():
+        
+        close_action.triggered.connect(emit_close)
+        copy_action.triggered.connect(emit_copy)
+        
+       
+        context_menu.addAction(close_action)
+        context_menu.addAction(copy_action)
+        context_menu.addAction(self.copy_cells_action)
+        context_menu.addAction(self.paste_cells_action)
+        
+        context_menu.exec(self.mapToGlobal(event.pos()))
+        context_menu.destroy()
+        del context_menu
+    
+    def emit_copy_cells(self):
             list = self.table_display.selectedIndexes()
             self.copied_values = []
             #print( list.column() )
@@ -386,36 +421,21 @@ class GenEditor(QMainWindow):
                 cell[1] -= lowest_row
                 cell[2] -= lowest_col
                      
-        def emit_paste_cells():
-            list = self.table_display.selectedIndexes()
-            if len(list) == 1:
-                row = list[0].row()
-                col = list[0].column()
-                
-                for cell in self.copied_values:
-                    eff_row = cell[1] + row
-                    eff_col = cell[2] + col
-      
-                    
-                    self.table_display.setItem(eff_row, eff_col, QTableWidgetItem( cell[0] ))
+    def emit_paste_cells(self):
+        list = self.table_display.selectedIndexes()
+        if len(list) == 1:
+            row = list[0].row()
+            col = list[0].column()
             
-        close_action.triggered.connect(emit_close)
-        copy_action.triggered.connect(emit_copy)
-        copy_cells_action.triggered.connect(emit_copy_cells)
-        paste_cells_action.triggered.connect(emit_paste_cells)
-        
-        copy_cells_action.setShortcut("Ctrl+C")
-        paste_cells_action.setShortcut("Ctrl+V")
-       
-        context_menu.addAction(close_action)
-        context_menu.addAction(copy_action)
-        context_menu.addAction(copy_cells_action)
-        context_menu.addAction(paste_cells_action)
-        
-        context_menu.exec(self.mapToGlobal(event.pos()))
-        context_menu.destroy()
-        del context_menu
-        
+            for cell in self.copied_values:
+                eff_row = cell[1] + row
+                eff_col = cell[2] + col
+  
+                
+                self.table_display.setItem(eff_row, eff_col, QTableWidgetItem( cell[0] ))
+
+
+    
     #table info stuff
     
     def load_animation_to_middle(self, index, array = None):      
@@ -698,12 +718,6 @@ if __name__ == "__main__":
     sys.excepthook = except_hook
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--inputgen", default=None,
-                        help="Path to generator file to be loaded.")
-    parser.add_argument("--collision", default=None,
-                        help="Path to collision to be loaded.")
-    parser.add_argument("--waterbox", default=None,
-                        help="Path to waterbox file to be loaded.")
 
     args = parser.parse_args()
 
