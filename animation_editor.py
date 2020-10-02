@@ -77,19 +77,23 @@ class GenEditor(QMainWindow):
         #edit menu
         
         self.edit_menu = QMenu(self)
-        self.edit_menu.setTitle("Edit")       
+        self.edit_menu.setTitle("Edit")
 
         self.copy_cells_action = QAction("Copy Selected Cells", self)
-        self.paste_cells_action = QAction("Paste Selected Cells", self)   
+        self.paste_cells_action = QAction("Paste Selected Cells", self)  
+        self.clear_cells_action = QAction("Clear Selected Cells", self)
         
         self.copy_cells_action.triggered.connect(self.emit_copy_cells)
         self.paste_cells_action.triggered.connect(self.emit_paste_cells)
+        self.clear_cells_action.triggered.connect(self.emit_clear_cells)
         
         self.copy_cells_action.setShortcut("Ctrl+C")
         self.paste_cells_action.setShortcut("Ctrl+V")
+        self.clear_cells_action.setShortcut("Delete")
         
         self.edit_menu.addAction(self.copy_cells_action)
         self.edit_menu.addAction(self.paste_cells_action)
+        self.edit_menu.addAction(self.clear_cells_action)
         
         self.menubar.addAction(self.edit_menu.menuAction())
         
@@ -423,24 +427,32 @@ class GenEditor(QMainWindow):
                      
     def emit_paste_cells(self):
         list = self.table_display.selectedIndexes()
-        if len(list) == 1:
-            row = list[0].row()
-            col = list[0].column()
-            
-            for cell in self.copied_values:
-                eff_row = cell[1] + row
-                eff_col = cell[2] + col
-  
-                
-                self.table_display.setItem(eff_row, eff_col, QTableWidgetItem( cell[0] ))
+    
+        row = list[0].row()
+        col = list[0].column()
+        
+        for cell in self.copied_values:
+            eff_row = cell[1] + row
+            eff_col = cell[2] + col
 
+            
+            self.table_display.setItem(eff_row, eff_col, QTableWidgetItem( cell[0] ))
+
+    def emit_clear_cells(self):
+        list = self.table_display.selectedIndexes()
+        
+        for cell in list:
+            item = self.table_display.item(cell.row(), cell.column())
+            
+            if isinstance(item, QTableWidgetItem):
+                item.setText("")
+            else:
+                self.table_display.setItem(cell.row(), cell.column(), QTableWidgetItem( "" ))
 
     
     #table info stuff
     
     def load_animation_to_middle(self, index, array = None):      
-
-      
         
         if array is not None:
             information = array

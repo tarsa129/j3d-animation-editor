@@ -451,7 +451,7 @@ class btk(j3d.basic_animation):
                     comp = anim.rotation[axis][0]
                     #angle = ((comp.value+180) % 360) - 180
                     sequence = [comp.value/rotscale]
-                    print("seq", sequence)
+                    #print("seq", sequence)
                 else:
                     sequence = []
                     for comp in anim.rotation[axis]:
@@ -460,7 +460,7 @@ class btk(j3d.basic_animation):
                         sequence.append(comp.value/rotscale)
                         sequence.append(comp.tangentIn/rotscale)
                         sequence.append(comp.tangentOut/rotscale)
-                    print("seq", sequence)
+                    #print("seq", sequence)
                 offset = j3d.find_sequence(all_rotations, sequence)
                 if offset == -1:
                     offset = len(all_rotations)
@@ -520,7 +520,7 @@ class btk(j3d.basic_animation):
 
         translations_start = f.tell()
         for val in all_translations:
-            print(val)
+            #print(val)
             write_float(f, val)
 
         j3d.write_padding(f, 32)
