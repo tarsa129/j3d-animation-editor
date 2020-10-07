@@ -43,7 +43,7 @@ def write_padding(f, multiple):
     diff = next_aligned - f.tell()
     
     for i in range(diff):
-        pos = i%len(PADDING)
+        pos = len(PADDING)
         f.write(PADDING[pos:pos+1])
 
 
@@ -248,7 +248,7 @@ def make_tangents(array):
     return array
 
 def convert_to_a(filepath, info):
-    if filepath.endswith(".bck"):
+    if filepath.endswith(".bck") or filepath.endswith(".bca"):
         from animations.bck import bck
         import animations.bck as bck_file
         bck = bck_file.bck.get_bck(info)

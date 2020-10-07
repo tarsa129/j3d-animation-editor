@@ -41,8 +41,8 @@ class AnimComponent(object):
             
         
         else:
-            print("TanType:", tanType)
-            print(len(valarray), offset+index*4)
+            #print("TanType:", tanType)
+            #print(len(valarray), offset+index*4)
             
             if tanType == 0:
                 return cls(valarray[offset + index*3], valarray[offset + index*3 + 1], valarray[offset + index*3 + 2])
@@ -150,7 +150,7 @@ class btk(j3d.basic_animation):
         """
         
         anim_count = threetimestexmatanims//3
-        print("Animation count:", anim_count)
+        #print("Animation count:", anim_count)
 
         f.seek(0x7C)
         unknown_address = read_uint32(f)
