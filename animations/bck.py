@@ -240,8 +240,11 @@ class bck(j3d.basic_animation):
                               
                 for k in range(2, len(info[line + j])): #for each keyframe
                     if info[line + j][k] != "":
-                        comp = bone_entry( keyframes[k-2], float(info[line + j][k]))
-                                       
+                        try:
+                            comp = bone_entry( keyframes[k-2], float(info[line + j][k]))
+                        except:
+                            comp = bone_entry( bck.duration, float(info[line + j][k]) )
+                                                                   
                         if j < 3:
                             current_anim.add_scale(xyz, comp)
                             #print("scale " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
