@@ -27,7 +27,7 @@ class GenEditor(QMainWindow):
         self.copied_values = []
         self.current_index = 0;
         self.create_window = None
-        
+        self.is_remove = False
 
     def setup_ui(self):
         self.resize(2500, 1000)
@@ -241,7 +241,7 @@ class GenEditor(QMainWindow):
             
         for filepath in filepaths:
             if filepath:
-            
+                
                 self.convert.setDisabled(False)
 
                 actual_animation_object = j3d.sort_file(filepath)
@@ -269,11 +269,11 @@ class GenEditor(QMainWindow):
                     child.setText(0, name)
                     child.setDisabled(True)
                    
-
             self.animation_bar.addTopLevelItem(loaded_animation)       
             self.current_index = len(list_of_animations) - 1
             self.load_animation_to_middle(len(list_of_animations) - 1)
             self.animation_bar.setCurrentItem(loaded_animation)
+            
 
     def button_save_level(self):
         index = self.animation_bar.currentIndex().row()      
@@ -296,7 +296,12 @@ class GenEditor(QMainWindow):
         
         if self.create_window is None:
             self.create_window = create_widget.create_window()
-            self.create_window.show()
+            self.create_window.setWindowModality(QtCore.Qt.ApplicationModal)
+            self.create_window.exec_()
+            
+            
+        if self.create_window.get_info is not None:
+            print("hello")
         
        
     #convert stuff
@@ -373,54 +378,50 @@ class GenEditor(QMainWindow):
         
         
         def emit_close():
-            print(" emit close ")
-            items = self.animation_bar.selectedItems()
             
+            print(" emit close ")
+            
+            self.is_remove = True
+
+            
+            items = self.animation_bar.selectedItems()         
             if ( len(items) > 1):
                 return
             
             item = items[0]
             index = self.animation_bar.indexFromItem(item)
             
-            index = index.row()
-            
-            print("remove item from the tree")
-            self.animation_bar.takeTopLevelItem(index)
-            
+            index = index.row()    #index is the thing to be deleted
             print( "the index is " + str(index) )
             
-            list_of_animations.pop(index)
-            
-            for anim in list_of_animations:
-                print(anim.filepath)
-            
-            self.table_display.clearContents()
-            if len( list_of_animations ) == 0:
-                index = 0
-            elif len( list_of_animations ) == 1 or index == 0:      #when there is only one or you took out the first                
-                index = 0
-                item = self.animation_bar.itemAt(0,0)           
-            elif index == len (list_of_animations):                       #taking out the last one
-                print("taking out the last one")
-                index = index - 1;
-                item = self.animation_bar.itemAt(index, 0)
-            else:
+            list_of_animations.pop(index) #remove from list
+
+            if len( list_of_animations ) == 0: #if there is nothing left, simply clear and return
+                self.table_display.clearContents()
+                self.animation_bar.takeTopLevelItem(0)
+                return
+            else: #there are more animations - select the one below item
+                self.current_index = max(index - 1, 0);
+                item = self.animation_bar.itemAt(self.current_index, 0);
                 
-                item = self.animation_bar.itemAt(index,0)
+            print("remove item from the tree")
+            self.animation_bar.takeTopLevelItem(index) #triggers selected_animation_changed 
+            self.table_display.clearContents()  
             
             print("load the previous animation to the middle. index: " + str(index) )
-            self.load_animation_to_middle(index)
+            self.load_animation_to_middle(self.current_index)
             
-            if len( list_of_animations) > 0:
-                self.animation_bar.setCurrentItem(item)
             
+            self.animation_bar.setCurrentItem(item)
+            self.is_remove = False
+            print("done with removing")
                             
         def emit_copy():
             items = self.animation_bar.selectedItems()
             
             if ( len(items) > 1):
                 return
-            
+
             current_entry = list_of_animations[index]
             copied_entry = all_anim_information.get_copy(current_entry)
             list_of_animations.insert(index + 1, copied_entry)
@@ -546,17 +547,20 @@ class GenEditor(QMainWindow):
         
     def selected_animation_changed(self):
 
+        if self.is_remove:
+            return;
         
+        print("too bad")
         if len(list_of_animations)  > 0:
-            list_of_animations[self.current_index].display_info = self.get_on_screen()
-            
+ 
+
+            list_of_animations[self.current_index].display_info = self.get_on_screen()          
             index = self.animation_bar.currentIndex().row()
-            
             print( "new selected index is " + str(index) )
             print( list_of_animations[index].display_info[0] )
             self.current_index = index
             self.load_animation_to_middle(index)       
-    
+
 
     def get_on_screen(self):
     
