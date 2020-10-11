@@ -43,7 +43,8 @@ def write_padding(f, multiple):
     diff = next_aligned - f.tell()
     
     for i in range(diff):
-        pos = len(PADDING)
+        
+        pos = i%len(PADDING)
         f.write(PADDING[pos:pos+1])
 
 
