@@ -252,7 +252,8 @@ class btk(j3d.basic_animation):
         for animation in self.animations:
             material_names.append(animation.name)
         return material_names     
-           
+  
+   
     def get_loading_information(self):
         info = []
         info.append( ["Loop_mode", self.loop_mode, "Angle Scale:", self.anglescale,
@@ -296,6 +297,22 @@ class btk(j3d.basic_animation):
         write_values(info, keyframes_dictionary, 1)
         return info  
      
+    @classmethod
+    def empty_table(cls, created):
+        info = []
+        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Unknown:", 0] )
+        info.append( ["Material name", "Texture Index", "Center", "Component", "Frame 0", "Frame " + str(created[3]) ] ) 
+        
+        for i in range( int(created[1]) ):
+            info.append( ["Material " + str(i), 0, "(0.5, 0.5, 0.5)", "Scale U:"] )
+            
+            things = ["Scale V:", "Scale W:", "Rotation U:", "Rotation V:", "Rotation W:",
+                "Translation U:", "Translation V:", "Translation W:"]
+            for comp in things:
+                info.append( ["", "", "", comp] )
+        return info
+    
+    
     @classmethod
     def from_table(cls, f, info):
         btk = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]), int(info[0][7]))

@@ -182,6 +182,23 @@ class btp(j3d.basic_animation):
         return information
     
     @classmethod
+    def empty_table(cls, created):
+        information = []
+        
+        information.append(["Flag: ", 0, "Anglescale", 0, "Unknown:", 0])
+        
+        information.append( [ "Material Name", "Duration"] )
+        
+        for i in range( int(created[3] ) ):
+            information[1].append( "Frame " + str(i))
+        
+        for i in range( int(created[1]) ):
+            information.append( [ "Material "  + str(i), created[3] ] )
+        
+        return information
+            
+    
+    @classmethod
     def from_table(cls, f, info):
         
         

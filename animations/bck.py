@@ -213,7 +213,25 @@ class bck(j3d.basic_animation):
             
         write_values(info, keyframes_dictionary, 1)
         return info  
-           
+    
+    @classmethod
+    def empty_table(cls, created):
+        info = []
+        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Unknown:", 0] )
+        info.append( ["Joint Number", "Component"] )
+
+        for i in range( int(created[3])):
+            info[1].append("Frame " + str(i) )
+        
+        for i in range( int(created[1]) ):
+            info.append( ["Joint " + str(i), "Scale U:"] )
+            
+            things = ["Scale V:", "Scale W:", "Rotation U:", "Rotation V:", "Rotation W:",
+                "Translation U:", "Translation V:", "Translation W:"]
+            for comp in things:
+                info.append( ["", comp] )
+        return info          
+    
     @classmethod
     def from_table(cls, f, info):
         print(f)

@@ -299,11 +299,28 @@ class GenEditor(QMainWindow):
             self.create_window.setWindowModality(QtCore.Qt.ApplicationModal)
             self.create_window.exec_()
             
+        created_info = self.create_window.get_info() 
+        if created_info is not None:
+            table = j3d.create_empty( created_info )
+            filepath = created_info[0]
+            new_anim = all_anim_information(filepath, table)           
             
-        if self.create_window.get_info is not None:
-            print("hello")
+            if len( list_of_animations ) > 0:
+                index = self.animation_bar.currentIndex().row()
+                list_of_animations[index].display_info = self.get_on_screen()
+            
+            list_of_animations.append(new_anim)            
+            loaded_animation = QTreeWidgetItem(self.animation_bar)
+            
+            filename = filepath[filepath.rfind("/") + 1:]
+            loaded_animation.setText(0, filename)
         
-       
+            self.animation_bar.addTopLevelItem(loaded_animation)       
+            self.current_index = len(list_of_animations) - 1
+            self.load_animation_to_middle(len(list_of_animations) - 1)
+            self.animation_bar.setCurrentItem(loaded_animation)
+        
+        self.create_window = None
     #convert stuff
 
     def convert_to_k(self):
@@ -399,6 +416,7 @@ class GenEditor(QMainWindow):
             if len( list_of_animations ) == 0: #if there is nothing left, simply clear and return
                 self.table_display.clearContents()
                 self.animation_bar.takeTopLevelItem(0)
+                self.is_remove = False
                 return
             else: #there are more animations - select the one below item
                 self.current_index = max(index - 1, 0);

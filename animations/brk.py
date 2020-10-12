@@ -304,6 +304,30 @@ class brk(object):
         return info  
     
     @classmethod
+    def empty_table(cls, created):
+        info = []
+        info.append( ["Loop_mode", "Duration:", created[3]] )
+        info.append( ["Register Animations"] )
+        info.append( ["Material Name", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
+
+        for i in range( int(created[1]) ):
+            info.append( ["Material " + str(i), "Red:"] )
+            
+            things = ["Green", "Blue", "Alpha"]
+            for chan in things:
+                info.append( ["", chan] )
+                
+        info.append( ["Constant Animations"] )
+        
+        for i in range( int(created[2]) ):
+            info.append( ["Material " + str(i), "Red:"] )
+            
+            things = ["Green", "Blue", "Alpha"]
+            for chan in things:
+                info.append( ["", chan] )
+        return info 
+    
+    @classmethod
     def from_table(cls, f, info):
         brk = cls(int(info[0][1]), int(info[0][3]))
         

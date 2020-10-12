@@ -317,5 +317,33 @@ def sort_filepath(filepath, information):
          from animations.bca import bca
          import animations.bca as bca_file
          return bca_file.bca.from_table(filepath, information) 
-         
+
+def create_empty(information):
+    table = []
+    filepath = information[0]
+    if filepath.endswith(".btp"):
+        from animations.btp import btp
+        import animations.btp as btp_file
+        table = btp_file.btp.empty_table(information)
+    elif filepath.endswith(".btk"):
+        from animations.btk import btk
+        import animations.btk as btk_file
+        table = btk_file.btk.empty_table(information)  
+    elif filepath.endswith(".brk"):
+        from animations.brk import brk
+        import animations.brk as brk_file
+        table = brk_file.brk.empty_table(information)  
+    elif filepath.endswith(".bck"):
+        from animations.bck import bck
+        import animations.bck as bck_file
+        table = bck_file.bck.empty_table(information) 
+    elif filepath.endswith(".bpk"):
+        from animations.bpk import bpk
+        import animations.bpk as bpk_file
+        table = bpk_file.bpk.empty_table(information) 
+    elif filepath.endswith(".bca"):
+        from animations.bca import bca
+        import animations.bca as bca_file
+        table = bca_file.bca.empty_table(information) 
+    return table
 

@@ -128,7 +128,7 @@ class bca(j3d.basic_animation):
         # Translate value bank
         f.seek(translateFloatsOffset)
         print("Translation count:", translateFloatCount)
-        print(hex(translateFloatsOffset), translateFloatCount)
+        #print(hex(translateFloatsOffset), translateFloatCount)
         
         for i in range(translateFloatCount): 
             translateFloats.append(read_float(f))
@@ -249,7 +249,25 @@ class bca(j3d.basic_animation):
             count += 1         
 
         return info  
-           
+     
+    @classmethod
+    def empty_table(cls, created):
+        info = []
+        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Unknown:", 0] )
+        info.append( ["Joint Number", "Component"] )
+
+        for i in range( int(created[3])):
+            info[1].append("Frame " + str(i) )
+        
+        for i in range( int(created[1]) ):
+            info.append( ["Joint " + str(i), "Scale U:"] )
+            
+            things = ["Scale V:", "Scale W:", "Rotation U:", "Rotation V:", "Rotation W:",
+                "Translation U:", "Translation V:", "Translation W:"]
+            for comp in things:
+                info.append( ["", comp] )
+        return info 
+     
     @classmethod
     def from_table(cls, f, info):
         bca = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
@@ -328,7 +346,7 @@ class bca(j3d.basic_animation):
         
         f.write(b"\x00"*(0x24*len(self.animations))) #placeholder for stuff
         
-        write_padding(f, multiple=32)
+        j3d.write_padding(f, multiple=32)
         
         all_scales = []
         all_rotations = []
@@ -357,7 +375,7 @@ class bca(j3d.basic_animation):
                     comp = anim.rotation[axis][0]
                     #angle = ((comp.value+180) % 360) - 180
                     sequence = [comp.value/rotscale]
-                    print("seq", sequence)
+                    #print("seq", sequence)
                 else:
                     sequence = []
                     for comp in anim.rotation[axis]:
@@ -413,19 +431,13 @@ class bca(j3d.basic_animation):
             for axis in "XYZ":
                 j3d.write_uint16(f, len(anim.scale[axis])) # Scale count for this animation
                 j3d.write_uint16(f, anim._scale_offsets[axis]) # Offset into scales
-                
-
-
+               
                 j3d.write_uint16(f, len(anim.rotation[axis])) # Rotation count for this animation
                 j3d.write_uint16(f, anim._rot_offsets[axis]) # Offset into rotations
                 
-
-
                 j3d.write_uint16(f, len(anim.translation[axis])) # Translation count for this animation
                 j3d.write_uint16(f, anim._translation_offsets[axis])# offset into translations
-                
 
-        
 
         # Fill in all the placeholder values
         f.seek(filesize_offset)
@@ -452,45 +464,72 @@ class bca(j3d.basic_animation):
         
         for joint_anim in bck.animations:
             new_bone_anim = bone_anim()
-                     
-            val_array = interpolate( joint_anim.scale["X"] )
-            new_bone_anim.scale["X"] = val_array
             
-            val_array = interpolate( joint_anim.scale["Y"])
-            new_bone_anim.scale["Y"] = val_array
+            if len( joint_anim.scale["X"] ) < bck.duration:
+                val_array = interpolate( joint_anim.scale["X"] )
+                new_bone_anim.scale["X"] = val_array
+            else:
+                new_bone_anim.scale["X"] = joint_anim.scale["X"]
             
-            val_array = interpolate( joint_anim.scale["Z"])
-            new_bone_anim.scale["Z"] = val_array
+            if len( joint_anim.scale["Y"] ) < bck.duration:
+                val_array = interpolate( joint_anim.scale["Y"])
+                new_bone_anim.scale["Y"] = val_array
+            else:
+                new_bone_anim.scale["Y"] = joint_anim.scale["Y"]
             
+            if len( joint_anim.scale["Z"] ) < bck.duration:   
+                val_array = interpolate( joint_anim.scale["Z"])
+                new_bone_anim.scale["Z"] = val_array
+            else:
+                new_bone_anim.scale["Z"] = joint_anim.scale["Z"]
+                
             rotscale = (2.0**bck.anglescale)*(180.0 / 32768.0)
-            print("the rotscale is " + str(rotscale))
             
-            val_array = interpolate( joint_anim.rotation["X"])
-            new_bone_anim.rotation["X"] = val_array
-            for entry in new_bone_anim.rotation["X"]:
+            if len( joint_anim.rotation["X"] ) < bck.duration:  
+                val_array = interpolate( joint_anim.rotation["X"])
+                new_bone_anim.rotation["X"] = val_array
+            else:
+                new_bone_anim.rotation["X"] = joint_anim.rotation["X"]
+            #for entry in new_bone_anim.rotation["X"]:
                 #entry.convert_rotation(rotscale)
-                pass
-                
-            val_array = interpolate( joint_anim.rotation["Y"])
-            new_bone_anim.rotation["Y"] = val_array
-            for entry in new_bone_anim.rotation["Y"]:
+                #pass
+            
+            if len( joint_anim.rotation["Y"] ) < bck.duration:  
+                val_array = interpolate( joint_anim.rotation["Y"])
+                new_bone_anim.rotation["Y"] = val_array
+            else:
+                new_bone_anim.rotation["Y"] = joint_anim.rotation["Y"]            
+            #for entry in new_bone_anim.rotation["Y"]:
                 #entry.convert_rotation(rotscale)
-                pass
-                
-            val_array = interpolate( joint_anim.rotation["Z"])
-            new_bone_anim.rotation["Z"] = val_array
-            for entry in new_bone_anim.rotation["Z"]:
+                #pass
+            
+            if len( joint_anim.rotation["Z"] ) < bck.duration:  
+                val_array = interpolate( joint_anim.rotation["Z"])
+                new_bone_anim.rotation["Z"] = val_array
+            else:
+                new_bone_anim.rotation["Z"] = joint_anim.rotation["Z"]            
+
+            #for entry in new_bone_anim.rotation["Z"]:
                 #entry.convert_rotation(rotscale)   
-                pass
+                #pass
             
-            val_array = interpolate( joint_anim.translation["X"] )
-            new_bone_anim.translation["X"] = val_array
+            if len( joint_anim.translation["X"] ) < bck.duration:  
+                val_array = interpolate( joint_anim.translation["X"] )
+                new_bone_anim.translation["X"] = val_array
+            else:
+                new_bone_anim.translation["X"] = joint_anim.translation["X"]
             
-            val_array = interpolate( joint_anim.translation["Y"])
-            new_bone_anim.translation["Y"] = val_array
-            
-            val_array = interpolate( joint_anim.translation["Z"])
-            new_bone_anim.translation["Z"] = val_array
+            if len( joint_anim.translation["Y"] ) < bck.duration:  
+                val_array = interpolate( joint_anim.translation["Y"] )
+                new_bone_anim.translation["Y"] = val_array
+            else:
+                new_bone_anim.translation["Y"] = joint_anim.translation["Y"]
+                
+            if len( joint_anim.translation["Z"] ) < bck.duration:  
+                val_array = interpolate( joint_anim.translation["Z"] )
+                new_bone_anim.translation["Z"] = val_array
+            else:
+                new_bone_anim.translation["Z"] = joint_anim.translation["Z"]
             
             bca.animations.append(new_bone_anim)
         
@@ -503,16 +542,15 @@ def interpolate(entry_array):
     if len( entry_array) == 1:
         return entry_array
 
-    
-    for i in range( len( entry_array )):
-        if ( i + 1 ) < len(entry_array ) :
-            some_values = inter_helper(entry_array[i], entry_array[i + 1])
+    for i in range( len( entry_array ) - 1):
+        
+        some_values = inter_helper(entry_array[i], entry_array[i + 1])
         
         for value in some_values:
             all_values.append(value)
     
-    print( len( all_values))
-
+    all_values.append( entry_array[-1] )
+    
     return all_values
     
 def inter_helper(start, end):
