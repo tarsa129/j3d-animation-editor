@@ -108,16 +108,21 @@ class GenEditor(QMainWindow):
         
         self.convert_to_key = QAction("Save as Keyframes", self)
         self.convert_to_all = QAction("Save as All", self)
+        self.import_anim = QAction("Import .anim", self)
         
         self.convert_to_key.triggered.connect(self.convert_to_k)
         self.convert_to_all.triggered.connect(self.convert_to_a)
+        self.import_anim.triggered.connect(self.import_anim_file)
         
         self.convert_to_key.setShortcut("Ctrl+K")
         
         self.convert.addAction(self.convert_to_key)
         self.convert.addAction(self.convert_to_all)
+        self.convert.addAction(self.import_anim)
         
-        self.convert.setDisabled(True)
+        self.convert_to_key.setDisabled(True)
+        self.convert_to_all.setDisabled(True)
+        
         
         self.menubar.addAction(self.convert.menuAction())
         
@@ -242,37 +247,11 @@ class GenEditor(QMainWindow):
         for filepath in filepaths:
             if filepath:
                 
-                self.convert.setDisabled(False)
+                
 
-                actual_animation_object = j3d.sort_file(filepath)
+                animation_object = j3d.sort_file(filepath)
                 
-                new_anim = all_anim_information(filepath)           
-                new_anim.display_info = actual_animation_object.get_loading_information()
-                
-                if len( list_of_animations ) > 0:
-                    print( "this is not the first loaded animation " ) 
-                    index = self.animation_bar.currentIndex().row()
-                    print( "the old index is " + str(index) )
-                    print( list_of_animations[index].display_info[0] ) 
-                    list_of_animations[index].display_info = self.get_on_screen()
-                    print( list_of_animations[index].display_info[0] ) 
-                
-                
-                list_of_animations.append(new_anim)            
-                loaded_animation = QTreeWidgetItem(self.animation_bar)
-                
-                filename = filepath[filepath.rfind("/") + 1:]
-                
-                loaded_animation.setText(0, filename)
-                for name in actual_animation_object.get_children_names():
-                    child = QTreeWidgetItem(loaded_animation)
-                    child.setText(0, name)
-                    child.setDisabled(True)
-                   
-            self.animation_bar.addTopLevelItem(loaded_animation)       
-            self.current_index = len(list_of_animations) - 1
-            self.load_animation_to_middle(len(list_of_animations) - 1)
-            self.animation_bar.setCurrentItem(loaded_animation)
+                self.universal_new_animation(animation_object, filepath)
             
 
     def button_save_level(self):
@@ -290,7 +269,10 @@ class GenEditor(QMainWindow):
             index = self.animation_bar.currentIndex().row()  
             list_of_animations[index].display_info = self.get_on_screen()
             info = j3d.fix_array(list_of_animations[index].display_info)
-            j3d.sort_filepath(filepath, info) 
+            if (list_of_animations[index].filepath.endswith(".bca") ):
+                self.convert_to_a()
+            else: 
+                j3d.sort_filepath(filepath, info) 
             
     def create_new(self):
         
@@ -315,10 +297,12 @@ class GenEditor(QMainWindow):
             filename = filepath[filepath.rfind("/") + 1:]
             loaded_animation.setText(0, filename)
         
+            self.is_remove = True 
             self.animation_bar.addTopLevelItem(loaded_animation)       
             self.current_index = len(list_of_animations) - 1
             self.load_animation_to_middle(len(list_of_animations) - 1)
             self.animation_bar.setCurrentItem(loaded_animation)
+            self.is_remove = False
         
         self.create_window = None
     #convert stuff
@@ -346,11 +330,52 @@ class GenEditor(QMainWindow):
             bca = j3d.convert_to_a(filepath, info) #this is a pure bck, no saving
             filepath = filepath[:-1] + "a"
             print("new filepath is " + filepath)
-            with open(filepath, "wb") as f:
-            
+            with open(filepath, "wb") as f:           
                 bca.write_bca(f)
                 f.close()
-      
+    
+    def import_anim_file(self):
+        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
+        ".anim files(*.anim)" )
+        if filepath:
+            bck = j3d.import_anim_file(filepath)
+            self.universal_new_animation(bck, filepath + ".bck" )
+            
+        
+    def universal_new_animation(self, actual_animation_object, filepath):
+        self.convert.setDisabled(False)
+        new_anim = all_anim_information(filepath)           
+        new_anim.display_info = actual_animation_object.get_loading_information()
+        
+        if len( list_of_animations ) > 0:
+            print( "this is not the first loaded animation " ) 
+            index = self.animation_bar.currentIndex().row()
+            print( "the old index is " + str(index) )
+            print( list_of_animations[index].display_info[0] ) 
+            list_of_animations[index].display_info = self.get_on_screen()
+            print( list_of_animations[index].display_info[0] ) 
+        
+        
+        list_of_animations.append(new_anim)            
+        loaded_animation = QTreeWidgetItem(self.animation_bar)
+        
+        filename = filepath[filepath.rfind("/") + 1:]
+        
+        loaded_animation.setText(0, filename)
+        for name in actual_animation_object.get_children_names():
+            child = QTreeWidgetItem(loaded_animation)
+            child.setText(0, name)
+            child.setDisabled(True)
+            
+            
+        self.is_remove = True     
+        self.animation_bar.addTopLevelItem(loaded_animation)       
+        self.current_index = len(list_of_animations) - 1
+        self.load_animation_to_middle(len(list_of_animations) - 1)
+        
+        self.animation_bar.setCurrentItem(loaded_animation)
+        self.is_remove = False
+        
     #bmd stuff
     def load_bone_names(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , ".bmd files(*.bmd)")
@@ -391,7 +416,7 @@ class GenEditor(QMainWindow):
         
         context_menu = QMenu(self.animation_bar)
         close_action = QAction("Close Current Animation", self)
-        copy_action = QAction("Copy Animation", self)
+        #copy_action = QAction("Copy Animation", self)
         
         
         def emit_close():
@@ -432,6 +457,8 @@ class GenEditor(QMainWindow):
             
             self.animation_bar.setCurrentItem(item)
             self.is_remove = False
+            
+            self.animation_bar.setCurrentItem(item)
             print("done with removing")
                             
         def emit_copy():
@@ -452,11 +479,11 @@ class GenEditor(QMainWindow):
          
         
         close_action.triggered.connect(emit_close)
-        copy_action.triggered.connect(emit_copy)
+        #copy_action.triggered.connect(emit_copy)
         
        
         context_menu.addAction(close_action)
-        context_menu.addAction(copy_action)
+        #context_menu.addAction(copy_action)
         context_menu.addAction(self.copy_cells_action)
         context_menu.addAction(self.paste_cells_action)
         

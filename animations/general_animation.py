@@ -79,11 +79,12 @@ def write_values(info, keyframes_dictionary, row):
     keys = []
 
     for i in keyframes_dictionary.keys():
-        keys.append(i)
+        keys.append( int(i) )
    
     keys.sort()
     
     for i in keys: #i is the frame, so for each keyframe
+       
         info[row].append("Frame " + str( (int(i)) ) ) #add the header
         
         k = row + 1 #k in the row index in the table
@@ -259,6 +260,12 @@ def convert_to_a(filepath, info):
         bca = bca_file.bca.from_bck(bck)
         
         return bca
+        
+def import_anim_file(filepath):
+    from animations.bck import bck
+    import animations.bck as bck_file
+    with open(filepath, "r") as f:
+        return bck.from_maya_anim(f);
 
 def sort_file(filepath):
     with open(filepath, "rb") as f:

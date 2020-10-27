@@ -49,6 +49,7 @@ class bone_anim(object):
         self.scale = {"X": [], "Y": [], "Z": []}
         self.rotation = {"X": [], "Y": [], "Z": []}
         self.translation = {"X": [], "Y": [], "Z": []}
+        self.joint_name = ""
         
         self._scale_offsets = {}
         self._rot_offsets = {}
@@ -162,16 +163,79 @@ class bck(j3d.basic_animation):
                     
             bck.animations.append(bone_animation)
         return bck
+    
+    @classmethod
+    def from_maya_anim(cls, filepath):
+        lines = filepath.readlines()
+        duration = int( lines[6][lines[6].find(" "): lines[6].find(";")] )
+        #duration -= int( lines[5][lines[5].find(" "): lines[5].find(";")] )
+        max = 0
+        print (duration)
+        i = 7
+        bck = cls(1, 1, duration)
+        
+        current_bone = lines[i].split()[3]
+        
+        #iterate through all the lines
+        while ( i < len(lines) ):
+        
+            # make a new bone
+            new_bone_name = lines[i].split()[3]
+            current_bone = new_bone_name
+            new_bone = bone_anim()
+            new_bone.joint_name = new_bone_name
+            bck.animations.append(new_bone)
+            
+            # while it is the same bone animation
+            while(new_bone_name == current_bone):
+                current_bone = new_bone_name
+                
+                #jump to keys for the entry  
+                
+                values = lines[i].split()
+                thing = values[2]
+                
+
+                i += 8     
+   
+                #read the keyframes
+                while( not "}" in lines[i]):
+                    values = lines[i].split()
+                    
+                    new_entry = bone_entry(int(values[0]), float(values[1]))
+                
+                    if len(thing) == 6:
+                        new_bone.add_scale( thing[-1], new_entry )
+                    elif len(thing) == 7:
+                        new_bone.add_rotation( thing[-1], new_entry )
+                    else:
+                        new_bone.add_translation( thing[-1], new_entry )                  
+                    i += 1
+                
+                i += 2
+                
+                if( i < len(lines) ):
+                    new_bone_name = lines[i].split()[3]
+                else:
+                    new_bone_name = current_bone + "asdf"
+                
+        return bck
+                
+  
+    
     def get_children_names(self):
         joints = []
         for i in range( len( self.animations )):
-            joints.append("Joint " + str(i) )
+            if self.animations[i].joint_name != "":
+                joints.append( self.animations[i].joint_name)
+            else:
+                joints.append("Joint " + str(i) )
         return joints
             
     def get_loading_information(self):
         info = []
         info.append( [ "Loop Mode:", self.loop_mode, "Angle Scale:", self.anglescale, "Duration:", self.duration] )
-        info.append( ["Joint Number", "Component"])
+        info.append( ["Bone Name", "Component"])
         
         keyframes_dictionary = {}
         keyframes_dictionary[0] = []
@@ -181,7 +245,10 @@ class bck(j3d.basic_animation):
         count = 0
         
         for anim in self.animations:
-            info.append( ["Joint " + str(count)] )
+            if anim.joint_name == "":
+                info.append( ["Joint " + str(count)] )
+            else:
+                info.append( [anim.joint_name] )
             things = ["Scale X:", "Scale Y:", "Scale Z:", "Rotation X:", "Rotation Y:", "Rotation Z:",
                 "Translation X:", "Translation Y:", "Translation Z:"]
             
@@ -471,3 +538,5 @@ class bck(j3d.basic_animation):
     def get_bck(cls, info):
         bck = cls.from_table("", info)    
         return bck
+        
+    
