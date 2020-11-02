@@ -5,7 +5,7 @@ from animations.general_animation import *
 from animations.general_animation import basic_animation
 import animations.general_animation as j3d
 
-BLKFILEMAGIC = b"J3D1blk1"
+BLKFILEMAGIC = b"J3D1bla1"
 
 class bone_entry(object):
     def __init__(self, time, value, tangentIn = 0, tangentOut=None):

@@ -23,6 +23,7 @@ class create_window(QDialog):
         self.filepath = None
         
         self.setup_ui()
+        
     
     def setup_ui(self):
         self.resize(800, 400)

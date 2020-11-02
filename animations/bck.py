@@ -175,6 +175,7 @@ class bck(j3d.basic_animation):
         bck = cls(1, 1, duration)
         
         current_bone = lines[i].split()[3]
+        max_rotation = 0
         
         #iterate through all the lines
         while ( i < len(lines) ):
@@ -208,6 +209,7 @@ class bck(j3d.basic_animation):
                         new_bone.add_scale( thing[-1], new_entry )
                     elif len(thing) == 7:
                         new_bone.add_rotation( thing[-1], new_entry )
+                        max_rotation = max(max_rotation, new_entry.value)
                     else:
                         new_bone.add_translation( thing[-1], new_entry )                  
                     i += 1
@@ -218,7 +220,8 @@ class bck(j3d.basic_animation):
                     new_bone_name = lines[i].split()[3]
                 else:
                     new_bone_name = current_bone + "asdf"
-                
+        bck.anglescale = int( abs(max_rotation) / 180 ) +  1
+        
         return bck
                 
   
