@@ -7,6 +7,7 @@ BRKFILEMAGIC = b"J3D1brk1"
 BCKFILEMAGIC = b"J3D1bck1"
 BPKFILEMAGIC = b"J3D1bpk1"
 BCAFILEMAGIC = b"J3D1bca1"
+BLAFILEMAGIC = b"J3D1bla1"
 
 PADDING = b"This is padding data to align"
 
@@ -296,6 +297,10 @@ def sort_file(filepath):
             from animations.bca import bca
             import animations.bca as bca_file
             return bca_file.bca.from_anim(f)
+        elif magic == BLAFILEMAGIC:
+            from animations.bla import bla
+            import animations.bla as bla_file
+            return bla_file.bla.from_anim(f) 
         f.close()
             
 def sort_filepath(filepath, information):
@@ -324,6 +329,10 @@ def sort_filepath(filepath, information):
          from animations.bca import bca
          import animations.bca as bca_file
          return bca_file.bca.from_table(filepath, information) 
+    elif filepath.endswith(".bla"):
+         from animations.bla import bla
+         import animations.bla as bla_file
+         return bla_file.bla.from_table(filepath, information) 
 
 def create_empty(information):
     table = []
