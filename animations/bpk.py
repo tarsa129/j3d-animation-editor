@@ -7,38 +7,6 @@ import animations.general_animation as j3d
 
 BPKFILEMAGIC = b"J3D1bpk1"
         
-class AnimComponent(object):
-    def __init__(self, time, value, tangentIn = 0, tangentOut=None):
-        self.time = time 
-        self.value = value
-        self.tangentIn = tangentIn 
-        
-        if tangentOut is None:
-            self.tangentOut = tangentIn
-        else:
-            self.tangentOut = tangentOut
-    
-    def serialize(self):
-        return [self.time, self.value, self.tangentIn, self.tangentOut]
-    
-    def __repr__(self):
-        return "Time: {0}, Val: {1}, TanIn: {2}, TanOut: {3}".format(self.time, self.value, self.tangentIn, self.tangentOut).__repr__()
-        
-    @classmethod
-    def from_array(cls, offset, index, count, valarray, tanType):
-        if count == 1:
-            return cls(0, valarray[offset+index], 0, 0)
-            
-        
-        else:
-            if tanType == 0:
-                return cls(valarray[offset + index*3], valarray[offset + index*3 + 1], valarray[offset + index*3 + 2])
-            elif tanType == 1:
-                return cls(valarray[offset + index*4], valarray[offset + index*4 + 1], valarray[offset + index*4 + 2], valarray[offset + index*4 + 3])
-            else:
-                raise RuntimeError("unknown tangent type: {0}".format(tanType))
-
-
 class ColorAnimation(object):
     def __init__(self, index, name):
         self._index = index 
@@ -62,7 +30,7 @@ class ColorAnimation(object):
             count, offset, tangent_type = struct.unpack(">HHH", f.read(6)) 
             
             for j in range(count):
-                animcomp = AnimComponent.from_array(offset, j, count, rgba_arrays[i], tangent_type)
+                animcomp = j3d.AnimComponent.from_array(offset, j, count, rgba_arrays[i], tangent_type)
                 coloranim.add_component(comp, animcomp)
 
         
@@ -255,7 +223,7 @@ class bpk(object):
                 
                 for k in range(2, len( info[curr_line + j] ) ):
                     if info[curr_line + j][k] != "":
-                        anim_comp = AnimComponent(keyframes[k - 3], int(info[curr_line + j][k]) )
+                        anim_comp = j3d.AnimComponent(keyframes[k - 3], int(info[curr_line + j][k]) )
                         color_anim.add_component(rgba, anim_comp)
             bpk.animations.append(color_anim)
                     

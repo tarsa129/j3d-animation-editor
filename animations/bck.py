@@ -7,43 +7,6 @@ import animations.general_animation as j3d
 
 BTKFILEMAGIC = b"J3D1bck1"
 
-class bone_entry(object):
-    def __init__(self, time, value, tangentIn = 0, tangentOut=None):
-        self.time = time
-        self.value = value
-        self.tangentIn = 0
-        self.tangentOut = 0
-    def convert_rotation(self, rotscale):
-        self.value *= rotscale 
-        self.tangentIn *= rotscale
-        self.tangentOut *= rotscale
-    def convert_rotation_inverse(self, rotscale):
-        self.value /= rotscale 
-        self.tangentIn /= rotscale
-        self.tangentOut /= rotscale
-     
-    @classmethod
-    def from_array(cls, offset, index, count, valarray, tanType):
-        if count == 1:
-            return cls(0.0, valarray[offset+index], 0.0, 0.0)
-            
-        
-        else:
-            #print("TanType:", tanType)
-            #print(len(valarray), offset+index*4)
-            
-            if tanType == 0:
-                return cls(valarray[offset + index*3], valarray[offset + index*3 + 1], valarray[offset + index*3 + 2])
-            elif tanType == 1:
-                return cls(valarray[offset + index*4], valarray[offset + index*4 + 1], valarray[offset + index*4 + 2], valarray[offset + index*4 + 3])
-            else:
-                raise RuntimeError("unknown tangent type: {0}".format(tanType))
-    def serialize(self):
-        return [self.time, self.value, self.tangentIn, self.tangentOut]
-        
-    def __repr__(self):
-        return "Time: {0}, Val: {1}, TanIn: {2}, TanOut: {3}".format(self.time, self.value, self.tangentIn, self.tangentOut).__repr__()
-
 class bone_anim(object):
     def __init__(self):
         self.scale = {"X": [], "Y": [], "Z": []}
@@ -142,14 +105,14 @@ class bck(j3d.basic_animation):
             for scale, axis in ((x_scale, "X"), (y_scale, "Y"), (z_scale, "Z")):
                 count, offset, tan_type = scale 
                 for j in range(count):
-                    comp = bone_entry.from_array(offset, j, count, scales, tan_type)
+                    comp = j3d.AnimComponent.from_array(offset, j, count, scales, tan_type)
                     bone_animation.add_scale(axis, comp)
                     #print(comp)
             
             for rotation, axis in ((x_rot, "X"), (y_rot, "Y"), (z_rot, "Z")):
                 count, offset, tan_type = rotation 
                 for j in range(count):
-                    comp = bone_entry.from_array(offset, j, count, rotations, tan_type)
+                    comp = j3d.AnimComponent.from_array(offset, j, count, rotations, tan_type)
                     comp.convert_rotation(rotscale)
                     bone_animation.add_rotation(axis, comp)
                     #print(comp)
@@ -157,7 +120,7 @@ class bck(j3d.basic_animation):
             for translation, axis in ((x_trans, "X"), (y_trans, "Y"), (z_trans, "Z")):
                 count, offset, tan_type = translation
                 for j in range(count):
-                    comp = bone_entry.from_array(offset, j, count, trans, tan_type)
+                    comp = j3d.AnimComponent.from_array(offset, j, count, trans, tan_type)
                     bone_animation.add_translation(axis, comp)
                     #print(comp)
                     
@@ -175,7 +138,6 @@ class bck(j3d.basic_animation):
         bck = cls(1, 1, duration)
         
         current_bone = lines[i].split()[3]
-        max_rotation = 0
         
         #iterate through all the lines
         while ( i < len(lines) ):
@@ -203,13 +165,12 @@ class bck(j3d.basic_animation):
                 while( not "}" in lines[i]):
                     values = lines[i].split()
                     
-                    new_entry = bone_entry(int(values[0]), float(values[1]))
+                    new_entry = j3d.AnimComponent(int(values[0]), float(values[1]))
                 
                     if len(thing) == 6:
                         new_bone.add_scale( thing[-1], new_entry )
                     elif len(thing) == 7:
                         new_bone.add_rotation( thing[-1], new_entry )
-                        max_rotation = max(max_rotation, new_entry.value)
                     else:
                         new_bone.add_translation( thing[-1], new_entry )                  
                     i += 1
@@ -220,7 +181,19 @@ class bck(j3d.basic_animation):
                     new_bone_name = lines[i].split()[3]
                 else:
                     new_bone_name = current_bone + "asdf"
-        bck.anglescale = int( abs(max_rotation) / 180 ) +  1
+        
+        for anim in bck.animations :
+            for axis in {"X", "Y", "Z"} :
+                if len( anim.scale[axis] ) == 0:
+                    new_entry = j3d.AnimComponent(0, 1.0)
+                    anim.add_scale(axis, new_entry)
+                if len( anim.rotation[axis] ) == 0:
+                    new_entry = j3d.AnimComponent(0, 0)
+                    anim.add_rotation(axis, new_entry)
+                if len( anim.translation[axis] ) == 0:
+                    new_entry = j3d.AnimComponent(0, 0)
+                    anim.add_translation(axis, new_entry)
+
         
         return bck
                 
@@ -329,9 +302,9 @@ class bck(j3d.basic_animation):
                 for k in range(2, len(info[line + j])): #for each keyframe
                     if info[line + j][k] != "":
                         try:
-                            comp = bone_entry( keyframes[k-2], float(info[line + j][k]))
+                            comp = j3d.AnimComponent( keyframes[k-2], float(info[line + j][k]))
                         except:
-                            comp = bone_entry( bck.duration, float(info[line + j][k]) )
+                            comp = j3d.AnimComponent( bck.duration, float(info[line + j][k]) )
                                                                    
                         if j < 3:
                             current_anim.add_scale(xyz, comp)

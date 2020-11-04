@@ -5,15 +5,13 @@ from animations.general_animation import *
 from animations.general_animation import basic_animation
 import animations.general_animation as j3d
 
-BLAFILEMAGIC = b"J3D1bla1"
-
-
+BLKFILEMAGIC = b"J3D1blk1"
 
 class cluster_anim(object):
     def __init__(self):
         self.seq = []
 
-class bla(j3d.basic_animation):
+class blk(j3d.basic_animation):
     def __init__(self, loop_mode, duration):
         self.loop_mode = loop_mode
         self.anglescale = -1
@@ -30,50 +28,52 @@ class bla(j3d.basic_animation):
         
         svr_data = f.read(16)
         
-        clf_start = f.tell()
-        clf_magic = f.read(4) #clf1
-        clf_size = j3d.read_uint32(f)
+        clk_start = f.tell()
+        clk_magic = f.read(4) #clk1
+        clk_size = j3d.read_uint32(f)
         
         loop_mode = j3d.read_uint8(f)
         j3d.read_uint8(f)
         
         duration = j3d.read_uint16(f)
-        bla = cls(loop_mode, duration)
+        blk = cls(loop_mode, duration)
 
         cluster_count = read_uint16(f)
-        scales_count = read_uint16(f)      
+        scales_count = int(read_uint16(f) / 3)
         
-        print(scales_count)
+        print("scales count " + str(scales_count) )
         
-        cluster_offset = read_uint32(f) + clf_start
-        scales_offset = read_uint32(f) + clf_start
-
-        # Read floats
+        cluster_offset = read_uint32(f) + clk_start
+        scales_offset = read_uint32(f) + clk_start
+        
         scales = []
         f.seek(scales_offset)
         for i in range(scales_count):
-
-            scales.append(read_float(f))      
-
-        # Read clusters
+            #print(hex (f.tell()))
+            time = read_float(f)
+            value = read_float(f)
+            tangentIn = read_float(f)
+            anim = j3d.AnimComponent( time, value, tangentIn )
+            scales.append(anim) 
         
         f.seek(cluster_offset)
-        
-        while ( f.read(4) != b'This'):
-            f.seek (f.tell() - 4)
+        while ( f.read(6) != b'This i'):
+            f.seek (f.tell() - 6)
+            print(f.tell() )
             new_anim = cluster_anim()
             
             clus_durati = j3d.read_uint16(f)
-            clus_offset = j3d.read_uint16(f)
-            
-            print(clus_durati)
-            
+            clus_offset = int(j3d.read_uint16(f) / 3)
+            j3d.read_uint16(f)
+
             for j in range( clus_durati ):
                 new_anim.seq.append( scales[j + clus_offset] ) 
             
-            bla.animations.append(new_anim)
+            blk.animations.append(new_anim)
+        
+
        
-        return bla
+        return blk
     def get_children_names(self):
         joints = []
         for i in range( len( self.animations )):
@@ -83,25 +83,27 @@ class bla(j3d.basic_animation):
     def get_loading_information(self):
         info = []
         info.append( [ "Loop Mode:", self.loop_mode, "Duration:", self.duration] )
-        info.append( ["Cluster Number", "Duration"])
+        info.append( ["Cluster Number"])
         
-        for i in range(self.duration):
-            info[1].append("Frame " + str(i) )
+        keyframes_dictionary = {}
+        keyframes_dictionary[0] = []
         
         i = len( info ) 
         
         count = 0
         
         for anim in self.animations:
-            info.append( ["Cluster " + str(count), len(anim.seq)] )
+            info.append( ["Cluster " + str(count)] )
             
-            for j in range (len ( anim.seq) ):    
-                info[i].append( anim.seq[j] )
+            array = anim.seq
+            
+            keyframes_dictionary = j3d.combine_dicts(array, keyframes_dictionary)
             
             i = len(info)
             
             count += 1
-            
+        
+        write_values(info, keyframes_dictionary, 1)
         return info  
     
     @classmethod
@@ -179,8 +181,8 @@ class bla(j3d.basic_animation):
         j3d.write_uint32(f, 1) # Always a section count of 1
         f.write(b"\xFF"*16)
         
-        clf1_start = f.tell()
-        f.write(b"clf1")
+        clk1_start = f.tell()
+        f.write(b"clk1")
         
         ttk1_size_offset = f.tell()
         f.write(b"EFGH")  # Placeholder for ttk1 size
@@ -317,7 +319,7 @@ class bla(j3d.basic_animation):
         j3d.write_uint32(f, total_size)
 
         f.seek(ttk1_size_offset)
-        j3d.write_uint32(f, total_size - clf1_start)
+        j3d.write_uint32(f, total_size - clk1_start)
 
         f.seek(count_offset)
         j3d.write_uint16(f, len(all_scales))
@@ -325,7 +327,7 @@ class bla(j3d.basic_animation):
         j3d.write_uint16(f, len(all_translations))
         # Next come the section offsets
 
-        j3d.write_uint32(f, bone_anim_start     - clf1_start)
-        j3d.write_uint32(f, scale_start         - clf1_start)
-        j3d.write_uint32(f, rotations_start     - clf1_start)
-        j3d.write_uint32(f, translations_start  - clf1_start)
+        j3d.write_uint32(f, bone_anim_start     - clk1_start)
+        j3d.write_uint32(f, scale_start         - clk1_start)
+        j3d.write_uint32(f, rotations_start     - clk1_start)
+        j3d.write_uint32(f, translations_start  - clk1_start)

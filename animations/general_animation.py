@@ -8,6 +8,7 @@ BCKFILEMAGIC = b"J3D1bck1"
 BPKFILEMAGIC = b"J3D1bpk1"
 BCAFILEMAGIC = b"J3D1bca1"
 BLAFILEMAGIC = b"J3D1bla1"
+BLKFILEMAGIC = b"J3D1blk1"
 
 PADDING = b"This is padding data to align"
 
@@ -52,6 +53,48 @@ def write_padding(f, multiple):
 class basic_animation(object):
     def __init__(self):
         pass
+
+class AnimComponent(object):
+    def __init__(self, time, value, tangentIn = 0, tangentOut=None):
+        self.time = time 
+        self.value = value
+        self.tangentIn = tangentIn 
+        
+        if tangentOut is None:
+            self.tangentOut = tangentIn
+        else:
+            self.tangentOut = tangentOut
+    
+    def serialize(self):
+        return [self.time, self.value, self.tangentIn, self.tangentOut]
+    
+    def __repr__(self):
+        return "Time: {0}, Val: {1}, TanIn: {2}, TanOut: {3}".format(self.time, self.value, self.tangentIn, self.tangentOut).__repr__()
+    
+    def convert_rotation(self, rotscale):
+        self.value *= rotscale 
+        self.tangentIn *= rotscale
+        self.tangentOut *= rotscale
+        
+    def convert_rotation_inverse(self, rotscale):
+        self.value /= rotscale 
+        self.tangentIn /= rotscale
+        self.tangentOut /= rotscale
+    
+    
+    @classmethod
+    def from_array(cls, offset, index, count, valarray, tanType):
+        if count == 1:
+            return cls(0, valarray[offset+index], 0, 0)
+            
+        
+        else:
+            if tanType == 0:
+                return cls(valarray[offset + index*3], valarray[offset + index*3 + 1], valarray[offset + index*3 + 2])
+            elif tanType == 1:
+                return cls(valarray[offset + index*4], valarray[offset + index*4 + 1], valarray[offset + index*4 + 2], valarray[offset + index*4 + 3])
+            else:
+                raise RuntimeError("unknown tangent type: {0}".format(tanType))
 
 def combine_dicts(array, keyframes_dictionary):
     thismat_kf = {}
@@ -301,6 +344,10 @@ def sort_file(filepath):
             from animations.bla import bla
             import animations.bla as bla_file
             return bla_file.bla.from_anim(f) 
+        elif magic == BLKFILEMAGIC:
+            from animations.blk import blk
+            import animations.blk as blk_file  
+            return blk_file.blk.from_anim(f) 
         f.close()
             
 def sort_filepath(filepath, information):
@@ -333,6 +380,10 @@ def sort_filepath(filepath, information):
          from animations.bla import bla
          import animations.bla as bla_file
          return bla_file.bla.from_table(filepath, information) 
+    elif filepath.endswith(".bla"):
+         from animations.blk import blk
+         import animations.blk as blk_file
+         return blk_file.blk.from_table(filepath, information) 
 
 def create_empty(information):
     table = []
@@ -361,5 +412,13 @@ def create_empty(information):
         from animations.bca import bca
         import animations.bca as bca_file
         table = bca_file.bca.empty_table(information) 
+    elif filepath.endswith(".bla"):
+        from animations.bla import bla
+        import animations.bla as bla_file
+        table = bla_file.bla.empty_table(information) 
+    elif filepath.endswith(".blk"):
+        from animations.blk import blk
+        import animations.blk as blk_file
+        table = blk_file.blk.empty_table(information) 
     return table
 

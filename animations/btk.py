@@ -6,52 +6,7 @@ from animations.general_animation import basic_animation
 import animations.general_animation as j3d
 
 BTKFILEMAGIC = b"J3D1btk1"
-
-class AnimComponent(object):
-    def __init__(self, time, value, tangentIn = 0, tangentOut=None):
-        self.time = time 
-        self.value = value
-        self.tangentIn = tangentIn 
-        
-        if tangentOut is None:
-            self.tangentOut = tangentIn
-        else:
-            self.tangentOut = tangentOut
-    
-    def convert_rotation(self, rotscale):
-        self.value *= rotscale 
-        self.tangentIn *= rotscale
-        self.tangentOut *= rotscale
-        
-    def convert_rotation_inverse(self, rotscale):
-        self.value /= rotscale 
-        self.tangentIn /= rotscale
-        self.tangentOut /= rotscale
-    
-    def serialize(self):
-        return [self.time, self.value, self.tangentIn, self.tangentOut]
-    
-    def __repr__(self):
-        return "Time: {0}, Val: {1}, TanIn: {2}, TanOut: {3}".format(self.time, self.value, self.tangentIn, self.tangentOut).__repr__()
-        
-    @classmethod
-    def from_array(cls, offset, index, count, valarray, tanType):
-        if count == 1:
-            return cls(0.0, valarray[offset+index], 0.0, 0.0)
-            
-        
-        else:
-            #print("TanType:", tanType)
-            #print(len(valarray), offset+index*4)
-            
-            if tanType == 0:
-                return cls(valarray[offset + index*3], valarray[offset + index*3 + 1], valarray[offset + index*3 + 2])
-            elif tanType == 1:
-                return cls(valarray[offset + index*4], valarray[offset + index*4 + 1], valarray[offset + index*4 + 2], valarray[offset + index*4 + 3])
-            else:
-                raise RuntimeError("unknown tangent type: {0}".format(tanType))
-    
-    
+       
 class MatrixAnimation(object):
     def __init__(self, index, matindex, name, center):
         self._index = index 
@@ -86,7 +41,15 @@ class MatrixAnimation(object):
 
     def _set_translation_offsets(self, axis, val):
         self._translation_offsets[axis] = val
-
+    def has_components(self):
+        size = len( scale["U"] ) + len( scale["V"] ) + len( scale["W"] )
+        size += len( rotation["U"] ) + len( rotation["V"] ) + len( rotation["W"] )
+        size += len( translation["U"] ) + len( translation["V"] ) + len( translation["W"] )
+        
+        return size
+    
+    
+    
 class btk(j3d.basic_animation):
     def __init__(self, loop_mode, anglescale, duration, unknown_address=0):
         self.animations = []
@@ -217,20 +180,20 @@ class btk(j3d.basic_animation):
             for scale, axis in ((u_scale, "U"), (v_scale, "V"), (w_scale, "W")):
                 count, offset, tan_type = scale 
                 for j in range(count):
-                    comp = AnimComponent.from_array(offset, j, count, scales, tan_type)
+                    comp = j3d.AnimComponent.from_array(offset, j, count, scales, tan_type)
                     matrix_animation.add_scale(axis, comp)
             
             for rotation, axis in ((u_rot, "U"), (v_rot, "V"), (w_rot, "W")):
                 count, offset, tan_type = rotation 
                 for j in range(count):
-                    comp = AnimComponent.from_array(offset, j, count, rotations, tan_type)
+                    comp = j3d.AnimComponent.from_array(offset, j, count, rotations, tan_type)
                     comp.convert_rotation(rotscale)
                     matrix_animation.add_rotation(axis, comp)
                     
             for translation, axis in ((u_trans, "U"), (v_trans, "V"), (w_trans, "W")):
                 count, offset, tan_type = translation
                 for j in range(count):
-                    comp = AnimComponent.from_array(offset, j, count, translations, tan_type)
+                    comp = j3d.AnimComponent.from_array(offset, j, count, translations, tan_type)
                     matrix_animation.add_translation(axis, comp)        
             
             
@@ -348,7 +311,7 @@ class btk(j3d.basic_animation):
                               
                 for k in range(4, len(info[line + j])): #for each keyframe
                     if info[line + j][k] != "":
-                        comp = AnimComponent( keyframes[k-4], float(info[line + j][k]))
+                        comp = j3d.AnimComponent( keyframes[k-4], float(info[line + j][k]))
                                        
                         if j < 3:
                             current_anim.add_scale(uvw, comp)
