@@ -148,8 +148,7 @@ class bpk(object):
         
         
         keyframes_dictionary = {}
-        keyframes_dictionary[0] = []
-           
+        keyframes_dictionary[0] = []       
         
         info.append( ["Material Name", "Channel"] )
         

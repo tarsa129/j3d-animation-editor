@@ -256,7 +256,7 @@ class GenEditor(QMainWindow):
         index = self.animation_bar.currentIndex().row()      
         self.list_of_animations[index].display_info = self.get_on_screen()
         info = j3d.fix_array(self.list_of_animations[index].display_info)
-        if (self.list_of_animations[index].filepath.endswith(".bca") ):
+        if (self.list_of_animations[index].filepath.endswith("a") ):
             self.convert_to_a()
         else: 
             j3d.sort_filepath(self.list_of_animations[index].filepath, info) 
@@ -294,7 +294,10 @@ class GenEditor(QMainWindow):
             
             filename = filepath[filepath.rfind("/") + 1:]
             loaded_animation.setText(0, filename)
-        
+            
+            self.edit_convert_actions(filename)
+            
+            
             self.is_remove = True 
             self.animation_bar.addTopLevelItem(loaded_animation)       
             self.current_index = len(self.list_of_animations) - 1
@@ -304,6 +307,23 @@ class GenEditor(QMainWindow):
         
         self.create_window = None
     #convert stuff
+    def edit_convert_actions(self, filename):
+        extension = filename[-4:]
+        if extension in {".bck", ".blk"}:
+            self.convert_to_all.setDisabled(False)
+            self.convert_to_key.setDisabled(True)
+        elif extension in {".bca", ".bla"}:
+            self.convert_to_all.setDisabled(False)
+            self.convert_to_key.setDisabled(True)
+        else:
+            self.convert_to_all.setDisabled(False)
+            self.convert_to_key.setDisabled(True)
+        
+        if extension in {".bck", ".bca"}:
+            self.model.setDisabled(False)
+        else:
+            self.model.setDisabled(True)
+            
 
     def convert_to_k(self):
         index = self.animation_bar.currentIndex().row()          
@@ -315,6 +335,10 @@ class GenEditor(QMainWindow):
             filepath = filepath[:-1] + "k"
             info = self.list_of_animations[index].display_info           
             bck = j3d.sort_filepath(filepath, info)
+        elif filepath.endswith(".bla"):
+            filepath = filepath[:-1] + "k"
+            info = self.list_of_animations[index].display_info           
+            blk = j3d.sort_filepath(filepath, info)
         
     def convert_to_a(self):
         index = self.animation_bar.currentIndex().row()
@@ -331,6 +355,15 @@ class GenEditor(QMainWindow):
             with open(filepath, "wb") as f:           
                 bca.write_bca(f)
                 f.close()
+        elif filepath.endswith(".blk") or filepath.endswith(".bla"):
+            info = self.list_of_animations[index].display_info
+            
+            bla = j3d.convert_to_a(filepath, info) #this is a pure bck, no saving
+            filepath = filepath[:-1] + "a"
+            print("new filepath is " + filepath)
+            with open(filepath, "wb") as f:           
+                bla.write_bla(f)
+                f.close()
     
     def import_anim_file(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
@@ -340,7 +373,7 @@ class GenEditor(QMainWindow):
             self.universal_new_animation(bck, filepath + ".bck" )
                  
     def universal_new_animation(self, actual_animation_object, filepath):
-        self.convert.setDisabled(False)
+        
         new_anim = all_anim_information(filepath)           
         new_anim.display_info = actual_animation_object.get_loading_information()
         
@@ -363,7 +396,8 @@ class GenEditor(QMainWindow):
             child = QTreeWidgetItem(loaded_animation)
             child.setText(0, name)
             child.setDisabled(True)
-            
+          
+        self.edit_convert_actions(filename)
             
         self.is_remove = True     
         self.animation_bar.addTopLevelItem(loaded_animation)       
@@ -570,13 +604,9 @@ class GenEditor(QMainWindow):
         
         if array is None:
             filepath = self.list_of_animations[index].filepath
-            if filepath.endswith(".bck") or filepath.endswith(".bca"):
-                self.model.setDisabled(False)
-                self.convert.setDisabled(False)
-            else:
-                self.model.setDisabled(True)
-                self.convert.setDisabled(False)
-        
+            
+            self.edit_convert_actions(filepath)
+
         
     def selected_animation_changed(self):
 

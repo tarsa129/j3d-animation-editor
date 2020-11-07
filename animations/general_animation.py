@@ -304,6 +304,16 @@ def convert_to_a(filepath, info):
         bca = bca_file.bca.from_bck(bck)
         
         return bca
+    if filepath.endswith(".blk") or filepath.endswith(".bla"):
+        from animations.blk import blk
+        import animations.blk as blk_file
+        blk = blk_file.blk.get_blk(info)
+        
+        from animations.bla import bla
+        import animations.bla as bla_file
+        bla = bla_file.bla.from_blk(blk)
+        
+        return bla
         
 def import_anim_file(filepath):
     from animations.bck import bck
@@ -380,7 +390,7 @@ def sort_filepath(filepath, information):
          from animations.bla import bla
          import animations.bla as bla_file
          return bla_file.bla.from_table(filepath, information) 
-    elif filepath.endswith(".bla"):
+    elif filepath.endswith(".blk"):
          from animations.blk import blk
          import animations.blk as blk_file
          return blk_file.blk.from_table(filepath, information) 
