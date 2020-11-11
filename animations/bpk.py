@@ -46,12 +46,16 @@ class ColorAnimation(object):
 
 
 class bpk(object):
-    def __init__(self, loop_mode, duration):
+    def __init__(self, loop_mode, duration, tantype = 1):
         self.animations = []
         self.loop_mode = loop_mode
         #self.anglescale = anglescale
         self.duration = duration
         #self.unknown_address = unknown_address
+        if tantype == 0 or tantype == 1:
+            self.tan_type = tantype
+        else:
+            self.tan_type = 1
 
     @classmethod
     def from_anim(cls, f):
@@ -130,9 +134,7 @@ class bpk(object):
                 ))
             
             bpk.animations.append(anim)
-        
-
-        
+     
         return bpk
 
     def get_children_names(self):

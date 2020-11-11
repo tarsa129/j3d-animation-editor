@@ -45,6 +45,8 @@ class bck(j3d.basic_animation):
         
         self.animations = []
     
+        self.tan_type = 1
+    
     @classmethod
     def from_anim(cls, f):
         size = j3d.read_uint32(f)
@@ -92,6 +94,8 @@ class bck(j3d.basic_animation):
         for i in range(trans_count):
             trans.append(read_float(f))
         
+        tangent_type = 0
+        
         f.seek(bone_offset)
         for i in range(bone_count):
             values = struct.unpack(">"+"H"*27, f.read(0x36))
@@ -104,6 +108,7 @@ class bck(j3d.basic_animation):
             
             for scale, axis in ((x_scale, "X"), (y_scale, "Y"), (z_scale, "Z")):
                 count, offset, tan_type = scale 
+                tangent_type = max(tan_type, tangent_type)
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, scales, tan_type)
                     bone_animation.add_scale(axis, comp)
@@ -111,6 +116,7 @@ class bck(j3d.basic_animation):
             
             for rotation, axis in ((x_rot, "X"), (y_rot, "Y"), (z_rot, "Z")):
                 count, offset, tan_type = rotation 
+                tangent_type = max(tan_type, tangent_type)
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, rotations, tan_type)
                     comp.convert_rotation(rotscale)
@@ -119,12 +125,15 @@ class bck(j3d.basic_animation):
                     
             for translation, axis in ((x_trans, "X"), (y_trans, "Y"), (z_trans, "Z")):
                 count, offset, tan_type = translation
+                tangent_type = max(tan_type, tangent_type)
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, trans, tan_type)
                     bone_animation.add_translation(axis, comp)
                     #print(comp)
                     
             bck.animations.append(bone_animation)
+        bck.tan_type = tangent_type
+        
         return bck
     
     @classmethod
@@ -210,7 +219,7 @@ class bck(j3d.basic_animation):
             
     def get_loading_information(self):
         info = []
-        info.append( [ "Loop Mode:", self.loop_mode, "Angle Scale:", self.anglescale, "Duration:", self.duration] )
+        info.append( [ "Loop Mode:", self.loop_mode, "Angle Scale:", self.anglescale, "Duration:", self.duration"Tan Type:", self.tan_typ] )
         info.append( ["Bone Name", "Component"])
         
         keyframes_dictionary = {}
@@ -260,7 +269,7 @@ class bck(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Unknown:", 0] )
+        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Tan Type:", self.tan_type] )
         info.append( ["Joint Number", "Component"] )
 
         for i in range( int(created[3])):
@@ -278,7 +287,7 @@ class bck(j3d.basic_animation):
     @classmethod
     def from_table(cls, f, info):
         print(f)
-        bck = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
+        bck = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]), int(info[0][7]))
         
         keyframes = []
         
@@ -478,17 +487,17 @@ class bck(j3d.basic_animation):
             for axis in "XYZ":
                 j3d.write_uint16(f, len(anim.scale[axis])) # Scale count for this animation
                 j3d.write_uint16(f, anim._scale_offsets[axis]) # Offset into scales
-                j3d.write_uint16(f, 1) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
+                j3d.write_uint16(f, self.tan_type) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
 
 
                 j3d.write_uint16(f, len(anim.rotation[axis])) # Rotation count for this animation
                 j3d.write_uint16(f, anim._rot_offsets[axis]) # Offset into rotations
-                j3d.write_uint16(f, 1) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
+                j3d.write_uint16(f, self.tan_type) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
 
 
                 j3d.write_uint16(f, len(anim.translation[axis])) # Translation count for this animation
                 j3d.write_uint16(f, anim._translation_offsets[axis])# offset into translations
-                j3d.write_uint16(f, 1) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
+                j3d.write_uint16(f, self.tan_type) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
 
         
 

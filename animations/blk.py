@@ -13,12 +13,17 @@ class cluster_anim(object):
         self.scale_offset = 0
 
 class blk(j3d.basic_animation):
-    def __init__(self, loop_mode, duration):
+    def __init__(self, loop_mode, duration, tantype = 1):
         self.loop_mode = loop_mode
         self.anglescale = 0
         self.duration = duration
         
         self.animations = []
+        
+        if tantype == 0 or tantype == 1:
+            self.tan_type = tantype
+        else:
+            self.tan_type = 1
     
     @classmethod
     def from_anim(cls, f):
@@ -58,21 +63,24 @@ class blk(j3d.basic_animation):
             
             scales.append(anim) 
 
+        tangent_type = 0
         
         f.seek(cluster_offset)
         while ( f.read(2) != b'Th'):
             f.seek (f.tell() - 2)
-            print( hex(f.tell()) )
+            
             new_anim = cluster_anim()
             
             clus_durati = j3d.read_uint16(f)
             clus_offset = int(j3d.read_uint16(f) / 3)
-            j3d.read_uint16(f)
+            tangent_type = max(tangent_type, j3d.read_uint16(f) )
 
             for j in range( clus_durati ):
                 new_anim.seq.append( scales[j + clus_offset] ) 
             
             blk.animations.append(new_anim)
+            
+        blk.tan_type = tangent_type
 
         return blk
     def get_children_names(self):
@@ -83,7 +91,7 @@ class blk(j3d.basic_animation):
             
     def get_loading_information(self):
         info = []
-        info.append( [ "Loop Mode:", self.loop_mode, "Duration:", self.duration] )
+        info.append( [ "Loop Mode:", self.loop_mode, "Duration:", self.duration, "Tangent Type:", self.tan_type] )
         info.append( ["Cluster Number"])
         
         keyframes_dictionary = {}
@@ -110,7 +118,7 @@ class blk(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( [ "Loop Mode:", "", "Duration:", created[3]] )
+        info.append( [ "Loop Mode:", "", "Duration:", created[3], "Tangent Type:", 1] )
         info.append( ["Cluster Number"])
         
         for i in range( int(created[3])):
@@ -123,7 +131,7 @@ class blk(j3d.basic_animation):
     
     @classmethod
     def from_table(cls, f, info):
-        blk = cls(int(info[0][1]), int(info[0][3]))
+        blk = cls(int(info[0][1]), int(info[0][3]), int(info[0][3]))
         
         keyframes = []
         
@@ -204,7 +212,8 @@ class blk(j3d.basic_animation):
                     sequence.append(comp.time)
                     sequence.append(comp.value)
                     sequence.append(comp.tangentIn)
-                    sequence.append(comp.tangentOut)
+                    if self.tan_type == 1 :
+                            sequence.append(comp.tangentOut)
                 
             offset = j3d.find_sequence(all_scales,sequence)
             if offset == -1:
@@ -227,7 +236,7 @@ class blk(j3d.basic_animation):
         for anim in self.animations:
             j3d.write_uint16(f, len(anim.seq) ) # Scale count for this animation
             j3d.write_uint16(f, anim.scale_offset)
-            j3d.write_uint16(f, 1) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
+            j3d.write_uint16(f, self.tan_type) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
     
 
         # Fill in all the placeholder values
