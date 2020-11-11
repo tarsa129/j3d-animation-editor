@@ -38,14 +38,17 @@ class bone_anim(object):
         self._translation_offsets[axis] = val
 
 class bck(j3d.basic_animation):
-    def __init__(self, loop_mode, anglescale, duration):
+    def __init__(self, loop_mode, anglescale, duration, tantype = 1):
         self.loop_mode = loop_mode
         self.anglescale = anglescale
         self.duration = duration
         
         self.animations = []
     
-        self.tan_type = 1
+        if tantype == 0 or tantype == 1:
+            self.tan_type = tantype
+        else:
+            self.tan_type = 1
     
     @classmethod
     def from_anim(cls, f):
@@ -205,8 +208,7 @@ class bck(j3d.basic_animation):
 
         
         return bck
-                
-  
+
     
     def get_children_names(self):
         joints = []
@@ -219,7 +221,7 @@ class bck(j3d.basic_animation):
             
     def get_loading_information(self):
         info = []
-        info.append( [ "Loop Mode:", self.loop_mode, "Angle Scale:", self.anglescale, "Duration:", self.duration"Tan Type:", self.tan_typ] )
+        info.append( [ "Loop Mode:", self.loop_mode, "Angle Scale:", self.anglescale, "Duration:", self.duration, "Tan Type:", self.tan_type] )
         info.append( ["Bone Name", "Component"])
         
         keyframes_dictionary = {}
@@ -402,7 +404,8 @@ class bck(j3d.basic_animation):
                         sequence.append(comp.time)
                         sequence.append(comp.value)
                         sequence.append(comp.tangentIn)
-                        sequence.append(comp.tangentOut)
+                        if self.tan_type == 1 :
+                            sequence.append(comp.tangentOut)
                     
                 offset = j3d.find_sequence(all_scales,sequence)
                 if offset == -1:
@@ -424,7 +427,8 @@ class bck(j3d.basic_animation):
                         sequence.append(comp.time)
                         sequence.append(comp.value/rotscale)
                         sequence.append(comp.tangentIn/rotscale)
-                        sequence.append(comp.tangentOut/rotscale)
+                        if self.tan_type == 1 :
+                            sequence.append(comp.tangentOut/rotscale)
                     #print("seq", sequence)
                 offset = j3d.find_sequence(all_rotations, sequence)
                 if offset == -1:
@@ -441,7 +445,8 @@ class bck(j3d.basic_animation):
                         sequence.append(comp.time)
                         sequence.append(comp.value)
                         sequence.append(comp.tangentIn)
-                        sequence.append(comp.tangentOut)
+                        if self.tan_type == 1 :
+                            sequence.append(comp.tangentOut)
                     
                 offset = j3d.find_sequence(all_translations, sequence)
                 if offset == -1:
