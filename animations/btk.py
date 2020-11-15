@@ -145,6 +145,8 @@ class btk(j3d.basic_animation):
         for i in range(scale_count):
             scales.append(read_float(f))
         
+        
+        
         # Read rotations
         rotations = []
         f.seek(rotation_offset)
@@ -156,6 +158,8 @@ class btk(j3d.basic_animation):
         f.seek(translation_offset)
         for i in range(translation_count):
             translations.append(read_float(f))
+        
+        tangent_type = 0
         
         # Read data per animation
         for i in indices:
@@ -181,11 +185,11 @@ class btk(j3d.basic_animation):
             
             matrix_animation = MatrixAnimation(i, mat_index, name, center)
             
-            tangent_type = 0
+            
             
             for scale, axis in ((u_scale, "U"), (v_scale, "V"), (w_scale, "W")):
                 count, offset, tan_type = scale 
-                print(tan_type)
+                
                 tangent_type = max(tan_type, tangent_type)
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, scales, tan_type)
@@ -193,7 +197,7 @@ class btk(j3d.basic_animation):
             
             for rotation, axis in ((u_rot, "U"), (v_rot, "V"), (w_rot, "W")):
                 count, offset, tan_type = rotation 
-                print(tan_type)
+                
                 tangent_type = max(tan_type, tangent_type)
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, rotations, tan_type)
@@ -202,7 +206,7 @@ class btk(j3d.basic_animation):
                     
             for translation, axis in ((u_trans, "U"), (v_trans, "V"), (w_trans, "W")):
                 count, offset, tan_type = translation
-                print(tan_type)
+               
                 tangent_type = max(tan_type, tangent_type)
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, translations, tan_type)
@@ -218,7 +222,7 @@ class btk(j3d.basic_animation):
             print(w_scale, w_rot, w_trans)
             """
             btk.animations.append(matrix_animation)
-            
+        btk.tan_type = tangent_type   
         return btk
             
     def get_children_names(self):

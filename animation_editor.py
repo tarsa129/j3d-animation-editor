@@ -64,6 +64,7 @@ class GenEditor(QMainWindow):
         self.save_file_action = QAction("Save", self)
         self.save_file_as_action = QAction("Save As", self)
         self.create_animation = QAction("Create Animation", self)
+        #self.combine_animations = QAction("Combine Animations", self)
         
         self.save_file_action.setShortcut("Ctrl+S")
         self.file_load_action.setShortcut("Ctrl+O")
@@ -74,11 +75,13 @@ class GenEditor(QMainWindow):
         self.save_file_action.triggered.connect(self.button_save_level)
         self.save_file_as_action.triggered.connect(self.button_save_as)
         self.create_animation.triggered.connect(self.create_new)
+        #self.combine_animations.triggered.connct(self.combine_anims)
 
         self.file_menu.addAction(self.file_load_action)
         self.file_menu.addAction(self.save_file_action)
         self.file_menu.addAction(self.save_file_as_action)   
         self.file_menu.addAction(self.create_animation)
+        #self.file_menu.addAction(self.combine_animations)
         
         self.menubar.addAction(self.file_menu.menuAction())
         self.setMenuBar(self.menubar)
@@ -306,6 +309,13 @@ class GenEditor(QMainWindow):
             self.is_remove = False
         
         self.create_window = None
+               
+    def combine_anims(self):
+        import widgets.quick_change as quick_change
+            
+        quick_change_window = quick_change.quick_editor()  
+        quick_change_window.setWindowModality(QtCore.Qt.ApplicationModal)            
+        quick_change_window.exec_()
     #convert stuff
     def edit_convert_actions(self, filename):
         extension = filename[-4:]
@@ -324,7 +334,6 @@ class GenEditor(QMainWindow):
         else:
             self.model.setDisabled(True)
             
-
     def convert_to_k(self):
         index = self.animation_bar.currentIndex().row()          
         self.list_of_animations[index].display_info = self.get_on_screen()
@@ -606,8 +615,7 @@ class GenEditor(QMainWindow):
             filepath = self.list_of_animations[index].filepath
             
             self.edit_convert_actions(filepath)
-
-        
+     
     def selected_animation_changed(self):
 
         if self.is_remove:
@@ -623,7 +631,6 @@ class GenEditor(QMainWindow):
             print( self.list_of_animations[index].display_info[0] )
             self.current_index = index
             self.load_animation_to_middle(index)       
-
 
     def get_on_screen(self):
     
@@ -645,8 +652,7 @@ class GenEditor(QMainWindow):
     
             collected_info.append(row_info)
         return collected_info
-            
-            
+                        
     def display_info_changes(self): #not used anymroe
         global count
         index = self.animation_bar.currentIndex().row() 

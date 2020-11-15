@@ -16,7 +16,7 @@ class create_window(QDialog):
  
         
         
-        self.file_types_names = {".btk", ".brk", ".bck" , ".btp", ".bca", ".bpk" };
+        self.file_types_names = {".btk", ".brk", ".bck" , ".btp", ".bca", ".bpk", ".bla", ".blk" };
         
         #stuff that we want to return / have access to
         self.selected = None
@@ -117,6 +117,10 @@ class create_window(QDialog):
                 self.const_label.setDisabled(False)
                 self.const_text.setDisabled(False)
                 return "Number of Register Materials"
+            elif self.selected == ".bla" or self.selected == ".blk":
+                self.const_label.setDisabled(True)
+                self.const_text.setDisabled(True)
+                return "Number of Clusters"
             else:
                 self.const_label.setDisabled(True)
                 self.const_text.setDisabled(True)
