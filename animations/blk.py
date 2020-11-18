@@ -55,7 +55,6 @@ class blk(j3d.basic_animation):
         scales = []
         f.seek(scales_offset)
         for i in range(scales_count):
-            #print(hex (f.tell()))
             time = read_float(f)
             value = read_float(f)
             tangentIn = read_float(f)
@@ -131,12 +130,14 @@ class blk(j3d.basic_animation):
     
     @classmethod
     def from_table(cls, f, info):
-        blk = cls(int(info[0][1]), int(info[0][3]), int(info[0][3]))
+        blk = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
         
         keyframes = []
         
+        print("filename " + f)
+        
         frame_offset = 1
-        if f == "":
+        if f == "" or info[1][1] == "Duration":
             frame_offset = 2
         
         for i in range(frame_offset, len( info[1] ) ):
@@ -144,11 +145,10 @@ class blk(j3d.basic_animation):
                 text = info[1][i][6:]
                 text = int(text)
                 keyframes.append(text)
+
         
         print("keyframes")
         print (keyframes)
-        
-        
         
         for i in range( 2, len(info)   ): #for each cluster
             current_anim = cluster_anim()           
@@ -157,9 +157,7 @@ class blk(j3d.basic_animation):
                 if info[i][k] != "":
                     comp = j3d.AnimComponent( keyframes[ k - frame_offset ], float(info[i][k]))
                     current_anim.seq.append(comp)                      
-            current_anim.seq = j3d.make_tangents(current_anim.seq)
-            
-            print(current_anim.seq)
+                    current_anim.seq = j3d.make_tangents(current_anim.seq)
             
             blk.animations.append(current_anim)
         if f == "":
@@ -194,12 +192,12 @@ class blk(j3d.basic_animation):
         data_offsets = f.tell()
         f.write(b"toadette") #placeholder for offsets
         
-        write_padding(f, multiple=32)
+        j3d.write_padding(f, multiple=32)
         cluster_anim_start = f.tell()
         
         f.write(b"\x00"*(0x6*len(self.animations))) #placeholder for stuff
         
-        write_padding(f, multiple=32)
+        j3d.write_padding(f, multiple=32)
         
         all_scales = []
         for anim in self.animations:
@@ -213,7 +211,7 @@ class blk(j3d.basic_animation):
                     sequence.append(comp.value)
                     sequence.append(comp.tangentIn)
                     if self.tan_type == 1 :
-                            sequence.append(comp.tangentOut)
+                        sequence.append(comp.tangentOut)
                 
             offset = j3d.find_sequence(all_scales,sequence)
             if offset == -1:
@@ -248,7 +246,7 @@ class blk(j3d.basic_animation):
 
         f.seek(count_offset)
         j3d.write_uint16(f, 1)
-        j3d.write_uint16(f, len(all_scales) * 3 )
+        j3d.write_uint16(f, len(all_scales) )
 
         # Next come the section offsets
 
