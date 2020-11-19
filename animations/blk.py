@@ -45,7 +45,7 @@ class blk(j3d.basic_animation):
         blk = cls(loop_mode, duration)
 
         cluster_count = read_uint16(f)
-        scales_count = int(read_uint16(f) / 3)
+        scales_count = int(read_uint16(f))
         
         print("scales count " + str(scales_count) )
         
@@ -55,12 +55,15 @@ class blk(j3d.basic_animation):
         scales = []
         f.seek(scales_offset)
         for i in range(scales_count):
+            scales.append ( read_float(f)) 
+            """
             time = read_float(f)
             value = read_float(f)
             tangentIn = read_float(f)
             anim = j3d.AnimComponent( time, value, tangentIn )
-            
             scales.append(anim) 
+            """
+            
 
         tangent_type = 0
         
@@ -71,12 +74,16 @@ class blk(j3d.basic_animation):
             new_anim = cluster_anim()
             
             clus_durati = j3d.read_uint16(f)
-            clus_offset = int(j3d.read_uint16(f) / 3)
-            tangent_type = max(tangent_type, j3d.read_uint16(f) )
+            clus_offset = int(j3d.read_uint16(f))
+            tan_type = j3d.read_uint16(f)
+            tangent_type = max(tangent_type, tan_type )
 
-            for j in range( clus_durati ):
-                new_anim.seq.append( scales[j + clus_offset] ) 
             
+            for j in range( clus_durati ):
+                comp = j3d.AnimComponent.from_array(clus_offset, j, clus_durati, scales, tan_type)
+                #new_anim.seq.append( scales[j + clus_offset] ) 
+                new_anim.seq.append(comp)
+                
             blk.animations.append(new_anim)
             
         blk.tan_type = tangent_type
@@ -130,7 +137,7 @@ class blk(j3d.basic_animation):
     
     @classmethod
     def from_table(cls, f, info):
-        blk = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
+        blk = cls(int(info[0][1]), int(info[0][3]))
         
         keyframes = []
         
@@ -139,6 +146,9 @@ class blk(j3d.basic_animation):
         frame_offset = 1
         if f == "" or info[1][1] == "Duration":
             frame_offset = 2
+            blk.tan_type = 1
+        else:
+            blk.tan_type = int(info[0][5])
         
         for i in range(frame_offset, len( info[1] ) ):
             if info[1][i] != "":
@@ -160,6 +170,7 @@ class blk(j3d.basic_animation):
                     current_anim.seq = j3d.make_tangents(current_anim.seq)
             
             blk.animations.append(current_anim)
+       
         if f == "":
             print("no saving")
             return blk
