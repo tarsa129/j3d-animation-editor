@@ -289,7 +289,10 @@ class bck(j3d.basic_animation):
     @classmethod
     def from_table(cls, f, info):
         print(f)
-        bck = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]), int(info[0][7]))
+        bck = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
+        
+        if info[0][7] != "":
+            bck.tan_type( info[0][7] )
         
         keyframes = []
         
