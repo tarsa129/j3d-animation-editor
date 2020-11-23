@@ -323,10 +323,10 @@ class GenEditor(QMainWindow):
             self.convert_to_all.setDisabled(False)
             self.convert_to_key.setDisabled(True)
         elif extension in {".bca", ".bla"}:
-            self.convert_to_all.setDisabled(False)
-            self.convert_to_key.setDisabled(True)
+            self.convert_to_all.setDisabled(True)
+            self.convert_to_key.setDisabled(False)
         else:
-            self.convert_to_all.setDisabled(False)
+            self.convert_to_all.setDisabled(True)
             self.convert_to_key.setDisabled(True)
         
         if extension in {".bck", ".bca"}:
@@ -337,8 +337,7 @@ class GenEditor(QMainWindow):
     def convert_to_k(self):
         index = self.animation_bar.currentIndex().row()          
         self.list_of_animations[index].display_info = self.get_on_screen()
-        
-        
+               
         filepath = self.list_of_animations[index].filepath
         if filepath.endswith(".bca"):
             filepath = filepath[:-1] + "k"
@@ -484,6 +483,11 @@ class GenEditor(QMainWindow):
                         if info[0] < 4:
                             try:
                                 new_value = operations( [ float(item.text()) , float(info[1])], info[0] )
+                                
+                                index = self.animation_bar.currentIndex().row()   
+                                if self.list_of_animations[index].filepath.endswith(".btp"):
+                                    new_value = int( new_value )
+                                
                                 item.setText(str( new_value) )
                                 print(new_value)
                             except:
