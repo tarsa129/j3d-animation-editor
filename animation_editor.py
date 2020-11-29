@@ -75,6 +75,9 @@ class GenEditor(QMainWindow):
         self.save_file_action.triggered.connect(self.button_save_level)
         self.save_file_as_action.triggered.connect(self.button_save_as)
         self.create_animation.triggered.connect(self.create_new)
+        
+        self.save_file_action.setDisabled(True)
+        self.save_file_as_action.setDisabled(True)
         #self.combine_animations.triggered.connct(self.combine_anims)
 
         self.file_menu.addAction(self.file_load_action)
@@ -240,15 +243,11 @@ class GenEditor(QMainWindow):
     #file stuff
       
     def button_load_level(self):
-
-        filepaths, choosentype = QFileDialog.getOpenFileNames( self, "Open File","" ,
-        "All Files(*.*);;.bck files (*.bck);;.brk files (*.brk);;.btk files (*.btk);;.btp files (*.btp)"
-        )
+        filter =  "All Supported Files(*.bca *.bck *.bla *.blk *.bpk *.brk *.btk *.btp)"
+        filepaths, choosentype = QFileDialog.getOpenFileNames( self, "Open File","" , filter )
             
         for filepath in filepaths:
-            if filepath:
-                
-                
+            if filepath:        
 
                 animation_object = j3d.sort_file(filepath)
                 
@@ -265,9 +264,12 @@ class GenEditor(QMainWindow):
             j3d.sort_filepath(self.list_of_animations[index].filepath, info) 
     
     def button_save_as(self): 
-        filepath, choosentype = QFileDialog.getSaveFileName(self, "Save File", "", ".brk files (*.brk);;.btk files (*.btk);;.btp files (*.btp);;All files (*)")
+        index = self.animation_bar.currentIndex().row()
+        
+        filter =  "All Supported Files(*.bca *.bck *.bla *.blk *.bpk *.brk *.btk *.btp)"
+        filepath, choosentype = QFileDialog.getSaveFileName(self, "Save File", self.list_of_animations[index].filepath, filter)
         if filepath:
-            index = self.animation_bar.currentIndex().row()  
+            
             self.list_of_animations[index].display_info = self.get_on_screen()
             info = j3d.fix_array(self.list_of_animations[index].display_info)
             if (self.list_of_animations[index].filepath.endswith(".bca") ):
@@ -306,6 +308,10 @@ class GenEditor(QMainWindow):
             self.current_index = len(self.list_of_animations) - 1
             self.load_animation_to_middle(len(self.list_of_animations) - 1)
             self.animation_bar.setCurrentItem(loaded_animation)
+            
+            self.save_file_action.setDisabled(False)
+            self.save_file_as_action.setDisabled(False)
+            
             self.is_remove = False
         
         self.create_window = None
@@ -413,6 +419,10 @@ class GenEditor(QMainWindow):
         self.load_animation_to_middle(len(self.list_of_animations) - 1)
         
         self.animation_bar.setCurrentItem(loaded_animation)
+        
+        self.save_file_action.setDisabled(False)
+        self.save_file_as_action.setDisabled(False)
+        
         self.is_remove = False
         
     #bmd stuff
