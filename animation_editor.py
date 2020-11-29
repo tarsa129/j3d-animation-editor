@@ -119,7 +119,7 @@ class GenEditor(QMainWindow):
         
         self.convert_to_key = QAction("Save as Keyframes", self)
         self.convert_to_all = QAction("Save as All", self)
-        self.import_anim = QAction("Import .anim", self)
+        self.import_anim = QAction("Import Maya .anim", self)
         
         self.convert_to_key.triggered.connect(self.convert_to_k)
         self.convert_to_all.triggered.connect(self.convert_to_a)
