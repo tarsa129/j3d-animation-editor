@@ -67,8 +67,7 @@ class bpk(object):
 
         svr_data = f.read(16)
         
-        pak_start = f.tell()
-        
+        pak_start = f.tell()       
         pak_magic = f.read(4)
         pak_sectionsize = read_uint32(f)
 
@@ -133,8 +132,10 @@ class bpk(object):
                 values["R"], values["G"], values["B"], values["A"]
                 ))
             
+           
+            
             bpk.animations.append(anim)
-     
+
         return bpk
 
     def get_children_names(self):
@@ -146,7 +147,7 @@ class bpk(object):
     def get_loading_information(self):
 
         info = []
-        info.append( ["Loop Mode:", self.loop_mode, "Duration:", self.duration] )
+        info.append( ["Loop Mode:", self.loop_mode, "Duration:", self.duration, "Tan Type:", self.tan_type] )
         
         
         keyframes_dictionary = {}
@@ -186,7 +187,7 @@ class bpk(object):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "Duration:", created[3]] )
+        info.append( ["Loop_mode", "Duration:", created[3], "Tan Type:", 1] )
         info.append( ["Material Name", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
 
         for i in range( int(created[1]) ):
@@ -199,10 +200,8 @@ class bpk(object):
     
     @classmethod
     def from_table(cls, f, info):
-        bpk = cls(int(info[0][1]), int(info[0][3]))
-        
-        
-           
+        bpk = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
+
         keyframes = []
         for i in range(2, len( info[1] ) ):
             if info[1][i] != "":
@@ -210,21 +209,20 @@ class bpk(object):
                 text = int(text)
                 keyframes.append(text)
         
-        #print(keyframes)
+        print(keyframes)
         
         for i in range(0, int( len(info) / 4)  ):
             curr_line = 4 * i + 2
             
             color_anim = ColorAnimation(i, info[curr_line][0] )
-            
-            
+                       
             for j in range(0, 4):
                 rgba = "RGBA"
                 rgba = rgba[j: j+1]
                 
                 for k in range(2, len( info[curr_line + j] ) ):
                     if info[curr_line + j][k] != "":
-                        anim_comp = j3d.AnimComponent(keyframes[k - 3], int(info[curr_line + j][k]) )
+                        anim_comp = j3d.AnimComponent(keyframes[k - 2], int(info[curr_line + j][k]) )
                         color_anim.add_component(rgba, anim_comp)
             bpk.animations.append(color_anim)
                     
@@ -268,7 +266,7 @@ class bpk(object):
         
         
         anim_start = f.tell()
-        f.write(b"\x00"*(0x1C*len(self.animations)))
+        f.write(b"\x00"*(0x18*len(self.animations)))
         write_padding(f, multiple=4)
 
         all_values = {}
@@ -291,7 +289,9 @@ class bpk(object):
                         sequence.append(comp.time)
                         sequence.append(comp.value)
                         sequence.append(comp.tangentIn)
-                        sequence.append(comp.tangentOut)
+                        if self.tan_type == 1 :
+                            sequence.append(comp.tangentOut)
+                            
                 
                 offset = j3d.find_sequence(all_values[colorcomp],sequence)
 
@@ -337,7 +337,7 @@ class bpk(object):
             for comp in ("R", "G", "B", "A"):
                 write_uint16(f, len(anim.component[comp])) # Scale count for this animation
                 write_uint16(f, anim._component_offsets[comp]) # Offset into scales
-                write_uint16(f, anim._tangent_type[comp]) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
+                write_uint16(f, self.tan_type) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
 
 
         # Fill in all the placeholder values
