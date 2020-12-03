@@ -17,7 +17,8 @@ conversion between key and all frame animations, where applicable, and automatic
 ability to import .anim files as .bck </br>
 
 # run from source code:
-you need the latest version of python and pyqt5. currently only works on python 3.8.2
+you need the latest version of python and pyqt5. make sure that the version of python that you are using has pyqt5 installed, or you will get a module not found error. </br>
+i will have an .exe as soon as i can be confident that most of the bugs are taken out.
 
 # special thanks:
 a lot of this code is stolen / based off of yoshi2's .btk and .brk conversion programs. 
