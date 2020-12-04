@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter,
                              QScrollArea, QGridLayout, QMenuBar, QMenu, QAction, QApplication, QStatusBar, QLineEdit,
                              QTreeWidget, QTreeWidgetItem, QTableWidget, QTableWidgetItem)
 
-from PyQt5.QtGui import QMouseEvent, QImage
+from PyQt5.QtGui import QMouseEvent, QImage, QIcon
 import PyQt5.QtGui as QtGui
 
 import animations.general_animation as j3d
@@ -185,9 +185,8 @@ class GenEditor(QMainWindow):
         self.table_display.setColumnCount(4)
         self.table_display.setRowCount(4)
         self.table_display.setGeometry(400, 50, self.width(), self.height())
-        
-        
-        
+        self.table_display.cellClicked.connect(self.cell_clicked)
+ 
         #self.table_display.currentItemChanged.connect(self.display_info_changes)
         
         #bottom bar
@@ -445,12 +444,28 @@ class GenEditor(QMainWindow):
                 print(strings)
                 f.close()
             #index = self.animation_bar.currentIndex().row()
-            information = self.get_on_screen()
+            #information = self.get_on_screen()
             #information = self.list_of_animations[index].display_info
             for i in range( len(strings) ):
-                information[9*i+2][0] = strings[i]
+                row = 9 * i + 2
+                item = self.table_display.item(row, 0)
+                if isinstance(item, QTableWidgetItem):
+                    item.setText(strings[i])
+                else:
+                    self.table_display.setItem( QTableWidgetItem( strings[i] ) )
             #self.list_of_animations[index].display_info = information
-            self.load_animation_to_middle(0, information)
+            #self.load_animation_to_middle(0, information)
+            information = self.get_on_screen()
+            first_vals = []
+            for i in range(len (information)):             
+                for j in range( len(information[i] )):                    
+                    if information[i][j] == "Linear" or information[i][j] == "Smooth":
+                        first_vals.append(information[i][j+1])
+                        break
+                    if information[i][j] != "":
+                        first_vals.append(information[i][j])
+                        break
+            self.table_display.setVerticalHeaderLabels(first_vals)
             
     #tree view stuff
     def contextMenuEvent(self, event):
@@ -552,14 +567,13 @@ class GenEditor(QMainWindow):
                 item = self.table_display.item(cell.row(), cell.column())
                 
                 if isinstance(item, QTableWidgetItem):
-                    self.copied_values.append( [item.text(), cell.row(), cell.column() ] )
-                   
+                    self.copied_values.append( [item.text(), cell.row(), cell.column(), item.icon() ] )                  
                 else:
-                    self.copied_values.append( ["", cell.row(), cell.column() ] )
-                
-                
+                    self.copied_values.append( ["", cell.row(), cell.column(), QIcon() ] )
+                               
                 lowest_row = min(lowest_row, cell.row())
                 lowest_col = min(lowest_col, cell.column())
+                
             print( len( self.copied_values) )
             
             for cell in self.copied_values:
@@ -577,7 +591,7 @@ class GenEditor(QMainWindow):
             eff_col = cell[2] + col
 
             
-            self.table_display.setItem(eff_row, eff_col, QTableWidgetItem( cell[0] ))
+            self.table_display.setItem(eff_row, eff_col, QTableWidgetItem(cell[3], cell[0] ))
 
     def emit_clear_cells(self):
         list = self.table_display.selectedIndexes()
@@ -587,8 +601,9 @@ class GenEditor(QMainWindow):
             
             if isinstance(item, QTableWidgetItem):
                 item.setText("")
-            else:
-                self.table_display.setItem(cell.row(), cell.column(), QTableWidgetItem( "" ))
+                item.setIcon( QIcon() )
+            """else:
+                self.table_display.setItem(cell.row(), cell.column(), QTableWidgetItem( "" )) """
 
     def emit_select_all(self):
         
@@ -619,21 +634,29 @@ class GenEditor(QMainWindow):
         for i in range(len (information)):
             col_count = max(col_count, len( information [i] ) )
             
-            for j in range( len(information[i] )):
+            for j in range( len(information[i] )):                    
+                if information[i][j] == "LLLL":
+                    first_vals.append(information[i][j+1])
+                    break
                 if information[i][j] != "":
-                     first_vals.append(information[i][j])
-                     break
+                    first_vals.append(information[i][j])
+                    break
+
 
         self.table_display.setColumnCount(col_count)
         self.table_display.setRowCount(len(information))
-        
-        
+                
         for row in range(len(information)):
             for col in range(col_count):
-                try:
-                    self.table_display.setItem(row, col, QTableWidgetItem( str(information[row][col]) ))
-                except:
-                    pass
+                if len( information[row] ) > col:
+                    if information[row][col] == "LLLL":
+                        icon = QIcon("icons/linear.png")
+                        item = QTableWidgetItem(icon, "Linear")
+                        item.setWhatsThis("The tanget interpolation mode")
+                    else:
+                        item = QTableWidgetItem(str(information[row][col]) )
+                    self.table_display.setItem(row, col, item)
+               
         
         
         self.table_display.setHorizontalHeaderLabels(information[1])
@@ -643,15 +666,13 @@ class GenEditor(QMainWindow):
             filepath = self.list_of_animations[index].filepath
             
             self.edit_convert_actions(filepath)
-     
+        
     def selected_animation_changed(self):
 
         if self.is_remove:
-            return;
+            return
         
-        print("too bad")
         if len(self.list_of_animations)  > 0:
- 
 
             self.list_of_animations[self.current_index].display_info = self.get_on_screen()          
             index = self.animation_bar.currentIndex().row()
@@ -672,9 +693,6 @@ class GenEditor(QMainWindow):
                 item = self.table_display.item(i, j)
                 if isinstance(item, QTableWidgetItem):
                     row_info.append(item.text())
-                    
-                    
-
                 else:
                     row_info.append("")
     
@@ -729,7 +747,21 @@ class GenEditor(QMainWindow):
             print( anim.display_info ) 
        
         #self.load_animation_to_middle(index)
-                
+       
+    def cell_clicked(self, row, column):
+        item = self.table_display.item(row, column)
+        icon = item.icon()
+        
+        if not item.icon().isNull() and column == 0:
+            if item.text().startswith("L"):
+                item.setText("Smooth")
+                icon = QIcon("icons/smooth.png")
+            else:
+                item.setText("Linear")
+                icon = QIcon("icons/linear.png")
+            item.setIcon(icon)
+
+       
     #table button stuff   
    
     def add_column(self):

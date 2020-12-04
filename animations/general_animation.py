@@ -269,25 +269,31 @@ def fix_array(info):
     #print(info)
     return info 
     
-def make_tangents(array):
+def make_tangents(array, inter =0 ):
     if len( array ) == 1:
-        return array
-    for i in range( len( array ) - 1):
-        this_comp = array[i]
-        next_comp = array[i+ 1]
-        
+            return array
+    elif inter == 1:
+        for i in range( len( array ) ):
+       
+            array[i].tangentOut = 0
+            array[i].tangentIn = 0
+    else:
+        for i in range( len( array ) - 1):
+            this_comp = array[i]
+            next_comp = array[i+ 1]
+            
+            tangent = (next_comp.value - this_comp.value) / (next_comp.time - this_comp.time)
+            
+            array[i].tangentOut = tangent
+            array[i+1].tangentIn = tangent
+
+        this_comp = array[-1]
+        next_comp = array[0]
+
         tangent = (next_comp.value - this_comp.value) / (next_comp.time - this_comp.time)
-        
-        array[i].tangentOut = tangent
-        array[i+1].tangentIn = tangent
-    
-    this_comp = array[-1]
-    next_comp = array[0]
-    
-    tangent = (next_comp.value - this_comp.value) / (next_comp.time - this_comp.time)
-        
-    array[-1].tangentOut = tangent
-    array[0].tangentIn = tangent
+            
+        array[-1].tangentOut = tangent
+        array[0].tangentIn = tangent
     
     #print( array)
     

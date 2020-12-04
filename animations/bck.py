@@ -14,6 +14,8 @@ class bone_anim(object):
         self.translation = {"X": [], "Y": [], "Z": []}
         self.joint_name = ""
         
+        self.tan_inter = 0
+        
         self._scale_offsets = {}
         self._rot_offsets = {}
         self._translation_offsets = {}
@@ -243,6 +245,8 @@ class bck(j3d.basic_animation):
                 comp = things[j]
                 if j == 0:
                     info[i].append(comp)
+                elif j == 1:
+                    info.append( ["LLLL", comp] )
                 else:
                     info.append( ["", comp] )
                 
@@ -279,9 +283,10 @@ class bck(j3d.basic_animation):
         
         for i in range( int(created[1]) ):
             info.append( ["Joint " + str(i), "Scale U:"] )
+            info.append( ["Linear", "Scale V:"] )
             
-            things = ["Scale V:", "Scale W:", "Rotation U:", "Rotation V:", "Rotation W:",
-                "Translation U:", "Translation V:", "Translation W:"]
+            things = ["Scale Z:", "Rotation X:", "Rotation Y:", "Rotation Z:",
+                "Translation X:", "Translation Y:", "Translation Z:"]
             for comp in things:
                 info.append( ["", comp] )
         return info          
@@ -305,9 +310,12 @@ class bck(j3d.basic_animation):
         print("keyframes")
         print (keyframes)
         
-        for i in range( int( len(info) / 9 )   ): #for each material
+        for i in range( int( len(info) / 9 )   ): #for each bone
             line = 9 * i + 2
             current_anim = bone_anim()
+            
+            if info[line + 1][0] == "S":
+                current_anim.tan_inter = 1
             
             for j in range(9):  #for each of thing in scale/rot/trans x/y/z/       
                 xyz = "XYZ"
@@ -335,17 +343,17 @@ class bck(j3d.basic_animation):
                             #print("trans " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
             
              #calculate tangents
-            """
+           
             for j in range(9):
                 xyz = "XYZ"
                 xyz = xyz[j%3: j%3 + 1]
                 
                 if j < 3:
-                    current_anim.scale[xyz] = j3d.make_tangents(current_anim.scale[xyz])
+                    current_anim.scale[xyz] = j3d.make_tangents(current_anim.scale[xyz], current_anim.tan_inter)
                 if j < 6:
-                    current_anim.rotation[xyz] = j3d.make_tangents(current_anim.rotation[xyz])
+                    current_anim.rotation[xyz] = j3d.make_tangents(current_anim.rotation[xyz], current_anim.tan_inter)
                 else:
-                    current_anim.translation[xyz] = j3d.make_tangents(current_anim.translation[xyz]) """
+                    current_anim.translation[xyz] = j3d.make_tangents(current_anim.translation[xyz], current_anim.tan_inter)
             
             bck.animations.append(current_anim)
         if f == "":
