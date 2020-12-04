@@ -261,23 +261,27 @@ def find_single_value(in_list, value):
     
 def fix_array(info):
     for i in range( len( info )):
-        while info[i][-1] == "":
-            info[i].pop( len( info[i]) - 1 )
-    for i in range( len( info )):
-        if len( info[i]) == 0:
-            info.pop(i)  
+        while len( info[i]) > 0 and info[i][-1] == "":
+                info[i].pop( len( info[i]) - 1 )
+    i = 0
+    while i < len(info) :
+        if len( info[i] ) == 0:
+            info.pop(i)
+        else:
+            i += 1
     #print(info)
     return info 
     
-def make_tangents(array, inter =0 ):
+def make_tangents(array, inter = 0 ):
     if len( array ) == 1:
-            return array
+        return array
     elif inter == 1:
-        for i in range( len( array ) ):
-       
+        print("smooth")
+        for i in range( len( array ) ):    
             array[i].tangentOut = 0
             array[i].tangentIn = 0
     else:
+        print("linear")
         for i in range( len( array ) - 1):
             this_comp = array[i]
             next_comp = array[i+ 1]

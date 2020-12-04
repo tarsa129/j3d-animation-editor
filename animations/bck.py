@@ -185,7 +185,7 @@ class bck(j3d.basic_animation):
                         new_bone.add_scale( thing[-1], new_entry )
                     elif len(thing) == 7:
                         new_bone.add_rotation( thing[-1], new_entry )
-                    else:
+                    elif len(thing) == 11:
                         new_bone.add_translation( thing[-1], new_entry )                  
                     i += 1
                 
@@ -314,7 +314,7 @@ class bck(j3d.basic_animation):
             line = 9 * i + 2
             current_anim = bone_anim()
             
-            if info[line + 1][0] == "S":
+            if info[line + 1][0].startswith("S"):
                 current_anim.tan_inter = 1
             
             for j in range(9):  #for each of thing in scale/rot/trans x/y/z/       
