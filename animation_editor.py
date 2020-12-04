@@ -23,7 +23,7 @@ class GenEditor(QMainWindow):
     
         super().__init__()
  
-        self.setup_ui()
+        
         
         self.list_of_animations = []
         self.copied_values = []
@@ -32,7 +32,7 @@ class GenEditor(QMainWindow):
         
         self.create_window = None
         
-        
+        self.setup_ui()
 
     def setup_ui(self):
         self.resize(2500, 1000)
@@ -98,18 +98,22 @@ class GenEditor(QMainWindow):
         self.copy_cells_action = QAction("Copy Selected Cells", self)
         self.paste_cells_action = QAction("Paste Selected Cells", self)  
         self.clear_cells_action = QAction("Clear Selected Cells", self)
+        self.select_all_action = QAction("Select All Cells", self)
         
         self.copy_cells_action.triggered.connect(self.emit_copy_cells)
         self.paste_cells_action.triggered.connect(self.emit_paste_cells)
         self.clear_cells_action.triggered.connect(self.emit_clear_cells)
+        self.select_all_action.triggered.connect(self.emit_select_all)
         
         self.copy_cells_action.setShortcut("Ctrl+C")
         self.paste_cells_action.setShortcut("Ctrl+V")
         self.clear_cells_action.setShortcut("Delete")
+        self.select_all_action.setShortcut("Ctrl+A")
         
         self.edit_menu.addAction(self.copy_cells_action)
         self.edit_menu.addAction(self.paste_cells_action)
         self.edit_menu.addAction(self.clear_cells_action)
+        self.edit_menu.addAction(self.select_all_action)
         
         self.menubar.addAction(self.edit_menu.menuAction())
         
@@ -585,6 +589,16 @@ class GenEditor(QMainWindow):
                 item.setText("")
             else:
                 self.table_display.setItem(cell.row(), cell.column(), QTableWidgetItem( "" ))
+
+    def emit_select_all(self):
+        
+        
+        for i in range( self.table_display.rowCount() ):
+            for j in range( self.table_display.columnCount() ) :
+                item = self.table_display.item(i, j)
+                if isinstance(item, QTableWidgetItem):
+                    self.table_display.item(i, j).setSelected(True)
+        
 
     #table info stuff
     
