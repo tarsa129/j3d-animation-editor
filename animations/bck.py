@@ -185,7 +185,7 @@ class bck(j3d.basic_animation):
                         new_bone.add_scale( thing[-1], new_entry )
                     elif len(thing) == 7:
                         new_bone.add_rotation( thing[-1], new_entry )
-                    elif len(thing) == 11:
+                    elif thing.startswith("translate"):
                         new_bone.add_translation( thing[-1], new_entry )                  
                     i += 1
                 
