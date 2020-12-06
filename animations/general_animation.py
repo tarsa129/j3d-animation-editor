@@ -298,6 +298,7 @@ def make_tangents(array, inter = 0 ):
             
         array[-1].tangentOut = tangent
         array[0].tangentIn = tangent
+        
     
     #print( array)
     
