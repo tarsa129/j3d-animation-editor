@@ -23,7 +23,7 @@ i will have an .exe as soon as i can be confident that most of the bugs are take
 
 # special thanks:
 a lot of this code is stolen / based off of yoshi2's .btk and .brk conversion programs. </br>
-thomasjamesart for the linear/smooth graphics
+thomasjamesgfx for the linear/smooth graphics
 
 
 
