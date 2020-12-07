@@ -226,7 +226,11 @@ class GenEditor(QMainWindow):
 
         self.bt_remr_here = QPushButton(self)
         self.bt_remr_here.setText("Rem. Current Row")
-        self.bt_remr_here.clicked.connect(self.rem_row_here)        
+        self.bt_remr_here.clicked.connect(self.rem_row_here)
+
+        self.bt_add_material = QPushButton(self)
+        self.bt_add_material.setText("Add Material / Bone")
+        self.bt_add_material.clicked.connect(self.add_material)
         
         self.bottom_actions.addWidget(self.bt_addc_here, 0, 0)       
         self.bottom_actions.addWidget(self.bt_addr_here, 0, 1)
@@ -236,6 +240,7 @@ class GenEditor(QMainWindow):
         self.bottom_actions.addWidget(self.bt_remr_here, 2, 1)
         self.bottom_actions.addWidget(self.bt_rm_col, 3, 0)
         self.bottom_actions.addWidget(self.bt_rm_row, 3, 1)
+        self.bottom_actions.addWidget(self.bt_add_material, 4, 0)
                
         self.left_vbox.addWidget(self.workaround)
         
@@ -865,7 +870,7 @@ class GenEditor(QMainWindow):
                     self.table_display.setItem(i, j, new)
     
     def rem_row_here(self):
-        currow = self.table_display.currentRow() + 2
+        currow = self.table_display.currentRow() + 1
         if currow == 0:
             self.rem_row()
         elif len(self.list_of_animations) > 0:          
@@ -886,6 +891,24 @@ class GenEditor(QMainWindow):
                 self.rem_row()
         else:
             self.rem_row()
+            
+    def add_material(self):
+        if len( self.list_of_animations ) > 0:
+            index = self.animation_bar.currentIndex().row()
+            extension = self.list_of_animations[index].filepath
+            extension = extension[-4:]
+            
+            rows_to_add = 0
+            
+            if extension in {".bck", ".bca", ".btk"}:
+                rows_to_add = 9
+            elif extension in {".brk", ".bpk"}:
+                rows_to_add = 4
+            elif extension in {".btp", ".blk", ".bla"}:
+                rows_to_add =1
+            
+            for i in range( rows_to_add ):
+                self.add_row()
     
 import sys
 def except_hook(cls, exception, traceback):
