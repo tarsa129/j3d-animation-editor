@@ -207,7 +207,7 @@ class bca(j3d.basic_animation):
         return joints            
     def get_loading_information(self):
         info = []
-        info.append( [ "Loop Mode:", self.loop_mode, "Angle Scale:", self.anglescale, "Duration:", self.duration] )
+        info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration] )
         info.append( ["Joint Number", "Component"])
         
         for i in range(self.duration):

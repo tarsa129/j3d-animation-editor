@@ -80,7 +80,7 @@ class bla(j3d.basic_animation):
             
     def get_loading_information(self):
         info = []
-        info.append( [ "Loop Mode:", self.loop_mode, "Duration:", self.duration] )
+        info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Duration:", self.duration ] ) 
         info.append( ["Cluster Number", "Duration"])
         
         for i in range(self.duration):
@@ -129,8 +129,7 @@ class bla(j3d.basic_animation):
         clf1_size_offset = f.tell()
         f.write(b"EFGH")  # Placeholder for clf1 size
         j3d.write_uint8(f, self.loop_mode)
-        j3d.write_sint8(f, self.anglescale)
-        
+        j3d.write_sint8(f, self.anglescale)    
         j3d.write_uint16(f, self.duration)
         
         #0x30        
@@ -147,7 +146,6 @@ class bla(j3d.basic_animation):
         f.write(b"\x00"*(0x4*len(self.animations))) #placeholder for stuff
         
         write_padding(f, multiple=32)
-        
         
         all_scales = []
         for anim in self.animations:
@@ -211,7 +209,7 @@ class bla(j3d.basic_animation):
                 new_cluster_anim.seq = val_array
             else:
                 new_cluster_anim.seq = cluster_animation.seq
-        
+            
             bla.animations.append(new_cluster_anim)
         
         return bla

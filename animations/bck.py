@@ -246,7 +246,10 @@ class bck(j3d.basic_animation):
                 if j == 0:
                     info[i].append(comp)
                 elif j == 1:
-                    info.append( ["LLLL", comp] )
+                    if anim.tan_inter == 0:
+                        info.append( ["LLLL", comp] )
+                    elif anim.tan_inter == 1:
+                        info.append( ["SSSS", comp] )
                 else:
                     info.append( ["", comp] )
                 
@@ -312,6 +315,8 @@ class bck(j3d.basic_animation):
         for i in range( int( len(info) / 9 )   ): #for each bone
             line = 9 * i + 2
             current_anim = bone_anim()
+            
+            current_anim.joint_name = info[line][0]
             
             if info[line + 1][0].startswith("S"):
                 current_anim.tan_inter = 1
@@ -538,5 +543,37 @@ class bck(j3d.basic_animation):
     def get_bck(cls, info):
         bck = cls.from_table("", info)    
         return bck
+      
+    @classmethod
+    def match_bmd(cls, info, strings):
+        bck = cls.from_table("", info)
+        
+        bone_names = bck.get_children_names()
+        #print("current bck bones")
+        #print(bone_names)
+        i = 0
+        while i < len( bck.animations):
+            anim = bck.animations[i]
+            if not anim.joint_name in strings:
+                bck.animations.pop(i)
+            else:
+                i += 1
+                
+        bone_names = bck.get_children_names()
+        #print("reduced bone names")
+        #print(bone_names)
+        
+        #print("strings")
+        #print(strings)
+        
+        def sort_function(animation):
+            return strings.index(animation.joint_name)
+
+        z = sorted( bck.animations, key = sort_function)
+        bck.animations = z
+        #print("sorted bone names")
+        #print( bck.get_children_names() )
+                
+        return bck.get_loading_information()
         
     

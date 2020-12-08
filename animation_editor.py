@@ -423,10 +423,8 @@ class GenEditor(QMainWindow):
         filename = filepath[filepath.rfind("/") + 1:]
         
         loaded_animation.setText(0, filename)
-        for name in actual_animation_object.get_children_names():
-            child = QTreeWidgetItem(loaded_animation)
-            child.setText(0, name)
-            child.setDisabled(True)
+        
+        self.edit_anim_bar_children(loaded_animation, actual_animation_object.get_children_names() )
           
         self.edit_convert_actions(filename)
             
@@ -441,22 +439,19 @@ class GenEditor(QMainWindow):
         self.save_file_as_action.setDisabled(False)
         
         self.is_remove = False
-        
+    
+    def edit_anim_bar_children(self, item, strings):
+         item.takeChildren()
+         for name in strings:
+            child = QTreeWidgetItem(item)
+            child.setText(0, name)
+            child.setDisabled(True)
+               
     #bmd stuff
     def load_bone_names(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , ".bmd files(*.bmd)")
-        if filepath:    
-            with open(filepath, "rb") as f:
-                s = f.read()
-                a = s.find(b'\x4A\x4E\x54\x31')
-                print(a)
-                f.seek(a + 0x14);
-                address = j3d.read_uint32(f)
-                print(address)
-                f.seek(address + a)
-                strings = j3d.StringTable.from_file(f).strings;
-                print(strings)
-                f.close()
+        if filepath:   
+            strings = self.get_bones_from_bmd(filepath)
             #index = self.animation_bar.currentIndex().row()
             #information = self.get_on_screen()
             #information = self.list_of_animations[index].display_info
@@ -480,11 +475,44 @@ class GenEditor(QMainWindow):
                         first_vals.append(information[i][j])
                         break
             self.table_display.setVerticalHeaderLabels(first_vals)
+            
+            index = self.animation_bar.currentIndex().row()
+            self.edit_anim_bar_children( self.animation_bar.itemAt(0, index), strings)
     
     def match_bone_names(self):
         index = self.animation_bar.currentIndex().row()
-    
-        pass
+        filepath = self.list_of_animations[index].filepath
+        
+        if filepath.endswith(".bck"):
+            bmd_file, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , ".bmd files(*.bmd)" )
+            if bmd_file:
+                self.list_of_animations[index].display_info = self.get_on_screen()
+                info = j3d.fix_array(self.list_of_animations[index].display_info)
+                strings = self.get_bones_from_bmd(bmd_file)
+                array = j3d.match_bmd(filepath, info, strings)
+                
+                self.load_animation_to_middle(index, array )
+                
+                self.edit_anim_bar_children( self.animation_bar.itemAt(0, index), strings)
+        
+    def get_bones_from_bmd(self, bmd_file):
+        strings = []
+        with open(bmd_file, "rb") as f:
+                s = f.read()
+                a = s.find(b'\x4A\x4E\x54\x31')
+                print(a)
+                f.seek(a + 0x14);
+                address = j3d.read_uint32(f)
+                print(address)
+                f.seek(address + a)
+                strings = j3d.StringTable.from_file(f).strings;
+                print(strings)
+                f.close()
+                
+                
+                
+        return strings
+
     #tree view stuff
     def contextMenuEvent(self, event):
         
@@ -660,7 +688,6 @@ class GenEditor(QMainWindow):
                     first_vals.append(information[i][j])
                     break
 
-
         self.table_display.setColumnCount(col_count)
         self.table_display.setRowCount(len(information))
                 
@@ -671,12 +698,13 @@ class GenEditor(QMainWindow):
                         icon = QIcon("icons/linear.png")
                         item = QTableWidgetItem(icon, "Linear")
                         item.setWhatsThis("The tanget interpolation mode")
+                    elif information[row][col] == "SSSS":
+                        icon = QIcon("icons/smooth.png")
+                        item = QTableWidgetItem(icon, "Smooth")
                     else:
                         item = QTableWidgetItem(str(information[row][col]) )
                     self.table_display.setItem(row, col, item)
-               
-        
-        
+                      
         self.table_display.setHorizontalHeaderLabels(information[1])
         self.table_display.setVerticalHeaderLabels(first_vals)
         

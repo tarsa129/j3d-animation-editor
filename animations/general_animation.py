@@ -287,12 +287,10 @@ def make_tangents(array, inter = 0 ):
     if len( array ) == 1:
         return array
     elif inter == 1:
-        print("smooth")
         for i in range( len( array ) ):    
             array[i].tangentOut = 0
             array[i].tangentIn = 0
     else:
-        print("linear")
         for i in range( len( array ) - 1):
             this_comp = array[i]
             next_comp = array[i+ 1]
@@ -453,4 +451,12 @@ def create_empty(information):
         import animations.blk as blk_file
         table = blk_file.blk.empty_table(information) 
     return table
+
+def match_bmd(filepath, information, strings):
+    print(filepath)
+
+    if filepath.endswith(".bck"):
+         from animations.bck import bck
+         import animations.bck as bck_file
+         return bck_file.bck.match_bmd(information, strings) 
 
