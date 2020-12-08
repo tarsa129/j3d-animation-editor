@@ -144,9 +144,7 @@ class btk(j3d.basic_animation):
         f.seek(scale_offset)
         for i in range(scale_count):
             scales.append(read_float(f))
-        
-        
-        
+  
         # Read rotations
         rotations = []
         f.seek(rotation_offset)
@@ -236,8 +234,8 @@ class btk(j3d.basic_animation):
    
     def get_loading_information(self):
         info = []
-        info.append( ["Loop_mode", self.loop_mode, "Angle Scale:", self.anglescale,
-            "Duration:", self.duration, "Unknown:", self.unknown_address, "Tan Type:", self.tan_type] )
+        info.append( ["Loop_mode", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale,
+            "Duration:", self.duration, "Unknown:", self.unknown_address, "Tan Type:", j3d.tan_type[self.tan_type] ] )
         info.append( ["Material name", "Texture Index", "Center", "Component"] ) 
         
         keyframes_dictionary = {}
@@ -280,7 +278,7 @@ class btk(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Unknown:", 0, "Tan Type:", 1] )
+        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Unknown:", 0, "Tan Type:", j3d.tan_type[1] ] )
         info.append( ["Material name", "Texture Index", "Center", "Component", "Frame 0", "Frame " + str(created[3]) ] ) 
         
         for i in range( int(created[1]) ):

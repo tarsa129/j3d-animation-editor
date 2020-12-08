@@ -174,7 +174,7 @@ class brk(object):
     def get_loading_information(self):
 
         info = []
-        info.append( ["Loop Mode:", self.loop_mode, "Duration:", self.duration] )
+        info.append( ["Loop Mode:", j3d.loop_mode[self.loop_mode] , "Duration:", self.duration] )
         info.append( ["Register Animations"])
         
         keyframes_dictionary = {}
@@ -274,7 +274,7 @@ class brk(object):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "Duration:", created[3]] )
+        info.append( ["Loop_mode", "", "Duration:", created[3]] )
         info.append( ["Register Animations"] )
         info.append( ["Material Name", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
 

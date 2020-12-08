@@ -147,7 +147,7 @@ class bpk(object):
     def get_loading_information(self):
 
         info = []
-        info.append( ["Loop Mode:", self.loop_mode, "Duration:", self.duration, "Tan Type:", self.tan_type] )
+        info.append( ["Loop Mode:", j3d.loop_mode[self.loop_mode], "Duration:", self.duration, "Tan Type:", j3d.tan_type[self.tan_type] ] )
         
         
         keyframes_dictionary = {}
@@ -187,7 +187,7 @@ class bpk(object):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "Duration:", created[3], "Tan Type:", 1] )
+        info.append( ["Loop_mode", "Duration:", created[3], "Tan Type:", j3d.tan_type[1] ] )
         info.append( ["Material Name", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
 
         for i in range( int(created[1]) ):

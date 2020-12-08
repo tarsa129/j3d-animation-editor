@@ -11,6 +11,11 @@ from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter,
 from PyQt5.QtGui import QMouseEvent, QImage, QIcon
 import PyQt5.QtGui as QtGui
 
+try:
+    from fbx import *
+except:
+    pass
+
 import animations.general_animation as j3d
 
 import widgets.create_anim as create_widget
@@ -151,8 +156,12 @@ class GenEditor(QMainWindow):
         self.load_bones.triggered.connect(self.load_bone_names)
         self.load_bones.setShortcut("Ctrl+L")
         
+        self.match_bones = QAction("Match Bone Names", self)
+        self.match_bones.triggered.connect(self.match_bone_names)
+        self.match_bones.setShortcut("Ctrl+M")
         
         self.model.addAction(self.load_bones)
+        self.model.addAction(self.match_bones)
        
         self.model.setDisabled(True)
         
@@ -471,7 +480,11 @@ class GenEditor(QMainWindow):
                         first_vals.append(information[i][j])
                         break
             self.table_display.setVerticalHeaderLabels(first_vals)
-            
+    
+    def match_bone_names(self):
+        index = self.animation_bar.currentIndex().row()
+    
+        pass
     #tree view stuff
     def contextMenuEvent(self, event):
         
@@ -765,8 +778,22 @@ class GenEditor(QMainWindow):
                 item.setText("Linear")
                 icon = QIcon("icons/linear.png")
             item.setIcon(icon)
+        elif row == 0 and column > 0:
+            setting = self.table_display.item(row, column - 1).text()
+            value = self.table_display.item(row, column).text()
+            if setting.startswith("Loop"):
+                options = j3d.loop_mode
+            elif setting.startswith("Tan"):
+                options = j3d.tan_type
+            else:
+                return
+                
+            if value == "" or value not in options:
+                position = -1
+            else:
+                position = options.index(value)           
+            self.table_display.item(row, column).setText(options[( position + 1) % len(options)])
 
-       
     #table button stuff   
    
     def add_column(self):

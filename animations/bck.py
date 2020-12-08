@@ -223,7 +223,7 @@ class bck(j3d.basic_animation):
             
     def get_loading_information(self):
         info = []
-        info.append( [ "Loop Mode:", self.loop_mode, "Angle Scale:", self.anglescale, "Duration:", self.duration, "Tan Type:", self.tan_type] )
+        info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration, "Tan Type:", self.tan_type] )
         info.append( ["Bone Name", "Component"])
         
         keyframes_dictionary = {}
@@ -275,7 +275,7 @@ class bck(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Tan Type:", self.tan_type] )
+        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Tan Type:", j3d.tan_type[1] ] )
         info.append( ["Joint Number", "Component"] )
 
         for i in range( int(created[3])):
@@ -293,7 +293,6 @@ class bck(j3d.basic_animation):
     
     @classmethod
     def from_table(cls, f, info):
-        print(f)
         bck = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
         
         if info[0][7] != "":

@@ -49,6 +49,8 @@ def write_padding(f, multiple):
         pos = i%len(PADDING)
         f.write(PADDING[pos:pos+1])
 
+loop_mode = ("Play once", "Unknown", "Loop", "Mirror once", "Mirror")
+tan_type = ("Tan out only", "Tan in and out") 
 
 class basic_animation(object):
     def __init__(self):
@@ -260,6 +262,7 @@ def find_single_value(in_list, value):
     return find_sequence(in_list, [value])
     
 def fix_array(info):
+    # the arrays should be pure text
     for i in range( len( info )):
         while len( info[i]) > 0 and info[i][-1] == "":
                 info[i].pop( len( info[i]) - 1 )
@@ -269,6 +272,14 @@ def fix_array(info):
             info.pop(i)
         else:
             i += 1
+    
+    # fix the header stuff
+    for i in range( len( info[0]) ):
+        if info[0][i] in loop_mode:
+            info[0][i] = str( loop_mode.index( info[0][i] ) )
+        elif info[0][i] in tan_type:
+            info[0][i] = str( tan_type.index( info[0][i] ) )
+            
     #print(info)
     return info 
     
