@@ -156,9 +156,10 @@ class GenEditor(QMainWindow):
         self.load_bones.triggered.connect(self.load_bone_names)
         self.load_bones.setShortcut("Ctrl+L")
         
-        self.match_bones = QAction("Match Bone Names", self)
-        self.match_bones.triggered.connect(self.match_bone_names)
+        self.match_bones = QAction("Match With .bmd", self)
+        self.match_bones.triggered.connect(self.match_bmd)
         self.match_bones.setShortcut("Ctrl+M")
+       
         
         self.model.addAction(self.load_bones)
         self.model.addAction(self.match_bones)
@@ -352,10 +353,11 @@ class GenEditor(QMainWindow):
             self.convert_to_all.setDisabled(True)
             self.convert_to_key.setDisabled(True)
         
+        self.model.setDisabled(False)
         if extension in {".bck", ".bca"}:
-            self.model.setDisabled(False)
+            self.load_bones.setDisabled(False)
         else:
-            self.model.setDisabled(True)
+            self.load_bones.setDisabled(True)
             
     def convert_to_k(self):
         index = self.animation_bar.currentIndex().row()          
@@ -375,10 +377,14 @@ class GenEditor(QMainWindow):
         index = self.animation_bar.currentIndex().row()
         filepath = self.list_of_animations[index].filepath
         
-        self.list_of_animations[index].display_info = self.get_on_screen()
+        info = self.get_on_screen()
+        info = j3d.fix_array( info )
+        
+        self.list_of_animations[index].display_info = info
+        
         
         if filepath.endswith(".bck") or filepath.endswith(".bca"):
-            info = self.list_of_animations[index].display_info
+
          
             bca = j3d.convert_to_a(filepath, info) #this is a pure bck, no saving
             filepath = filepath[:-1] + "a"
@@ -387,7 +393,7 @@ class GenEditor(QMainWindow):
                 bca.write_bca(f)
                 f.close()
         elif filepath.endswith(".blk") or filepath.endswith(".bla"):
-            info = self.list_of_animations[index].display_info
+        
             
             bla = j3d.convert_to_a(filepath, info) #this is a pure bck, no saving
             filepath = filepath[:-1] + "a"
@@ -438,6 +444,8 @@ class GenEditor(QMainWindow):
         self.save_file_action.setDisabled(False)
         self.save_file_as_action.setDisabled(False)
         
+       
+        
         self.is_remove = False
     
     def edit_anim_bar_children(self, item, strings):
@@ -479,21 +487,25 @@ class GenEditor(QMainWindow):
             index = self.animation_bar.currentIndex().row()
             self.edit_anim_bar_children( self.animation_bar.itemAt(0, index), strings)
     
-    def match_bone_names(self):
+    def match_bmd(self):
         index = self.animation_bar.currentIndex().row()
         filepath = self.list_of_animations[index].filepath
         
-        if filepath.endswith(".bck"):
-            bmd_file, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , ".bmd files(*.bmd)" )
-            if bmd_file:
-                self.list_of_animations[index].display_info = self.get_on_screen()
-                info = j3d.fix_array(self.list_of_animations[index].display_info)
+        bmd_file, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , ".bmd files(*.bmd)" )
+        if bmd_file:
+            self.list_of_animations[index].display_info = self.get_on_screen()
+            info = j3d.fix_array(self.list_of_animations[index].display_info)
+            strings = []
+
+            if filepath.endswith(".bck") or filepath.endswith(".bca"):
                 strings = self.get_bones_from_bmd(bmd_file)
-                array = j3d.match_bmd(filepath, info, strings)
-                
-                self.load_animation_to_middle(index, array )
-                
-                self.edit_anim_bar_children( self.animation_bar.itemAt(0, index), strings)
+            else:
+                strings = self.get_materials_from_bmd(bmd_file)
+            
+            array = j3d.match_bmd(filepath, info, strings)                
+            self.load_animation_to_middle(index, array )                
+            self.edit_anim_bar_children( self.animation_bar.itemAt(0, index), strings)
+     
         
     def get_bones_from_bmd(self, bmd_file):
         strings = []
@@ -508,9 +520,23 @@ class GenEditor(QMainWindow):
                 strings = j3d.StringTable.from_file(f).strings;
                 print(strings)
                 f.close()
-                
-                
-                
+            
+        return strings
+
+    def get_materials_from_bmd(self, bmd_file):
+        strings = []
+        with open(bmd_file, "rb") as f:
+                s = f.read()
+                a = s.find(b'\x4D\x41\x54\x33')
+                print(a)
+                f.seek(a + 0x14);
+                address = j3d.read_uint32(f)
+                print(address)
+                f.seek(address + a)
+                strings = j3d.StringTable.from_file(f).strings;
+                print(strings)
+                f.close()
+            
         return strings
 
     #tree view stuff

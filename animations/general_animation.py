@@ -10,6 +10,8 @@ BCAFILEMAGIC = b"J3D1bca1"
 BLAFILEMAGIC = b"J3D1bla1"
 BLKFILEMAGIC = b"J3D1blk1"
 
+
+
 PADDING = b"This is padding data to align"
 
 def read_uint32(f):
@@ -55,6 +57,13 @@ tan_type = ("Tan out only", "Tan in and out")
 class basic_animation(object):
     def __init__(self):
         pass
+        
+    def get_children_names(self):
+        strings = []
+        
+        for animation in self.animations:
+            strings.append(animation.name)
+        return strings
 
 class AnimComponent(object):
     def __init__(self, time, value, tangentIn = 0, tangentOut=None):
@@ -313,33 +322,35 @@ def make_tangents(array, inter = 0 ):
     
     return array
 
+#import statements
+import animations.btp as btp_file
+import animations.btk as btk_file
+import animations.brk as brk_file
+import animations.bpk as bpk_file
+import animations.bck as bck_file
+import animations.bca as bca_file
+import animations.blk as blk_file
+import animations.bla as bla_file
+
 def convert_to_a(filepath, info):
     if filepath.endswith(".bck") or filepath.endswith(".bca"):
-        from animations.bck import bck
-        import animations.bck as bck_file
         bck = bck_file.bck.get_bck(info)
-        
-        from animations.bca import bca
-        import animations.bca as bca_file
         bca = bca_file.bca.from_bck(bck)
         
         return bca
     if filepath.endswith(".blk") or filepath.endswith(".bla"):
-        from animations.blk import blk
-        import animations.blk as blk_file
+
         blk = blk_file.blk.get_blk(info)
-        
-        from animations.bla import bla
-        import animations.bla as bla_file
         bla = bla_file.bla.from_blk(blk)
         
         return bla
         
 def import_anim_file(filepath):
-    from animations.bck import bck
-    import animations.bck as bck_file
+
     with open(filepath, "r") as f:
         return bck.from_maya_anim(f);
+
+
 
 def sort_file(filepath):
     with open(filepath, "rb") as f:
@@ -347,116 +358,81 @@ def sort_file(filepath):
         print(magic)
         
         if magic == BTPFILEMAGIC:
-            from animations.btp import btp
-            import animations.btp as btp_file
             return btp_file.btp.from_anim(f)       
         elif magic == BTKFILEMAGIC:
-            from animations.btk import btk
-            import animations.btk as btk_file
             return btk_file.btk.from_anim(f)       
         elif magic == BRKFILEMAGIC:
-            from animations.brk import brk
-            import animations.brk as brk_file
             return brk_file.brk.from_anim(f)       
         elif magic == BCKFILEMAGIC:
-            from animations.bck import bck
-            import animations.bck as bck_file
             return bck_file.bck.from_anim(f)      
         elif magic == BPKFILEMAGIC:
-            from animations.bpk import bpk
-            import animations.bpk as bpk_file
             return bpk_file.bpk.from_anim(f)          
         elif magic == BCAFILEMAGIC:
-            from animations.bca import bca
-            import animations.bca as bca_file
             return bca_file.bca.from_anim(f)
         elif magic == BLAFILEMAGIC:
-            from animations.bla import bla
-            import animations.bla as bla_file
             return bla_file.bla.from_anim(f) 
-        elif magic == BLKFILEMAGIC:
-            from animations.blk import blk
-            import animations.blk as blk_file  
+        elif magic == BLKFILEMAGIC: 
             return blk_file.blk.from_anim(f) 
         f.close()
             
 def sort_filepath(filepath, information):
     print(filepath)
     if filepath.endswith(".btp"):
-        from animations.btp import btp
-        import animations.btp as btp_file
         return btp_file.btp.from_table(filepath, information)
     elif filepath.endswith(".btk"):
-        from animations.btk import btk
-        import animations.btk as btk_file
         return btk_file.btk.from_table(filepath, information)  
     elif filepath.endswith(".brk"):
-         from animations.brk import brk
-         import animations.brk as brk_file
          return brk_file.brk.from_table(filepath, information)  
     elif filepath.endswith(".bck"):
-         from animations.bck import bck
-         import animations.bck as bck_file
          return bck_file.bck.from_table(filepath, information) 
     elif filepath.endswith(".bpk"):
-         from animations.bpk import bpk
-         import animations.bpk as bpk_file
          return bpk_file.bpk.from_table(filepath, information) 
     elif filepath.endswith(".bca"):
-         from animations.bca import bca
-         import animations.bca as bca_file
          return bca_file.bca.from_table(filepath, information) 
     elif filepath.endswith(".bla"):
-         from animations.bla import bla
-         import animations.bla as bla_file
          return bla_file.bla.from_table(filepath, information) 
     elif filepath.endswith(".blk"):
-         from animations.blk import blk
-         import animations.blk as blk_file
          return blk_file.blk.from_table(filepath, information) 
 
 def create_empty(information):
     table = []
     filepath = information[0]
     if filepath.endswith(".btp"):
-        from animations.btp import btp
-        import animations.btp as btp_file
         table = btp_file.btp.empty_table(information)
     elif filepath.endswith(".btk"):
-        from animations.btk import btk
-        import animations.btk as btk_file
         table = btk_file.btk.empty_table(information)  
     elif filepath.endswith(".brk"):
-        from animations.brk import brk
-        import animations.brk as brk_file
         table = brk_file.brk.empty_table(information)  
     elif filepath.endswith(".bck"):
-        from animations.bck import bck
-        import animations.bck as bck_file
         table = bck_file.bck.empty_table(information) 
     elif filepath.endswith(".bpk"):
-        from animations.bpk import bpk
-        import animations.bpk as bpk_file
         table = bpk_file.bpk.empty_table(information) 
     elif filepath.endswith(".bca"):
-        from animations.bca import bca
-        import animations.bca as bca_file
         table = bca_file.bca.empty_table(information) 
     elif filepath.endswith(".bla"):
-        from animations.bla import bla
-        import animations.bla as bla_file
         table = bla_file.bla.empty_table(information) 
     elif filepath.endswith(".blk"):
-        from animations.blk import blk
-        import animations.blk as blk_file
         table = blk_file.blk.empty_table(information) 
     return table
 
 def match_bmd(filepath, information, strings):
     print(filepath)
-
-    if filepath.endswith(".bck"):
-         from animations.bck import bck
-         import animations.bck as bck_file
-         return bck_file.bck.match_bmd(information, strings) 
-
+    
+    if filepath.endswith(".btp"):
+        table = btp_file.btp.match_bmd(information, strings) 
+    elif filepath.endswith(".btk"):
+        table = btk_file.btk.match_bmd(information, strings)   
+    elif filepath.endswith(".brk"):
+        table = brk_file.brk.match_bmd(information, strings)   
+    elif filepath.endswith(".bck"):
+        table = bck_file.bck.match_bmd(information, strings) 
+    elif filepath.endswith(".bpk"):
+        table = bpk_file.bpk.match_bmd(information, strings) 
+    elif filepath.endswith(".bca"):
+        table = bca_file.bca.match_bmd(information, strings)  
+    elif filepath.endswith(".bla"):
+        table = bla_file.bla.match_bmd(information, strings) 
+    elif filepath.endswith(".blk"):
+        table = blk_file.blk.match_bmd(information, strings) 
+    return table
+    

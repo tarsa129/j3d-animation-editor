@@ -138,12 +138,6 @@ class bpk(object):
 
         return bpk
 
-    def get_children_names(self):
-        mat_names = []
-        for color_anim in self.animations:
-            mat_names.append(color_anim.name)
-        return mat_names
-
     def get_loading_information(self):
 
         info = []

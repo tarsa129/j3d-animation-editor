@@ -5,14 +5,14 @@ from animations.general_animation import *
 from animations.general_animation import basic_animation
 import animations.general_animation as j3d
 
-BTKFILEMAGIC = b"J3D1bck1"
+BCKFILEMAGIC = b"J3D1bck1"
 
 class bone_anim(object):
     def __init__(self):
         self.scale = {"X": [], "Y": [], "Z": []}
         self.rotation = {"X": [], "Y": [], "Z": []}
         self.translation = {"X": [], "Y": [], "Z": []}
-        self.joint_name = ""
+        self.name = ""
         
         self.tan_inter = 0
         
@@ -160,7 +160,7 @@ class bck(j3d.basic_animation):
             new_bone_name = lines[i].split()[3]
             current_bone = new_bone_name
             new_bone = bone_anim()
-            new_bone.joint_name = new_bone_name
+            new_bone.name = new_bone_name
             bck.animations.append(new_bone)
             
             # while it is the same bone animation
@@ -215,8 +215,8 @@ class bck(j3d.basic_animation):
     def get_children_names(self):
         joints = []
         for i in range( len( self.animations )):
-            if self.animations[i].joint_name != "":
-                joints.append( self.animations[i].joint_name)
+            if self.animations[i].name != "":
+                joints.append( self.animations[i].name)
             else:
                 joints.append("Joint " + str(i) )
         return joints
@@ -234,10 +234,10 @@ class bck(j3d.basic_animation):
         count = 0
         
         for anim in self.animations:
-            if anim.joint_name == "":
+            if anim.name == "":
                 info.append( ["Joint " + str(count)] )
             else:
-                info.append( [anim.joint_name] )
+                info.append( [anim.name] )
             things = ["Scale X:", "Scale Y:", "Scale Z:", "Rotation X:", "Rotation Y:", "Rotation Z:",
                 "Translation X:", "Translation Y:", "Translation Z:"]
             
@@ -298,7 +298,7 @@ class bck(j3d.basic_animation):
     def from_table(cls, f, info):
         bck = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
         
-        if info[0][7] != "":
+        if len(info[0]) >= 7 and info[0][7] != "":
             bck.tan_type = int( info[0][7] )
         
         keyframes = []
@@ -316,7 +316,7 @@ class bck(j3d.basic_animation):
             line = 9 * i + 2
             current_anim = bone_anim()
             
-            current_anim.joint_name = info[line][0]
+            current_anim.name = info[line][0]
             
             if info[line + 1][0].startswith("S"):
                 current_anim.tan_inter = 1
@@ -554,7 +554,7 @@ class bck(j3d.basic_animation):
         i = 0
         while i < len( bck.animations):
             anim = bck.animations[i]
-            if not anim.joint_name in strings:
+            if not anim.name in strings:
                 bck.animations.pop(i)
             else:
                 i += 1
@@ -567,7 +567,7 @@ class bck(j3d.basic_animation):
         #print(strings)
         
         def sort_function(animation):
-            return strings.index(animation.joint_name)
+            return strings.index(animation.name)
 
         z = sorted( bck.animations, key = sort_function)
         bck.animations = z

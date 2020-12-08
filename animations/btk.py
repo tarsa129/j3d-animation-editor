@@ -222,16 +222,7 @@ class btk(j3d.basic_animation):
             btk.animations.append(matrix_animation)
         btk.tan_type = tangent_type   
         return btk
-            
-    def get_children_names(self):
-    
-
-        material_names = []
-        for animation in self.animations:
-            material_names.append(animation.name)
-        return material_names     
-  
-   
+             
     def get_loading_information(self):
         info = []
         info.append( ["Loop_mode", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale,
@@ -564,3 +555,7 @@ class btk(j3d.basic_animation):
         j3d.write_uint32(f, rotations_start     - ttk1_start)
         j3d.write_uint32(f, translations_start  - ttk1_start)
     
+    @classmethod
+    def match_bmd(cls, info, strings):
+        btk = cls.from_table("", info)
+        

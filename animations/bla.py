@@ -72,6 +72,7 @@ class bla(j3d.basic_animation):
             bla.animations.append(new_anim)
        
         return bla
+        
     def get_children_names(self):
         joints = []
         for i in range( len( self.animations )):

@@ -4,19 +4,13 @@ from animations.general_animation import *
 from animations.general_animation import basic_animation
 import animations.general_animation as j3d
 
-BTPFILEMAGIC = b"J3D1btp1"
-
-
 class btp_facial_entry(object):
     def __init__(self, mat_name, frames):
-        self.material_name = mat_name
+        self.name = mat_name
         self.frames = frames
 
-    
-
 class btp(j3d.basic_animation):
-    FILEMAGIC = b"J3D1btp1"
-    
+  
     def __init__(self, flag, anglescale, unknown1 = 1):
         self.animations = []
         self.flag = flag
@@ -93,16 +87,7 @@ class btp(j3d.basic_animation):
         btp.animations = read_animations
         f.close()
         return btp
-      
-    def get_children_names(self):
-        
-        material_names = []
-        
-        for btp_facial_entry in self.animations:
-            material_names.append(btp_facial_entry.material_name)
-        
-        return material_names
-        
+              
     def get_loading_information(self):
         
         information = []
@@ -119,7 +104,7 @@ class btp(j3d.basic_animation):
                        
             list_of_frames = self.animations[i].frames
             
-            curr_info = [self.animations[i].material_name, len(list_of_frames)]
+            curr_info = [self.animations[i].name, len(list_of_frames)]
             
             keyframes_dictionary[0].append(list_of_frames[0])
             
@@ -138,7 +123,7 @@ class btp(j3d.basic_animation):
                     thismat_kf[j] = list_of_frames[j]                    
                     texture_index = list_of_frames[j]
 
-            #print("keyframes for " + self.animations[i].material_name)
+            #print("keyframes for " + self.animations[i].name)
             #print(thismat_kf.keys())
             
             for j in keyframes_dictionary.keys(): #if there is a keyframe that does not apply to the current material, pad
@@ -177,8 +162,8 @@ class btp(j3d.basic_animation):
                 information[k].append(j)
                 k += 1
         
-        print("information: ")        
-        print (information)
+        #print("information: ")        
+        #print (information)
         return information
     
     @classmethod
@@ -271,7 +256,7 @@ class btp(j3d.basic_animation):
         with open(f, "wb") as f:
             
             #header info 
-            f.write(BTPFILEMAGIC)
+            f.write(j3d.BTPFILEMAGIC)
             filesize_offset = f.tell()
             f.write(b"ABCD") # Placeholder for file size
             j3d.write_uint32(f, 1) # Always a section count of 1

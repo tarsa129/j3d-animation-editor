@@ -34,6 +34,9 @@ class bone_anim(object):
         self.rotation = {"X": [], "Y": [], "Z": []}
         self.translation = {"X": [], "Y": [], "Z": []}
         
+        self.name = ""
+        self.tan_inter = 0
+        
         self._scale_offsets = {}
         self._rot_offsets = {}
         self._translation_offsets = {}
@@ -200,11 +203,16 @@ class bca(j3d.basic_animation):
         
         bca.animations = animations
         return bca
+        
     def get_children_names(self):
         joints = []
         for i in range( len( self.animations )):
-            joints.append("Joint " + str(i) )
-        return joints            
+            if self.animations[i].name != "":
+                joints.append( self.animations[i].name)
+            else:
+                joints.append("Joint " + str(i) )
+        return joints           
+    
     def get_loading_information(self):
         info = []
         info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration] )
@@ -226,6 +234,11 @@ class bca(j3d.basic_animation):
                 comp = things[j]
                 if j == 0:
                     info[i].append(comp)
+                elif j == 1:
+                    if anim.tan_inter == 0:
+                        info.append( ["LLLL", comp] )
+                    elif anim.tan_inter == 1:
+                        info.append( ["SSSS", comp] )
                 else:
                     info.append( ["", comp] )
                 
