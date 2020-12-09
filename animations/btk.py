@@ -32,7 +32,6 @@ class MatrixAnimation(object):
         self.translation[axis].append(comp)
 
     # These functions are used for keeping track of the offset
-    # in the json->btk conversion and are otherwise not useful.
     def _set_scale_offsets(self, axis, val):
         self._scale_offsets[axis] = val
 
