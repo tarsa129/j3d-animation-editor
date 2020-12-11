@@ -11,13 +11,11 @@ class ColorAnimation(object):
     def __init__(self, index, name):
         self._index = index 
         #self.matindex = matindex 
-        self.name = name 
+        self.name = name
 
-        
         self.component = {"R": [], "G": [], "B": [], "A": []}
 
         self._component_offsets = {}
-        self._tangent_type = {"R": 1, "G": 1, "B": 1, "A": 1}
 
     def add_component(self, colorcomp, animcomp):
         self.component[colorcomp].append(animcomp)
@@ -32,7 +30,6 @@ class ColorAnimation(object):
             for j in range(count):
                 animcomp = j3d.AnimComponent.from_array(offset, j, count, rgba_arrays[i], tangent_type)
                 coloranim.add_component(comp, animcomp)
-
         
         return coloranim
         
@@ -41,12 +38,9 @@ class ColorAnimation(object):
     def _set_component_offsets(self, colorcomp, val):
         self._component_offsets[colorcomp] = val
     
-    def _set_tangent_type(self, colorcomp, val):
-        self._tangent_type[colorcomp] = val
 
-
-class bpk(object):
-    def __init__(self, loop_mode, duration, tantype = 1):
+class bpk(j3d.basic_animation):
+    def __init__(self, loop_mode, duration, tantype = 0):
         self.animations = []
         self.loop_mode = loop_mode
         #self.anglescale = anglescale
@@ -76,6 +70,7 @@ class bpk(object):
         #assert padd == b"\xFF"
         #now at 0x2c
         duration = read_uint16(f)
+        
         bpk = cls(loop_mode, duration)
 
         color_anim_count = read_uint16(f)
@@ -124,18 +119,16 @@ class bpk(object):
             #print(animtype, comp, hex(offsets[animtype][comp]), count)
             for i in range(count):
                 values[comp].append(read_sint16(f))
-        
+              
         for i in range(color_anim_count):
             f.seek(color_animation_offset + 0x1C*i)
             name = stringtable.strings[i]
             anim = ColorAnimation.from_bpk(f, i, name, (
                 values["R"], values["G"], values["B"], values["A"]
                 ))
-            
-           
+                          
             
             bpk.animations.append(anim)
-
         return bpk
 
     def get_loading_information(self):
@@ -218,6 +211,8 @@ class bpk(object):
                     if info[curr_line + j][k] != "":
                         anim_comp = j3d.AnimComponent(keyframes[k - 2], int(info[curr_line + j][k]) )
                         color_anim.add_component(rgba, anim_comp)
+                color_anim.component[rgba] = j3d.make_tangents(color_anim.component[rgba])
+
             bpk.animations.append(color_anim)
                     
         
@@ -280,15 +275,15 @@ class bpk(object):
                     
                 # Set up offset for scale
                 if len(animation_components) == 1:
-                    sequence = [animation_components[0].value]
+                    sequence = [ int( animation_components[0].value) ]
                 else:
                     sequence = []
                     for comp in animation_components:
                         sequence.append(comp.time)
                         sequence.append(comp.value)
-                        sequence.append(comp.tangentIn)
+                        sequence.append( int(comp.tangentIn) )
                         if self.tan_type == 1 :
-                            sequence.append(comp.tangentOut)
+                            sequence.append( int( comp.tangentOut) )
                             
                 
                 offset = j3d.find_sequence(all_values[colorcomp],sequence)

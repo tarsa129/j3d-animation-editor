@@ -93,13 +93,13 @@ class bca(j3d.basic_animation):
         bca = cls(loop_mode, anglescale, duration)
         
         
-        print(hex(f.tell()))
+        #print(hex(f.tell()))
         jointAnimCount = read_uint16(f)
-        print(jointAnimCount)
+        #print(jointAnimCount)
         scaleFloatCount = read_uint16(f)
         rotationShortsCount = read_uint16(f)
         translateFloatCount = read_uint16(f)
-        print(hex(f.tell()))
+        #print(hex(f.tell()))
         jointAnimationEntriesOffset = read_uint32(f) + anf_start
         scaleFloatsOffset = read_uint32(f) + anf_start
         rotationShortsOffset = read_uint32(f) + anf_start
@@ -112,25 +112,25 @@ class bca(j3d.basic_animation):
         scaleFloats = []
         rotationShorts = []
         translateFloats = []
-        print("jointanims:", hex(jointAnimationEntriesOffset), "count:", jointAnimCount)
-        print("scalefloats:", hex(scaleFloatsOffset))
-        print("rotations:", hex(rotationShortsOffset))
-        print("translate floats:", hex(translateFloatsOffset))
+        #print("jointanims:", hex(jointAnimationEntriesOffset), "count:", jointAnimCount)
+        #print("scalefloats:", hex(scaleFloatsOffset))
+        #print("rotations:", hex(rotationShortsOffset))
+        #print("translate floats:", hex(translateFloatsOffset))
         # Scale value bank
         f.seek(scaleFloatsOffset)
-        print("Scale count:", scaleFloatCount)
+        #print("Scale count:", scaleFloatCount)
         for i in range(scaleFloatCount): 
             scaleFloats.append(read_float(f))
         
         # Rotation value bank
-        print("Rotation count:", rotationShortsCount)
+        #print("Rotation count:", rotationShortsCount)
         f.seek(rotationShortsOffset)
         for i in range(rotationShortsCount): 
             rotationShorts.append(read_sint16(f))
             
         # Translate value bank
         f.seek(translateFloatsOffset)
-        print("Translation count:", translateFloatCount)
+        #print("Translation count:", translateFloatCount)
         #print(hex(translateFloatsOffset), translateFloatCount)
         
         for i in range(translateFloatCount): 
@@ -234,11 +234,13 @@ class bca(j3d.basic_animation):
                 comp = things[j]
                 if j == 0:
                     info[i].append(comp)
-                elif j == 1:
-                    if anim.tan_inter == 0:
-                        info.append( ["LLLL", comp] )
-                    elif anim.tan_inter == 1:
-                        info.append( ["SSSS", comp] )
+                    """    
+                    elif j == 1:
+                        if anim.tan_inter == 0:
+                            info.append( ["LLLL", comp] )
+                        elif anim.tan_inter == 1:
+                            info.append( ["SSSS", comp] )
+                    """
                 else:
                     info.append( ["", comp] )
                 

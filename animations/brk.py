@@ -17,7 +17,6 @@ class ColorAnimation(object):
         self.component = {"R": [], "G": [], "B": [], "A": []}
 
         self._component_offsets = {}
-        self._tangent_type = {"R": 1, "G": 1, "B": 1, "A": 1}
 
     def add_component(self, colorcomp, animcomp):
         self.component[colorcomp].append(animcomp)
@@ -43,18 +42,20 @@ class ColorAnimation(object):
     # in the json->brk conversion and are otherwise not useful.
     def _set_component_offsets(self, colorcomp, val):
         self._component_offsets[colorcomp] = val
-    
-    def _set_tangent_type(self, colorcomp, val):
-        self._tangent_type[colorcomp] = val
 
 
-class brk(object):
-    def __init__(self, loop_mode, duration):
+class brk(j3d.basic_animation):
+    def __init__(self, loop_mode, duration, tantype = 0):
         self.register_animations = []
         self.constant_animations = []
         self.loop_mode = loop_mode
         #self.anglescale = anglescale
         self.duration = duration
+        
+        if tantype == 0 or tantype == 1:
+            self.tan_type = tantype
+        else:
+            self.tan_type = 1
         #self.unknown_address = unknown_address
 
     @classmethod
@@ -333,6 +334,9 @@ class brk(object):
                         if info[curr_line + j][k] != "":
                             anim_comp = j3d.AnimComponent(keyframes[k - 3], int(info[curr_line + j][k]) )
                             color_anim.add_component(rgba, anim_comp)
+                            
+                    color_anim[rgba] = j3d.make_tangents(color_anim[rgba])
+                    color_anim.component[rgba] = j3d.make_tangents(color_anim.component[rgba])
                 brk.register_animations.append(color_anim)
                     
         if constant_line + 1 < len( info ):
@@ -357,6 +361,7 @@ class brk(object):
                         if info[curr_line + j][k] != "":
                             anim_comp = j3d.AnimComponent( keyframes[k - 3], int(info[curr_line + j][k]))
                             color_anim.add_component(rgba, anim_comp)
+                    color_anim.component[rgba] = j3d.make_tangents(color_anim.component[rgba])
                 brk.constant_animations.append(color_anim)
               
         if f == "":
@@ -434,14 +439,14 @@ class brk(object):
                         
                     # Set up offset for scale
                     if len(animation_components) == 1:
-                        sequence = [animation_components[0].value]
+                        sequence = [ int(animation_components[0].value) ]
                     else:
                         sequence = []
                         for comp in animation_components:
                             sequence.append(comp.time)
                             sequence.append(comp.value)
-                            sequence.append(comp.tangentIn)
-                            sequence.append(comp.tangentOut)
+                            sequence.append( int(comp.tangentIn) )
+                            sequence.append( int(comp.tangentOut) )
                     
                     offset = j3d.find_sequence(all_values[animtype][colorcomp],sequence)
 
@@ -501,7 +506,7 @@ class brk(object):
             for comp in ("R", "G", "B", "A"):
                 write_uint16(f, len(anim.component[comp])) # Scale count for this animation
                 write_uint16(f, anim._component_offsets[comp]) # Offset into scales
-                write_uint16(f, anim._tangent_type[comp]) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
+                write_uint16(f, self.tan_type) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
 
             write_uint8(f, anim.unknown)
             f.write(b"\xFF\xFF\xFF")
@@ -511,7 +516,7 @@ class brk(object):
             for comp in ("R", "G", "B", "A"):
                 write_uint16(f, len(anim.component[comp])) # Scale count for this animation
                 write_uint16(f, anim._component_offsets[comp]) # Offset into scales
-                write_uint16(f, anim._tangent_type[comp]) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
+                write_uint16(f, self.tan_type) # Tangent type, 0 = only TangentIn; 1 = TangentIn and TangentOut
 
             write_uint8(f, anim.unknown)
             f.write(b"\xFF\xFF\xFF")
