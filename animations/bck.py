@@ -146,7 +146,8 @@ class bck(j3d.basic_animation):
         lines = filepath.readlines()
         duration = int( lines[6][lines[6].find(" "): lines[6].find(";")] )
         #duration -= int( lines[5][lines[5].find(" "): lines[5].find(";")] )
-        max = 0
+        max_angle = 0
+        
         print (duration)
         i = 7
         bck = cls(1, 1, duration)
@@ -172,7 +173,6 @@ class bck(j3d.basic_animation):
                 values = lines[i].split()
                 thing = values[2]
                 
-
                 i += 8     
    
                 #read the keyframes
@@ -184,6 +184,7 @@ class bck(j3d.basic_animation):
                     if len(thing) == 6:
                         new_bone.add_scale( thing[-1], new_entry )
                     elif len(thing) == 7:
+                        max_angle = max( abs(max_angle), abs(new_entry.value) )
                         new_bone.add_rotation( thing[-1], new_entry )
                     elif thing.startswith("translate"):
                         new_bone.add_translation( thing[-1], new_entry )                  
@@ -195,6 +196,8 @@ class bck(j3d.basic_animation):
                     new_bone_name = lines[i].split()[3]
                 else:
                     new_bone_name = current_bone + "asdf"
+        
+        bck.anglescale = int( max_angle / 180) ;
         
         for anim in bck.animations :
             for axis in {"X", "Y", "Z"} :
@@ -208,6 +211,7 @@ class bck(j3d.basic_animation):
                     new_entry = j3d.AnimComponent(0, 0)
                     anim.add_translation(axis, new_entry)
 
+        
         
         return bck
 
@@ -548,18 +552,12 @@ class bck(j3d.basic_animation):
     def match_bmd(cls, info, strings):
         bck = cls.from_table("", info)
         
-        bone_names = bck.get_children_names()
+        #bone_names = bck.get_children_names()
         #print("current bck bones")
         #print(bone_names)
-        i = 0
-        while i < len( bck.animations):
-            anim = bck.animations[i]
-            if not anim.name in strings:
-                bck.animations.pop(i)
-            else:
-                i += 1
+        j3d.basic_animation.match_bmd(bck, strings)
                 
-        bone_names = bck.get_children_names()
+        #bone_names = bck.get_children_names()
         #print("reduced bone names")
         #print(bone_names)
         

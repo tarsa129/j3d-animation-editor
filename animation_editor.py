@@ -407,7 +407,8 @@ class GenEditor(QMainWindow):
         ".anim files(*.anim)" )
         if filepath:
             bck = j3d.import_anim_file(filepath)
-            self.universal_new_animation(bck, filepath + ".bck" )
+            filepath = filepath[0:-5] + ".bck"
+            self.universal_new_animation(bck, filepath)
                  
     def universal_new_animation(self, actual_animation_object, filepath):
         
@@ -822,31 +823,33 @@ class GenEditor(QMainWindow):
        
     def cell_clicked(self, row, column):
         item = self.table_display.item(row, column)
-        icon = item.icon()
         
-        if not item.icon().isNull() and column == 0:
-            if item.text().startswith("L"):
-                item.setText("Smooth")
-                icon = QIcon("icons/smooth.png")
-            else:
-                item.setText("Linear")
-                icon = QIcon("icons/linear.png")
-            item.setIcon(icon)
-        elif row == 0 and column > 0:
-            setting = self.table_display.item(row, column - 1).text()
-            value = self.table_display.item(row, column).text()
-            if setting.startswith("Loop"):
-                options = j3d.loop_mode
-            elif setting.startswith("Tan"):
-                options = j3d.tan_type
-            else:
-                return
-                
-            if value == "" or value not in options:
-                position = -1
-            else:
-                position = options.index(value)           
-            self.table_display.item(row, column).setText(options[( position + 1) % len(options)])
+        if isinstance(item, QTableWidgetItem):
+            icon = item.icon()
+            
+            if not item.icon().isNull() and column == 0:
+                if item.text().startswith("L"):
+                    item.setText("Smooth")
+                    icon = QIcon("icons/smooth.png")
+                else:
+                    item.setText("Linear")
+                    icon = QIcon("icons/linear.png")
+                item.setIcon(icon)
+            elif row == 0 and column > 0:
+                setting = self.table_display.item(row, column - 1).text()
+                value = self.table_display.item(row, column).text()
+                if setting.startswith("Loop"):
+                    options = j3d.loop_mode
+                elif setting.startswith("Tan"):
+                    options = j3d.tan_type
+                else:
+                    return
+                    
+                if value == "" or value not in options:
+                    position = -1
+                else:
+                    position = options.index(value)           
+                self.table_display.item(row, column).setText(options[( position + 1) % len(options)])
 
     #table button stuff   
    

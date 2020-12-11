@@ -342,9 +342,13 @@ class btk(j3d.basic_animation):
             
             
             btk.animations.append(current_anim)
-        with open(f, "wb") as f:
-            btk.write_btk(f)
-            f.close()
+        if f == "":
+            print("no saving")
+            return btk
+        else:
+            with open(f, "wb") as f:
+                btk.write_btk(f)
+                f.close()
   
     def write_btk(self, f):
         
@@ -557,4 +561,6 @@ class btk(j3d.basic_animation):
     @classmethod
     def match_bmd(cls, info, strings):
         btk = cls.from_table("", info)
+        j3d.basic_animation.match_bmd(btk, strings)
+        return btk.get_loading_information()
         

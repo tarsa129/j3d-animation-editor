@@ -174,7 +174,7 @@ class brk(object):
     def get_loading_information(self):
 
         info = []
-        info.append( ["Loop Mode:", j3d.loop_mode[self.loop_mode] , "Duration:", self.duration] )
+        info.append( ["Loop Mode:", j3d.loop_mode[self.loop_mode] , "Duration:", self.duration, "Tan Type:", j3d.tan_type[1] ] )
         info.append( ["Register Animations"])
         
         keyframes_dictionary = {}
@@ -359,9 +359,13 @@ class brk(object):
                             color_anim.add_component(rgba, anim_comp)
                 brk.constant_animations.append(color_anim)
               
-        with open(f, "wb") as f:
-            brk.write_brk(f)
-            f.close()
+        if f == "":
+            print("no saving")
+            return brk
+        else:
+            with open(f, "wb") as f:
+                brk.write_brk(f)
+                f.close()
 
     
     def write_brk(self, f):
@@ -537,3 +541,8 @@ class brk(object):
         for data_start in data_starts:
             write_uint32(f, data_start - trk1_start)
 
+    @classmethod
+    def match_bmd(cls, info, strings):
+        bfk = cls.from_table("", info)
+        j3d.basic_animation.match_bmd(bfk, strings)
+        return brk.get_loading_information()

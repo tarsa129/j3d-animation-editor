@@ -269,3 +269,8 @@ class blk(j3d.basic_animation):
         blk = cls.from_table("", info)    
         return blk
         
+    @classmethod
+    def match_bmd(cls, info, strings):
+        blk = cls.from_table("", info)
+        j3d.basic_animation.match_bmd(blk, strings)
+        return blk.get_loading_information()

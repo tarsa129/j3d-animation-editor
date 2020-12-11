@@ -361,4 +361,8 @@ class btp(j3d.basic_animation):
         j3d.write_uint32(f, remap_table_os - tpt1_start)
         j3d.write_uint32(f, stringtable_os - tpt1_start)
         
-        
+    @classmethod
+    def match_bmd(cls, info, strings):
+        btp = cls.from_table("", info)
+        info = j3d.basic_animation.match_bmd(btp, strings)
+        return btp.get_loading_information()

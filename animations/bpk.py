@@ -222,9 +222,13 @@ class bpk(object):
                     
         
               
-        with open(f, "wb") as f:
-            bpk.write_bpk(f)
-            f.close()
+        if f == "":
+            print("no saving")
+            return bpk
+        else:
+            with open(f, "wb") as f:
+                bpk.write_bpk(f)
+                f.close()
 
     
     def write_bpk(self, f):
@@ -358,3 +362,8 @@ class bpk(object):
         for data_start in data_starts:
             write_uint32(f, data_start - pak1_start)
 
+    @classmethod
+    def match_bmd(cls, info, strings):
+        bpk = cls.from_table("", info)
+        j3d.basic_animation.match_bmd(bpk, strings)
+        return bpk.get_loading_information()

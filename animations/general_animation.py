@@ -64,6 +64,20 @@ class basic_animation(object):
         for animation in self.animations:
             strings.append(animation.name)
         return strings
+    
+    @classmethod
+    def match_bmd(cls, object, strings):
+                      
+        i = 0
+        while i < len( object.animations):
+            anim = object.animations[i]
+            if not anim.name in strings:
+                object.animations.pop(i)
+            else:
+                i += 1
+        
+        return object
+        
 
 class AnimComponent(object):
     def __init__(self, time, value, tangentIn = 0, tangentOut=None):
@@ -348,9 +362,7 @@ def convert_to_a(filepath, info):
 def import_anim_file(filepath):
 
     with open(filepath, "r") as f:
-        return bck.from_maya_anim(f);
-
-
+        return bck_file.bck.from_maya_anim(f);
 
 def sort_file(filepath):
     with open(filepath, "rb") as f:
@@ -417,22 +429,18 @@ def create_empty(information):
 
 def match_bmd(filepath, information, strings):
     print(filepath)
-    
+
     if filepath.endswith(".btp"):
         table = btp_file.btp.match_bmd(information, strings) 
     elif filepath.endswith(".btk"):
         table = btk_file.btk.match_bmd(information, strings)   
     elif filepath.endswith(".brk"):
         table = brk_file.brk.match_bmd(information, strings)   
-    elif filepath.endswith(".bck"):
+    elif filepath.endswith(".bck") or filepath.endswith(".bca"):
         table = bck_file.bck.match_bmd(information, strings) 
     elif filepath.endswith(".bpk"):
         table = bpk_file.bpk.match_bmd(information, strings) 
-    elif filepath.endswith(".bca"):
-        table = bca_file.bca.match_bmd(information, strings)  
-    elif filepath.endswith(".bla"):
-        table = bla_file.bla.match_bmd(information, strings) 
-    elif filepath.endswith(".blk"):
+    elif filepath.endswith(".blk") or filepath.endswith(".bla"):
         table = blk_file.blk.match_bmd(information, strings) 
     return table
     

@@ -425,7 +425,6 @@ class bca(j3d.basic_animation):
 
         rotations_start = f.tell()
         for val in all_rotations:
-
             j3d.write_sint16(f, int(val))
 
         j3d.write_padding(f, 32)
@@ -547,6 +546,7 @@ class bca(j3d.basic_animation):
             bca.animations.append(new_bone_anim)
         
         return bca
+        
         
 def interpolate(entry_array):
 
