@@ -11,25 +11,16 @@ from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter,
 from PyQt5.QtGui import QMouseEvent, QImage, QIcon
 import PyQt5.QtGui as QtGui
 
-try:
-    from fbx import *
-except:
-    pass
-
 import animations.general_animation as j3d
 
 import widgets.create_anim as create_widget
 import widgets.tree_view as tree_view
 
-
-
 class GenEditor(QMainWindow):
     def __init__(self):
     
         super().__init__()
- 
-        
-        
+       
         self.list_of_animations = []
         self.copied_values = []
         self.current_index = 0;
@@ -126,19 +117,22 @@ class GenEditor(QMainWindow):
         self.convert = QMenu(self)
         self.convert.setTitle("Convert")
         
-        self.convert_to_key = QAction("Save as Keyframes", self)
-        self.convert_to_all = QAction("Save as All", self)
+        self.convert_to_key = QAction("Save as .bck / .blk", self)
+        self.convert_to_all = QAction("Save as .bca / .bla", self)
         self.import_anim = QAction("Import Maya .anim", self)
+        self.import_fbx = QAction("Import .fbx", self)
         
         self.convert_to_key.triggered.connect(self.convert_to_k)
         self.convert_to_all.triggered.connect(self.convert_to_a)
         self.import_anim.triggered.connect(self.import_anim_file)
+        self.import_fbx.triggered.connect(self.import_fbx_file)
         
         self.convert_to_key.setShortcut("Ctrl+K")
         
         self.convert.addAction(self.convert_to_key)
         self.convert.addAction(self.convert_to_all)
         self.convert.addAction(self.import_anim)
+        #self.convert.addAction(self.import_fbx)
         
         self.convert_to_key.setDisabled(True)
         self.convert_to_all.setDisabled(True)
@@ -409,7 +403,15 @@ class GenEditor(QMainWindow):
             bck = j3d.import_anim_file(filepath)
             filepath = filepath[0:-5] + ".bck"
             self.universal_new_animation(bck, filepath)
-                 
+      
+    def import_fbx_file(self):
+        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
+        ".fbx files(*.fbx)" )
+        if filepath:
+            bck = j3d.import_fbx_file(filepath)
+            filepath = filepath[0:-5] + ".bck"
+            self.universal_new_animation(bck, filepath)
+      
     def universal_new_animation(self, actual_animation_object, filepath):
         
         new_anim = all_anim_information(filepath)           
@@ -721,11 +723,11 @@ class GenEditor(QMainWindow):
         for row in range(len(information)):
             for col in range(col_count):
                 if len( information[row] ) > col:
-                    if information[row][col] == "LLLL":
+                    if information[row][col] == "LLLL" or ( col == 0 and information[row][col] == "Linear"):
                         icon = QIcon("icons/linear.png")
                         item = QTableWidgetItem(icon, "Linear")
                         item.setWhatsThis("The tanget interpolation mode")
-                    elif information[row][col] == "SSSS":
+                    elif information[row][col] == "SSSS" or ( col == 0 and information[row][col] == "Smooth"):
                         icon = QIcon("icons/smooth.png")
                         item = QTableWidgetItem(icon, "Smooth")
                     else:

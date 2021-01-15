@@ -335,7 +335,7 @@ class brk(j3d.basic_animation):
                             anim_comp = j3d.AnimComponent(keyframes[k - 3], int(info[curr_line + j][k]) )
                             color_anim.add_component(rgba, anim_comp)
                             
-                    color_anim[rgba] = j3d.make_tangents(color_anim[rgba])
+                    
                     color_anim.component[rgba] = j3d.make_tangents(color_anim.component[rgba])
                 brk.register_animations.append(color_anim)
                     

@@ -32,7 +32,7 @@ class animation_bar(QTreeWidget):
             
             print(" emit close ")
             
-            self.is_remove = True
+            self.main_editor.is_remove = True
 
             
             items = self.selectedItems()         
