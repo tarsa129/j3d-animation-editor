@@ -275,16 +275,16 @@ class brk(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "", "Duration:", created[3]] )
+        info.append( ["Loop_mode", "", "Duration:", created[3], "Tangent Type:", j3d.tan_type[1] ] )
         info.append( ["Register Animations"] )
-        info.append( ["Material Name", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
+        info.append( ["Material Name", "Unknown", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
 
         for i in range( int(created[1]) ):
-            info.append( ["Material " + str(i), "Red:"] )
+            info.append( ["Material " + str(i), 0 ,"Red:"] )
             
             things = ["Green", "Blue", "Alpha"]
             for chan in things:
-                info.append( ["", chan] )
+                info.append( ["", "", chan] )
                 
         info.append( ["Constant Animations"] )
         
@@ -293,12 +293,12 @@ class brk(j3d.basic_animation):
             
             things = ["Green", "Blue", "Alpha"]
             for chan in things:
-                info.append( ["", chan] )
+                info.append( ["", "", chan] )
         return info 
     
     @classmethod
     def from_table(cls, f, info):
-        brk = cls(int(info[0][1]), int(info[0][3]))
+        brk = cls(int(info[0][1]), int(info[0][3]), int(info[0][5])  )
         
         constant_line = 0;
         
@@ -319,14 +319,13 @@ class brk(j3d.basic_animation):
                     text = int(text)
                     keyframes.append(text)
             
-            #print(keyframes)
+            print(keyframes)
             
             for i in range(0, int( constant_line / 4) ):
                 curr_line = 4 * i + 3
                 
                 color_anim = ColorAnimation(i, info[curr_line][0], int( info[curr_line][1] ) )
-                
-                
+                              
                 for j in range(0, 4):
                     rgba = "RGBA"
                     rgba = rgba[j: j+1]
@@ -335,9 +334,11 @@ class brk(j3d.basic_animation):
                             anim_comp = j3d.AnimComponent(keyframes[k - 3], int(info[curr_line + j][k]) )
                             color_anim.add_component(rgba, anim_comp)
                             
-                    
+                            
+                                               
                     color_anim.component[rgba] = j3d.make_tangents(color_anim.component[rgba])
                 brk.register_animations.append(color_anim)
+            #print(brk.register_animations)
                     
         if constant_line + 1 < len( info ):
             print("there are constant animations")
@@ -409,10 +410,7 @@ class brk(j3d.basic_animation):
         constant_anim_start = f.tell()
         f.write(b"\x00"*(0x1C*len(self.constant_animations)))
         write_padding(f, multiple=4)
-        
 
-
-        
         all_values = {}
         
         for animtype, animations in (
@@ -446,7 +444,9 @@ class brk(j3d.basic_animation):
                             sequence.append(comp.time)
                             sequence.append(comp.value)
                             sequence.append( int(comp.tangentIn) )
-                            sequence.append( int(comp.tangentOut) )
+                            if self.tan_type == 1 :
+                                sequence.append( int(comp.tangentOut) )
+                    
                     
                     offset = j3d.find_sequence(all_values[animtype][colorcomp],sequence)
 
@@ -462,6 +462,7 @@ class brk(j3d.basic_animation):
             for comp in ("R", "G", "B", "A"):
                 data_starts.append(f.tell())
                 for val in all_values[animtype][comp]:
+                    print(val)
                     write_sint16(f, val)
                 write_padding(f, 4)
                 
