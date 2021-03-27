@@ -40,17 +40,16 @@ class GenEditor(QMainWindow):
         
         # establish UI themes
         self.default_style_sheet = ""
-        self.dark_style_sheet = "color: rgb(230, 230, 230); background-color: rgb(40, 40, 40);"  # dark theme, todo: darken disabled text    
-
-
+        self.dark_style_sheet = "color: rgb(230, 230, 230); background-color: rgb(40, 40, 40);"  # dark theme, todo: darken disabled text   
+        
         self.show()
-
+    
     def toggle_dark_theme(self): # simple little function to swap stylesheets
         if self.styleSheet() == self.default_style_sheet:
             self.setStyleSheet(self.dark_style_sheet)
         else:
             self.setStyleSheet(self.default_style_sheet)
-
+    
     def setup_ui_menubar(self):
         
         #file stuff
@@ -70,7 +69,6 @@ class GenEditor(QMainWindow):
         self.save_file_as_action = QAction("Save As", self)
         self.create_animation = QAction("Create Animation", self)
         #self.combine_animations = QAction("Combine Animations", self)
-        self.toggle_dark_theme_action = QAction("Toggle Dark Theme", self) # create an option to toggle dark theme
         
         self.save_file_action.setShortcut("Ctrl+S")
         self.file_load_action.setShortcut("Ctrl+O")
@@ -81,7 +79,6 @@ class GenEditor(QMainWindow):
         self.save_file_action.triggered.connect(self.button_save_level)
         self.save_file_as_action.triggered.connect(self.button_save_as)
         self.create_animation.triggered.connect(self.create_new)
-        self.toggle_dark_theme_action.triggered.connect(self.toggle_dark_theme) # link the button to the function
         
         self.save_file_action.setDisabled(True)
         self.save_file_as_action.setDisabled(True)
@@ -92,8 +89,6 @@ class GenEditor(QMainWindow):
         self.file_menu.addAction(self.save_file_as_action)   
         self.file_menu.addAction(self.create_animation)
         #self.file_menu.addAction(self.combine_animations)
-        self.file_menu.addSeparator()
-        self.file_menu.addAction(self.toggle_dark_theme_action) # add the button to the File menu
         
         self.menubar.addAction(self.file_menu.menuAction())
         self.setMenuBar(self.menubar)
@@ -145,7 +140,7 @@ class GenEditor(QMainWindow):
         self.convert.addAction(self.convert_to_key)
         self.convert.addAction(self.convert_to_all)
         self.convert.addAction(self.import_anim)
-        #self.convert.addAction(self.import_fbx)
+        self.convert.addAction(self.import_fbx)
         
         self.convert_to_key.setDisabled(True)
         self.convert_to_all.setDisabled(True)
@@ -196,13 +191,13 @@ class GenEditor(QMainWindow):
         
         #middle table
         
-
+        
         self.table_display = QTableWidget(self)
         self.table_display.resize(1600, self.height())
         self.table_display.setColumnCount(4)
         self.table_display.setRowCount(4)
         for i in range(self.table_display.rowCount()): # iterate through our initial rows
-            self.table_display.setRowHeight(i, 20) # make them thinner
+            self.table_display.setRowHeight(i, 20) # make them thinner       
         self.table_display.setGeometry(400, 50, self.width(), self.height())
         self.table_display.cellClicked.connect(self.cell_clicked)
  
@@ -371,15 +366,15 @@ class GenEditor(QMainWindow):
     def convert_to_k(self):
         index = self.animation_bar.currentIndex().row()          
         self.list_of_animations[index].display_info = self.get_on_screen()
-               
+        
         filepath = self.list_of_animations[index].filepath
         if filepath.endswith(".bca"):
             filepath = filepath[:-1] + "k"
-            info = self.list_of_animations[index].display_info           
+            info = j3d.fix_array(self.list_of_animations[index].display_info)            
             bck = j3d.sort_filepath(filepath, info)
         elif filepath.endswith(".bla"):
             filepath = filepath[:-1] + "k"
-            info = self.list_of_animations[index].display_info           
+            info = j3d.fix_array(self.list_of_animations[index].display_info)             
             blk = j3d.sort_filepath(filepath, info)
         
     def convert_to_a(self):
@@ -457,6 +452,8 @@ class GenEditor(QMainWindow):
         self.current_index = len(self.list_of_animations) - 1
         self.load_animation_to_middle(len(self.list_of_animations) - 1)
         
+        self.setWindowTitle("j3d animation editor - " + filepath)
+        
         self.animation_bar.setCurrentItem(loaded_animation)
         
         self.save_file_action.setDisabled(False)
@@ -475,14 +472,14 @@ class GenEditor(QMainWindow):
                
     #bmd stuff
     def load_bone_names(self):
-        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd, *.bdl)")
-        if filepath:
-            strings = self.get_bones_from_bmd(filepath) # get bone names from bmd
+        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)")
+        if filepath:   
+            strings = self.get_bones_from_bmd(filepath)
             #index = self.animation_bar.currentIndex().row()
             #information = self.get_on_screen()
             #information = self.list_of_animations[index].display_info
-            for i in range( len(strings) ): # Set the names on the side of the table 
-                row = 9 * i + 2 
+            for i in range( len(strings) ):
+                row = 9 * i + 2
                 item = self.table_display.item(row, 0)
                 if isinstance(item, QTableWidgetItem):
                     item.setText(strings[i])
@@ -502,14 +499,14 @@ class GenEditor(QMainWindow):
                         break
             self.table_display.setVerticalHeaderLabels(first_vals)
             
-            index = self.animation_bar.currentIndex().row() # put the bone names on the sidebar
+            index = self.animation_bar.currentIndex().row()
             self.edit_anim_bar_children( self.animation_bar.itemAt(0, index), strings)
     
     def match_bmd(self):
         index = self.animation_bar.currentIndex().row()
         filepath = self.list_of_animations[index].filepath
         
-        bmd_file, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd, *.bdl)" )
+        bmd_file, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)" )
         if bmd_file:
             self.list_of_animations[index].display_info = self.get_on_screen()
             info = j3d.fix_array(self.list_of_animations[index].display_info)
@@ -706,7 +703,7 @@ class GenEditor(QMainWindow):
         
 
     #table info stuff
-
+    
     def load_animation_to_middle(self, index, array = None):      
         
         if array is not None:
@@ -736,7 +733,6 @@ class GenEditor(QMainWindow):
         self.table_display.setRowCount(len(information))
         for i in range(self.table_display.rowCount()): # interate through all the rows of the middle table
             self.table_display.setRowHeight(i, 20) # make each row thinner
-        
                 
         for row in range(len(information)):
             for col in range(col_count):
@@ -757,7 +753,7 @@ class GenEditor(QMainWindow):
         
         if array is None:
             filepath = self.list_of_animations[index].filepath
-            
+            self.setWindowTitle("j3d animation editor - " + filepath)
             self.edit_convert_actions(filepath)
         
     def selected_animation_changed(self):
@@ -948,7 +944,7 @@ class GenEditor(QMainWindow):
     
     def add_row(self):
         self.table_display.setRowCount(self.table_display.rowCount() + 1)
-        self.table_display.setRowHeight(self.table_display.rowCount() - 1, 20) # make sure user-added rows are also thinner by default
+        self.table_display.setRowHeight(self.table_display.rowCount() - 1, 20)
         if self.table_display.rowCount() > 2:
             self.bt_rm_row.setDisabled(False)
     
@@ -1044,7 +1040,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     app = QApplication(sys.argv)
-
+    
 
     pikmin_gui = GenEditor()
     pikmin_gui.clipboard = app.clipboard() # we can put stuff on the clipboard with this
