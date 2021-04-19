@@ -69,6 +69,7 @@ class GenEditor(QMainWindow):
         self.save_file_as_action = QAction("Save As", self)
         self.create_animation = QAction("Create Animation", self)
         #self.combine_animations = QAction("Combine Animations", self)
+        self.toggle_dark_theme_action = QAction("Toggle Dark Theme", self) # create an option to toggle dark theme
         
         self.save_file_action.setShortcut("Ctrl+S")
         self.file_load_action.setShortcut("Ctrl+O")
@@ -79,6 +80,7 @@ class GenEditor(QMainWindow):
         self.save_file_action.triggered.connect(self.button_save_level)
         self.save_file_as_action.triggered.connect(self.button_save_as)
         self.create_animation.triggered.connect(self.create_new)
+        self.toggle_dark_theme_action.triggered.connect(self.toggle_dark_theme)
         
         self.save_file_action.setDisabled(True)
         self.save_file_as_action.setDisabled(True)
@@ -89,6 +91,8 @@ class GenEditor(QMainWindow):
         self.file_menu.addAction(self.save_file_as_action)   
         self.file_menu.addAction(self.create_animation)
         #self.file_menu.addAction(self.combine_animations)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(self.toggle_dark_theme_action) # add the button to the File menu
         
         self.menubar.addAction(self.file_menu.menuAction())
         self.setMenuBar(self.menubar)
