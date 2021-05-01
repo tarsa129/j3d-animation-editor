@@ -184,7 +184,7 @@ class brk(j3d.basic_animation):
       
         if len (self.register_animations) > 0:   
             print("there are register animations")
-            info.append( ["Material Name", "Unknown", "Channel"] )
+            info.append( ["Material Name", "Color Index", "Channel"] )
             
             i = len( info ) 
             
@@ -220,7 +220,7 @@ class brk(j3d.basic_animation):
         
         if len (self.constant_animations) > 0:      
             
-            info.append( ["Material Name", "Unknown", "Channel"] )
+            info.append( ["Material Name", "Color Index", "Channel"] )
             
             keyframes_dictionary = {}
             keyframes_dictionary[0] = []   
@@ -277,7 +277,7 @@ class brk(j3d.basic_animation):
         info = []
         info.append( ["Loop_mode", "", "Duration:", created[3], "Tangent Type:", j3d.tan_type[1] ] )
         info.append( ["Register Animations"] )
-        info.append( ["Material Name", "Unknown", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
+        info.append( ["Material Name", "Color Index", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
 
         for i in range( int(created[1]) ):
             info.append( ["Material " + str(i), 0 ,"Red:"] )
@@ -287,9 +287,9 @@ class brk(j3d.basic_animation):
                 info.append( ["", "", chan] )
                 
         info.append( ["Constant Animations"] )
-        
+        info.append( ["Material Name", "Color Index", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
         for i in range( int(created[2]) ):
-            info.append( ["Material " + str(i), "Red:"] )
+            info.append( ["Material " + str(i), 0,  "Red:"] )
             
             things = ["Green", "Blue", "Alpha"]
             for chan in things:
@@ -462,7 +462,6 @@ class brk(j3d.basic_animation):
             for comp in ("R", "G", "B", "A"):
                 data_starts.append(f.tell())
                 for val in all_values[animtype][comp]:
-                    print(val)
                     write_sint16(f, val)
                 write_padding(f, 4)
                 
