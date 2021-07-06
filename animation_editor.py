@@ -275,7 +275,7 @@ class GenEditor(QMainWindow):
     #file stuff
       
     def button_load_level(self):
-        filter =  "All Supported Files(*.bca *.bck *.bla *.blk *.bpk *.brk *.btk *.btp)"
+        filter =  "All Supported Files(*.bca *.bck *.bla *.blk *.bpk *.brk *.btk *.btp *.bva)"
         filepaths, choosentype = QFileDialog.getOpenFileNames( self, "Open File","" , filter )
             
         for filepath in filepaths:
@@ -290,7 +290,7 @@ class GenEditor(QMainWindow):
         index = self.animation_bar.currentIndex().row()      
         self.list_of_animations[index].display_info = self.get_on_screen()
         info = j3d.fix_array(self.list_of_animations[index].display_info)
-        if (self.list_of_animations[index].filepath.endswith("a") ):
+        if (self.list_of_animations[index].filepath.endswith("a") and not self.list_of_animations[index].filepath.endswith(".bva")  ):
             self.convert_to_a()
         else: 
             j3d.sort_filepath(self.list_of_animations[index].filepath, info) 
@@ -415,6 +415,8 @@ class GenEditor(QMainWindow):
             with open(filepath, "wb") as f:           
                 bla.write_bla(f)
                 f.close()
+
+            
     
     def import_anim_file(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,

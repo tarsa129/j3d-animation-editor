@@ -1,107 +1,106 @@
-import struct
+import struct 
+#from collections import OrderedDict
 
 from animations.general_animation import *
 from animations.general_animation import basic_animation
 import animations.general_animation as j3d
 
-class btp_facial_entry(object):
-    def __init__(self, mat_name, frames):
-        self.name = mat_name
+BVAFILEMAGIC = b"J3D1bva1"
+
+class VisibilityAnimation(object):
+    def __init__(self, index, name, frames):
+        self.index = index 
+        self.name = name 
         self.frames = frames
         
         self._offset = 0;
-        
+
+
+    # These functions are used for keeping track of the offset
+    # in the json->brk conversion and are otherwise not useful.
     def _set_offset(self, val):
         self._offset = val
 
-class btp(j3d.basic_animation):
-  
-    def __init__(self, flag, anglescale, unknown1 = 1):
+
+class bva(j3d.basic_animation):
+    def __init__(self, loop_mode, duration, tantype = 0):
         self.animations = []
-        self.flag = flag
-        self.anglescale = anglescale
-        self.unknown_address = unknown1    
+        self.loop_mode = loop_mode
+        #self.anglescale = anglescale
+        self.duration = duration
         
-        self.largest_duration = 0
-        
-    
+        if tantype == 0 or tantype == 1:
+            self.tan_type = tantype
+        else:
+            self.tan_type = 1
+        #self.unknown_address = unknown_address
+
     @classmethod
     def from_anim(cls, f):
-        #at this point, f is at 0x09
-        size = j3d.read_uint32(f)
 
-        sectioncount = j3d.read_uint32(f)
+        size = read_uint32(f)
+        #print("Size of brk: {} bytes".format(size))
+        sectioncount = read_uint32(f)
         assert sectioncount == 1
 
         svr_data = f.read(16)
-        #at this point, f is at the actual start of the documentaion
-
-        tpt_start = f.tell()
-        tpt_magic = f.read(4) #TPT1
-
-        tpt_sectionsize = j3d.read_uint32(f)
-
-        flag = j3d.read_uint8(f)
-        angle = j3d.read_uint8(f)
-
-        anim_length = j3d.read_uint16(f)
-        num_entries = j3d.read_uint16(f) #also known as "keyframe count in the documentation"
-        print("there are " + str(num_entries) + " entries")
         
-        unknown1 = j3d.read_uint16(f)
+        vaf_start = f.tell()
         
-        btp = cls(flag, angle, unknown1)
+        vaf_magic = f.read(4)
+        vaf_sectionsize = read_uint32(f)
 
-        #offsets
-        facial_animation_entries_os = j3d.read_uint32(f) + tpt_start
-        texture_index_bank_os = j3d.read_uint32(f) + tpt_start
-        remap_table_os = j3d.read_uint32(f) + tpt_start
-        stringtable_os = j3d.read_uint32(f) + tpt_start
+        loop_mode = read_uint8(f)
+        padd = f.read(1)
+        assert padd == b"\xFF"
+        duration = read_uint16(f)
+        bva = cls(loop_mode, duration)
 
-        #at this point, we are at the facial animation entries
-        
-        
-        #make string table
-        f.seek(stringtable_os)
-        stringtable = j3d.StringTable.from_file(f)
-    
-        read_animations = []
-    
-        for i in range(num_entries):
-        
-            f.seek(facial_animation_entries_os + i * 8)
-            print(f.tell())
-        
-            this_length = j3d.read_uint16(f)
-            print("length of " + str(i) + " is " + str(this_length))
-            this_start = j3d.read_uint16(f)
+        visibility_count = read_uint16(f)
+        show_table_count = read_uint16(f)
+        visibility_offset = read_uint32(f) + vaf_start 
+        show_table_offset = read_uint32(f) + vaf_start
+
+
+        for i in range(visibility_count):
             
-            indices = []
             
-            f.seek(texture_index_bank_os + 2 * this_start)
-     
-            for j in range(this_length):
-                indices.append(j3d.read_uint16(f))
+            f.seek(visibility_offset + 0x4*i)
+            show_count = read_uint16(f) #duration
+            show_index = read_uint16(f) #index into table
             
-            animation = btp_facial_entry(stringtable.strings[i], indices)
+            frames = []
+            f.seek( show_table_offset + show_index)
+            for j in range( show_count ):
+                frames.append( read_uint8(f) )
             
-            read_animations.append(animation)
-            
-       
-        btp.animations = read_animations
-        f.close()
-        return btp
-              
+            anim = VisibilityAnimation(i, "Mesh " + str(i), frames)
+            bva.animations.append(anim)
+        
+
+        return bva
+
+    def get_children_names(self):
+        mesh_names = []
+        for mesh in self.animations:
+            mesh_names.append(mesh.name)
+        return mesh_names
+
     def get_loading_information(self):
-        
-        information = []
-        
-        information.append(["Flag: ", self.flag, "Anglescale", self.anglescale, "Unknown:", self.unknown_address])
-        
-        information.append( [ "Material Name", "Duration"] )
+
+        info = []
+        info.append( ["Loop Mode:", j3d.loop_mode[self.loop_mode] , "Duration:", self.duration, "Tan Type:", j3d.tan_type[1] ] )
+    
         
         keyframes_dictionary = {}
         keyframes_dictionary[0] = []
+        
+
+        info.append( ["Mesh Name", "Duration"] )
+        
+        keyframes_dictionary = {}
+        keyframes_dictionary[0] = []
+
         
         for anim in self.animations: 
             #print("current at mat index : " + str(i) )
@@ -147,7 +146,7 @@ class btp(j3d.basic_animation):
             print("keyframes dic")
             print(keyframes_dictionary)
             
-            information.append(curr_info)
+            info.append(curr_info)
         
         keys = []
 
@@ -157,16 +156,17 @@ class btp(j3d.basic_animation):
         keys.sort()
         
         for i in keys: #i is the frame, so for each keyframe
-            information[1].append("Frame " + str(i)) #add the header
+            info[1].append("Frame " + str(i)) #add the header
             
             k = 2 #k in the row index in the table
             for j in keyframes_dictionary[i]: #j is the value
-                information[k].append(j)
+                info[k].append(j)
                 k += 1
         
-        #print("information: ")        
-        #print (information)
-        return information
+        
+        
+        print(info)
+        return info  
     
     @classmethod
     def empty_table(cls, created):
@@ -174,32 +174,31 @@ class btp(j3d.basic_animation):
         
         information.append(["Flag: ", 0, "Anglescale", 0, "Unknown:", 0])
         
-        information.append( [ "Material Name", "Duration"] )
+        information.append( [ "Mesh Name", "Duration"] )
         
         for i in range( int(created[3] ) ):
             information[1].append( "Frame " + str(i))
         
         for i in range( int(created[1]) ):
-            information.append( [ "Material "  + str(i), created[3] ] )
+            information.append( [ "Mesh "  + str(i), created[3] ] )
         
         return information
-            
     
     @classmethod
     def from_table(cls, f, info):
-        
-        
-        btp = cls(int(info[0][1]) , int(info[0][3]), int(info[0][5]))
-        
+        bva = cls(int(info[0][1]), int(info[0][3]), int(info[0][5])  )
+
+
         largest_duration = 0;
         
         extent = max(len(info[0]), len(info[1]))
         
         keyframes = []
         
+        print(info[1])
         for i in range( 2, len( info[1] ) ):
             text = info[1][i][6:]
-            #print(text)
+            print(text)
             #assert text.isnumeric()
             if text.isnumeric():
                 text = int(text)
@@ -240,75 +239,69 @@ class btp(j3d.basic_animation):
                     frames.append(last_value)            
                 elif j != int(info[1][next_kf][6:]): #if not a keyframe, just write
                     frames.append(last_value)
-                else: #if it is a keyframe            
+                else: #if it is a keyframe       
+                    
                     last_value = info[i][next_kf]
                     frames.append(last_value)
                     prev_kf = next_kf
-                    
+                    print("keyframe " + str(last_value))
                     next_kf += 1
                      
             print("frames:")
             print(frames)
             
-            entry = btp_facial_entry(info[i][0], frames)
-            btp.animations.append(entry)
-            btp.largest_duration = largest_duration
-            
+            entry = VisibilityAnimation(info[i][0], "toadette", frames)
+            bva.animations.append(entry)
+            bva.largest_duration = largest_duration
+   
         if f == "":
             print("no saving")
-            return btp
+            return bva
         else:
             with open(f, "wb") as f:
-                btp.write_btp(f)
+                bva.write_bva(f)
                 f.close()
-        
-    def write_btp(self, f):
 
-        #header info 
-        f.write(j3d.BTPFILEMAGIC)
+
+    def write_bva(self, f):
+        f.write(BVAFILEMAGIC)
         filesize_offset = f.tell()
         f.write(b"ABCD") # Placeholder for file size
-        j3d.write_uint32(f, 1) # Always a section count of 1
+        write_uint32(f, 1) # Always a section count of 1
         f.write(b"\xFF"*16)
-         
-        tpt1_start = f.tell()
-        f.write(b"TPT1")
-        
-        tpt1_size_offset = f.tell()
-        f.write(b"EFGH")  # Placeholder for tpt1 size
-                    
-        j3d.write_uint8(f, self.flag)
-        j3d.write_uint8(f, self.anglescale)
-        j3d.write_uint16(f, self.largest_duration)
-        j3d.write_uint16(f, len(self.animations) )
-        j3d.write_uint16(f, self.unknown_address)
-        
-        tables_offset = f.tell();
-        
-        f.write(b"toadettebestgril")           
 
-        facial_animation_entries_os = f.tell()
+        vaf1_start = f.tell()
+        f.write(b"VAF1")
+
+        vaf1_size_offset = f.tell()
+        f.write(b"EFGH")  # Placeholder for vaf1 size
         
-        f.write(b"\x00"*(0x8*len(self.animations))) #placeholder for stuff
+        write_uint8(f, self.loop_mode)
+        write_uint8(f, 0xFF)
+        write_uint16(f, self.duration)
         
-        """
-        total_frames = 0;
-       
-        for i in range( len (btp.animations) ):
-            j3d.write_uint16(f, len ( btp.animations[i].frames ))
-            j3d.write_uint16(f, total_frames)
-            total_frames += len (btp.animations[i].frames )
-            j3d.write_uint16(f, 0x00FF)
-            j3d.write_uint16(f, 0xFFFF)
-        """
         
-        j3d.write_padding(f, 4)
+        write_uint16(f, len(self.animations))
         
-        texture_index_bank_os = f.tell()
+        count_offset = f.tell()
+        f.write(b"AB"*1)  # Placeholder for table count
+        data_offsets = f.tell()
+        f.write(b"ABCD"*2) # Placeholder for data offsets 
+   
+        write_padding(f, multiple=32)
+        assert f.tell() == 0x40
+         
+        # now, time for the visiblity animations to be written as placeholders        
+        anim_start = f.tell()
+        f.write(b"\x00"*(0x4*len(self.animations)))
+        write_padding(f, multiple=4)
         
+        table_offset = f.tell()
+        # write the table
         all_frames = []
         
         for anim in self.animations:
+            print(anim.frames)
             offset = j3d.find_sequence( all_frames, anim.frames )
             if offset == -1:
                 offset = len(all_frames)
@@ -317,52 +310,36 @@ class btp(j3d.basic_animation):
             anim._set_offset(offset)
        
         for val in all_frames:
-            j3d.write_uint16(f, int(val) )
+            j3d.write_uint8(f, int(val) )
             
         j3d.write_padding(f, 4)
-       
-        """
-        for i in range( len (btp.animations) ):
-            for j in btp.animations[i].frames:
-                j = int(j)
-                j3d.write_uint16(f, j)
-        """
         
-        remap_table_os = f.tell()
-        
-        j3d.write_uint32(f, 0x00000001)
-        
-        stringtable_os = f.tell()
-        
-        strings = self.get_children_names()
-        
-        j3d.StringTable.write(f, strings)
-        
-        j3d.write_padding(f, 32)
-        
+ 
+        write_padding(f, multiple=32)
         total_size = f.tell()
+
+        f.seek(anim_start)
+        for anim in self.animations:
+            write_uint16(f, len(anim.frames))
+            write_uint16(f, anim._offset)
+     
+        # Fill in all the placeholder values
+        f.seek(count_offset)
+        write_uint16(f, len(all_frames ) )
         
         f.seek(filesize_offset)
-        j3d.write_uint32(f, total_size)
-        
-        f.seek(tpt1_size_offset)
-        j3d.write_uint32(f, total_size - tpt1_start)
-        
-        f.seek(facial_animation_entries_os);
-        for anim in self.animations:
-            j3d.write_uint16(f, len ( anim.frames ))
-            j3d.write_uint16(f, anim._offset)
-            j3d.write_uint16(f, 0x00FF)
-            j3d.write_uint16(f, 0xFFFF)
-                
-        f.seek(tables_offset)
-        j3d.write_uint32(f, facial_animation_entries_os - tpt1_start)
-        j3d.write_uint32(f, texture_index_bank_os - tpt1_start)
-        j3d.write_uint32(f, remap_table_os - tpt1_start)
-        j3d.write_uint32(f, stringtable_os - tpt1_start)
-        
+        write_uint32(f, total_size)
+
+        f.seek(vaf1_size_offset)
+        write_uint32(f, total_size - vaf1_start)
+
+        f.seek(data_offsets)
+        write_uint32(f, anim_start        - vaf1_start)
+        write_uint32(f, table_offset        - vaf1_start)
+\
+
     @classmethod
     def match_bmd(cls, info, strings):
-        btp = cls.from_table("", info)
-        info = j3d.basic_animation.match_bmd(btp, strings)
-        return btp.get_loading_information()
+        bva = cls.from_table("", info)
+        j3d.basic_animation.match_bmd(bva, strings)
+        return bva.get_loading_information()

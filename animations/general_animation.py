@@ -11,7 +11,7 @@ BPKFILEMAGIC = b"J3D1bpk1"
 BCAFILEMAGIC = b"J3D1bca1"
 BLAFILEMAGIC = b"J3D1bla1"
 BLKFILEMAGIC = b"J3D1blk1"
-
+BVAFILEMAGIC = b"J3D1bva1"
 
 
 PADDING = b"This is padding data to align"
@@ -348,6 +348,7 @@ import animations.bck as bck_file
 import animations.bca as bca_file
 import animations.blk as blk_file
 import animations.bla as bla_file
+import animations.bva as bva_file
 
 def convert_to_a(filepath, info):
     if filepath.endswith(".bck") or filepath.endswith(".bca"):
@@ -399,6 +400,8 @@ def sort_file(filepath):
             return bla_file.bla.from_anim(f) 
         elif magic == BLKFILEMAGIC: 
             return blk_file.blk.from_anim(f) 
+        elif magic == BVAFILEMAGIC: 
+            return bva_file.bva.from_anim(f) 
         f.close()
             
 def sort_filepath(filepath, information):
@@ -419,6 +422,8 @@ def sort_filepath(filepath, information):
          return bla_file.bla.from_table(filepath, information) 
     elif filepath.endswith(".blk"):
          return blk_file.blk.from_table(filepath, information) 
+    elif filepath.endswith(".bva"):
+         return bva_file.bva.from_table(filepath, information) 
 
 def create_empty(information):
     table = []
@@ -439,6 +444,8 @@ def create_empty(information):
         table = bla_file.bla.empty_table(information) 
     elif filepath.endswith(".blk"):
         table = blk_file.blk.empty_table(information) 
+    elif filepath.endswith(".bva"):
+        table = bva_file.bva.empty_table(information) 
     return table
 
 def match_bmd(filepath, information, strings):
@@ -456,5 +463,7 @@ def match_bmd(filepath, information, strings):
         table = bpk_file.bpk.match_bmd(information, strings) 
     elif filepath.endswith(".blk") or filepath.endswith(".bla"):
         table = blk_file.blk.match_bmd(information, strings) 
+    elif filepath.endswith(".bva"):
+        table = bva_file.bva.match_bmd(information, strings) 
     return table
     
