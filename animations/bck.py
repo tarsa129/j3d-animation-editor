@@ -1,9 +1,15 @@
 import struct 
 from collections import OrderedDict
 
+from fbx import *
+from FbxCommon import * 
+import sys, inspect
+
 from animations.general_animation import *
 from animations.general_animation import basic_animation
 import animations.general_animation as j3d
+
+
 
 BCKFILEMAGIC = b"J3D1bck1"
 
@@ -19,6 +25,7 @@ class bone_anim(object):
         self._scale_offsets = {}
         self._rot_offsets = {}
         self._translation_offsets = {}
+
 
 
     def add_scale(self, axis, comp):
@@ -40,7 +47,8 @@ class bone_anim(object):
         self._translation_offsets[axis] = val
 
 class bck(j3d.basic_animation):
-    def __init__(self, loop_mode, anglescale, duration, tantype = 1):
+
+    def __init__(self, loop_mode = 0, anglescale = 0, duration = 1, tantype = 1):
         self.loop_mode = loop_mode
         self.anglescale = anglescale
         self.duration = duration
@@ -214,7 +222,13 @@ class bck(j3d.basic_animation):
         
         
         return bck
+    
+    def from_fbx_anim(self):
+         
+        return self.get_loading_information()
+        
 
+       
     
     def get_children_names(self):
         joints = []

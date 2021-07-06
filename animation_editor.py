@@ -16,6 +16,10 @@ import animations.general_animation as j3d
 import widgets.create_anim as create_widget
 import widgets.tree_view as tree_view
 
+from fbx import *
+import fbx as fbx
+import inspect, sys
+
 class GenEditor(QMainWindow):
     def __init__(self):
     
@@ -27,8 +31,10 @@ class GenEditor(QMainWindow):
         self.is_remove = False
         
         self.create_window = None
+         
         
         self.setup_ui()
+        
 
     def setup_ui(self):
         self.resize(2500, 1000)
@@ -422,9 +428,12 @@ class GenEditor(QMainWindow):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
         ".fbx files(*.fbx)" )
         if filepath:
-            bck = j3d.import_fbx_file(filepath)
-            filepath = filepath[0:-5] + ".bck"
-            self.universal_new_animation(bck, filepath)
+            bcks = j3d.import_fbx_file(filepath)
+            for bck in bcks:
+                self.universal_new_animation(bck[1], bck[0])
+                
+            #filepath = filepath[0:-5] + ".bck"
+            #self.universal_new_animation(bck, filepath)
       
     def universal_new_animation(self, actual_animation_object, filepath):
         

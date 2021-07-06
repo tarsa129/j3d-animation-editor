@@ -1,5 +1,7 @@
 import struct
-
+from sys import platform
+from animations.fbx_scripts import import_fbx_file
+import animations.fbx_scripts as fs
 
 BTPFILEMAGIC = b"J3D1btp1"
 BTKFILEMAGIC = b"J3D1btk1"
@@ -80,10 +82,11 @@ class basic_animation(object):
         
 
 class AnimComponent(object):
-    def __init__(self, time, value, tangentIn = 0, tangentOut=None):
+    def __init__(self, time, value, tangentIn = 0, tangentOut=None, tantype = "0"):
         self.time = time 
         self.value = value
         self.tangentIn = tangentIn 
+        self.tanType = tantype
         
         if tangentOut is None:
             self.tangentOut = tangentIn
@@ -362,7 +365,18 @@ def convert_to_a(filepath, info):
 def import_anim_file(filepath):
 
     with open(filepath, "r") as f:
-        return bck_file.bck.from_maya_anim(f);
+        info = bck_file.bck.from_maya_anim(f)
+        f.close()
+        return info
+
+def import_fbx_file(filepath):
+    
+    animations = fs.import_fbx_file(filepath)
+
+    return animations
+            
+    #return bck_file.bck.from_fbx_anim(filepath); 
+
 
 def sort_file(filepath):
     with open(filepath, "rb") as f:
