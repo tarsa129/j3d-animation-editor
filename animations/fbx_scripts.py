@@ -1,12 +1,7 @@
 import struct
 
-from ctypes import *
-from sys import platform
-
 from fbx import *
 import fbx as fbx
-
-
 
 KFCURVE_INTERPOLATION_CONSTANT    = 0x00000002     
 KFCURVE_INTERPOLATION_LINEAR      = 0x00000004     
