@@ -25,7 +25,7 @@ The FBX SDK can be installed by
 More details about the FBX SDK installation can be found [here](https://gitlab.inria.fr/radili/fbxsdk_python).
 
 # building from source code
-Run the included "cxfreeze.bat" file. This will create a new folder called "dist", which has the .exe. Then, copy "FbxCommon.pyd" and "fbxsip.pyd" from your Python3.9 files into the "Lib" folder withint the "dist" folder.
+Run the included "cxfreeze.bat" file. This will create a new folder called "dist", which has the .exe. Then, copy "FbxCommon.py" and "fbxsip.pyd" from your Python3.9 files into the "Lib" folder withint the "dist" folder.
 
 # special thanks:
 * Yoshi2, from whom a lot of the animation reading / writing code and gui code is adapted
