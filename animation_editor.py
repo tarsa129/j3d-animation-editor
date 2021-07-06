@@ -431,8 +431,12 @@ class GenEditor(QMainWindow):
         ".fbx files(*.fbx)" )
         if filepath:
             bcks = j3d.import_fbx_file(filepath)
+            index_of_slash = filepath.rfind("/")
+            
+            filepath = filepath[0:index_of_slash + 1]
+            print(filepath)
             for bck in bcks:
-                self.universal_new_animation(bck[1], bck[0])
+                self.universal_new_animation(bck[1],filepath +  bck[0] + ".bck")
                 
             #filepath = filepath[0:-5] + ".bck"
             #self.universal_new_animation(bck, filepath)
