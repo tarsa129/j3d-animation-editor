@@ -32,7 +32,7 @@ class GenEditor(QMainWindow):
         
         self.create_window = None
          
-        
+        self.setAcceptDrops(True)
         self.setup_ui()
         
 
@@ -210,7 +210,7 @@ class GenEditor(QMainWindow):
             self.table_display.setRowHeight(i, 20) # make them thinner       
         self.table_display.setGeometry(400, 50, self.width(), self.height())
         self.table_display.cellClicked.connect(self.cell_clicked)
- 
+        
         #self.table_display.currentItemChanged.connect(self.display_info_changes)
         
         #bottom bar
@@ -272,6 +272,7 @@ class GenEditor(QMainWindow):
         self.horizontalLayout.addWidget(self.workaroundl)
         self.horizontalLayout.addWidget(self.table_display)  
 
+
     #file stuff
       
     def button_load_level(self):
@@ -298,7 +299,7 @@ class GenEditor(QMainWindow):
     def button_save_as(self): 
         index = self.animation_bar.currentIndex().row()
         
-        filter =  "All Supported Files(*.bca *.bck *.bla *.blk *.bpk *.brk *.btk *.btp)"
+        filter =  "All Supported Files(*.bca *.bck *.bla *.blk *.bpk *.brk *.btk *.btp *.bva)"
         filepath, choosentype = QFileDialog.getSaveFileName(self, "Save File", self.list_of_animations[index].filepath, filter)
         if filepath:
             
@@ -354,6 +355,40 @@ class GenEditor(QMainWindow):
         quick_change_window = quick_change.quick_editor()  
         quick_change_window.setWindowModality(QtCore.Qt.ApplicationModal)            
         quick_change_window.exec_()
+    
+    def dragEnterEvent(self, event):
+        mime_data = event.mimeData()
+        if mime_data.hasUrls:
+            url = mime_data.urls()[0]
+            filepath = url.toLocalFile()
+            exten = filepath[filepath.rfind("."):].lower()
+            if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva", ".anim", ".fbx" ]:
+                event.acceptProposedAction()
+ 
+            
+    def dropEvent(self, event):
+        mime_data = event.mimeData()
+        if mime_data.hasUrls:
+            url = mime_data.urls()[0]
+            filepath = url.toLocalFile()
+            exten = filepath[filepath.rfind("."):].lower()
+            if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva" ]:
+                animation_object = j3d.sort_file(filepath)            
+                self.universal_new_animation(animation_object, filepath)
+            elif exten == ".anim": 
+                bck = j3d.import_anim_file(filepath)
+                filepath = filepath[0:-5] + ".bck"
+                self.universal_new_animation(bck, filepath)
+            elif exten == ".fbx":
+                bcks = j3d.import_fbx_file(filepath)
+                index_of_slash = filepath.rfind("/")
+                
+                filepath = filepath[0:index_of_slash + 1]
+                print(filepath)
+                for bck in bcks:
+                    self.universal_new_animation(bck[1],filepath +  bck[0] + ".bck")
+        print(event.mimeData().text() )
+    
     #convert stuff
     def edit_convert_actions(self, filename):
         extension = filename[-4:]
