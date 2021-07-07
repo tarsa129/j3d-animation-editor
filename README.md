@@ -29,3 +29,4 @@ More details about the FBX SDK installation can be found [here](https://gitlab.i
 # special thanks:
 * Yoshi2, from whom a lot of the animation reading / writing code and gui code is adapted
 * NoClip.Website, which provided guidance on how to read/write certain file types (.brk, .bpk, .bva)
+* fon-22, for providing .bva files to test with

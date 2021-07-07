@@ -402,6 +402,11 @@ class GenEditor(QMainWindow):
             self.convert_to_all.setDisabled(True)
             self.convert_to_key.setDisabled(True)
         
+        if extension == ".bva":
+            self.match_bones.setDisabled(True)
+        else:
+            self.match_bones.setDisabled(False)
+        
         self.model.setDisabled(False)
         if extension in {".bck", ".bca"}:
             self.load_bones.setDisabled(False)
@@ -568,6 +573,9 @@ class GenEditor(QMainWindow):
 
             if filepath.endswith(".bck") or filepath.endswith(".bca"):
                 strings = self.get_bones_from_bmd(bmd_file)
+            elif filepath.endswith(".bva"):
+                return
+                #string = self.get_meshes_from_bmd(bmd_file)
             else:
                 strings = self.get_materials_from_bmd(bmd_file)
             
@@ -597,6 +605,22 @@ class GenEditor(QMainWindow):
         with open(bmd_file, "rb") as f:
                 s = f.read()
                 a = s.find(b'\x4D\x41\x54\x33')
+                print(a)
+                f.seek(a + 0x14);
+                address = j3d.read_uint32(f)
+                print(address)
+                f.seek(address + a)
+                strings = j3d.StringTable.from_file(f).strings;
+                print(strings)
+                f.close()
+            
+        return strings
+
+    def get_meshes_from_bmd(self, bmd_file):
+        strings = []
+        with open(bmd_file, "rb") as f:
+                s = f.read()
+                a = s.find(b'\x53\x48\x50\x31')
                 print(a)
                 f.seek(a + 0x14);
                 address = j3d.read_uint32(f)
