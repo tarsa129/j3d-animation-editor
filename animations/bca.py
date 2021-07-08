@@ -35,7 +35,7 @@ class bone_anim(object):
         self.translation = {"X": [], "Y": [], "Z": []}
         
         self.name = ""
-        self.tan_inter = 0
+        self.tan_inter = []
         
         self._scale_offsets = {}
         self._rot_offsets = {}
@@ -216,7 +216,7 @@ class bca(j3d.basic_animation):
     def get_loading_information(self):
         info = []
         info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration] )
-        info.append( ["Joint Number", "Component"])
+        info.append( ["Joint Number", "Tangent Interpolation (Unused)","Component"])
         
         for i in range(self.duration):
             info[1].append("Frame " + str(i) )
@@ -233,6 +233,7 @@ class bca(j3d.basic_animation):
             for j in range (len ( things ) ):    
                 comp = things[j]
                 if j == 0:
+                    info[i].append("LLLL")
                     info[i].append(comp)
                     """    
                     elif j == 1:
@@ -242,7 +243,7 @@ class bca(j3d.basic_animation):
                             info.append( ["SSSS", comp] )
                     """
                 else:
-                    info.append( ["", comp] )
+                    info.append( ["", "LLLL", comp] )
                 
                 comp_dict = {}
                 if comp[0:1] == "S":
