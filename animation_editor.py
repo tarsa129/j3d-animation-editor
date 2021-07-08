@@ -167,12 +167,16 @@ class GenEditor(QMainWindow):
         self.load_bones.triggered.connect(self.load_bone_names)
         self.load_bones.setShortcut("Ctrl+L")
         
+        self.load_bones_all = QAction("Load Bone Names (All Animations)", self)
+        self.load_bones_all.triggered.connect(self.load_bone_names_all)
+        
         self.match_bones = QAction("Match With .bmd", self)
         self.match_bones.triggered.connect(self.match_bmd)
         self.match_bones.setShortcut("Ctrl+M")
        
         
         self.model.addAction(self.load_bones)
+        self.model.addAction(self.load_bones_all)
         self.model.addAction(self.match_bones)
        
         self.model.setDisabled(True)
@@ -542,7 +546,7 @@ class GenEditor(QMainWindow):
                 if isinstance(item, QTableWidgetItem):
                     item.setText(strings[i])
                 else:
-                    self.table_display.setItem( QTableWidgetItem( strings[i] ) )
+                    self.table_display.setItem(i, 0, QTableWidgetItem( strings[i] ) )
             #self.list_of_animations[index].display_info = information
             #self.load_animation_to_middle(0, information)
             information = self.get_on_screen()
@@ -560,6 +564,44 @@ class GenEditor(QMainWindow):
             index = self.animation_bar.currentIndex().row()
             self.edit_anim_bar_children( self.animation_bar.itemAt(0, index), strings)
     
+    def load_bone_names_all(self):
+        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)")
+        if filepath:   
+            strings = self.get_bones_from_bmd(filepath)
+            #index = self.animation_bar.currentIndex().row()
+            #information = self.get_on_screen()
+            #information = self.list_of_animations[index].display_info
+            for j in range( len(self.list_of_animations)):
+                if self.list_of_animations[j].filepath.endswith(".bca") or self.list_of_animations[j].filepath.endswith(".bck"):
+                    info = self.list_of_animations[j].display_info
+                    for i in range( len(strings) ):
+                        row = 9 * i + 2
+                        if row < len( info ) :
+                            info[row][0] = strings[i]
+
+            for i in range( len(strings) ):
+                row = 9 * i + 2
+                item = self.table_display.item(row, 0)
+                if isinstance(item, QTableWidgetItem):
+                    item.setText(strings[i])
+                else:
+                    self.table_display.setItem(i, 0, QTableWidgetItem( strings[i] ) )
+            #self.list_of_animations[index].display_info = information
+            #self.load_animation_to_middle(0, information)
+            information = self.get_on_screen()
+            first_vals = []
+            for i in range(len (information)):             
+                for j in range( len(information[i] )):                    
+                    if information[i][j] == "Linear" or information[i][j] == "Smooth":
+                        first_vals.append(information[i][j+1])
+                        break
+                    if information[i][j] != "":
+                        first_vals.append(information[i][j])
+                        break
+            self.table_display.setVerticalHeaderLabels(first_vals)
+            
+            index = self.animation_bar.currentIndex().row()
+            self.edit_anim_bar_children( self.animation_bar.itemAt(0, index), strings)
     def match_bmd(self):
         index = self.animation_bar.currentIndex().row()
         filepath = self.list_of_animations[index].filepath
@@ -787,7 +829,7 @@ class GenEditor(QMainWindow):
             information = array
         else:
             if index < len( self.list_of_animations ) :
-                information = self.list_of_animations[index].display_info;
+                information = self.list_of_animations[index].display_info
             else:
                 return
                 
@@ -815,11 +857,11 @@ class GenEditor(QMainWindow):
         for row in range(len(information)):
             for col in range(col_count):
                 if len( information[row] ) > col:
-                    if information[row][col] == "LLLL" or ( col == 0 and information[row][col] == "Linear"):
+                    if information[row][col] == "LLLL" or ( col == 1 and information[row][col] == "Linear"):
                         icon = QIcon("icons/linear.png")
                         item = QTableWidgetItem(icon, "Linear")
                         item.setWhatsThis("The tanget interpolation mode")
-                    elif information[row][col] == "SSSS" or ( col == 0 and information[row][col] == "Smooth"):
+                    elif information[row][col] == "SSSS" or ( col == 1 and information[row][col] == "Smooth"):
                         icon = QIcon("icons/smooth.png")
                         item = QTableWidgetItem(icon, "Smooth")
                     else:
