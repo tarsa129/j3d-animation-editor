@@ -1,4 +1,3 @@
-import struct
 
 from fbx import *
 import fbx as fbx
@@ -104,7 +103,7 @@ def DisplayLayers(stack, node):
 #will append a bone anim AT EACH CALL TO DISPLAY CHANNELS
 def DisplayAnimationLayer(pAnimLayer, pNode, bck_anim):
     (bone_anim, maxs) = DisplayChannels(pNode, pAnimLayer)
-    info = [maxs[0], maxs[1] ]
+    info = [maxs[0], maxs[1]]
     bone_anim.name = pNode.GetName()
     bck_anim.animations.append(bone_anim)
     
@@ -127,69 +126,82 @@ def DisplayChannels(pNode, pAnimLayer):
     lAnimCurve = pNode.LclTranslation.GetCurve(pAnimLayer, "X")
     if lAnimCurve:
         #print("        TX")
-        (dur, ang) = DisplayCurve(lAnimCurve, bone_anim.translation, "X")
-        duration = max(duration, dur)
+        (dur, ang, tan) = DisplayCurve(lAnimCurve, bone_anim.translation, "X")
+        duration = max(duration, dur)   
+        bone_anim.tan_inter[6] = tan
     lAnimCurve = pNode.LclTranslation.GetCurve(pAnimLayer, "Y")
     if lAnimCurve:
         #print("        TY")
-        (dur, ang) = DisplayCurve(lAnimCurve, bone_anim.translation, "Y")
+        (dur, ang, tan) = DisplayCurve(lAnimCurve, bone_anim.translation, "Y")
         duration = max(duration, dur)
+        bone_anim.tan_inter[7] = tan
     lAnimCurve = pNode.LclTranslation.GetCurve(pAnimLayer, "Z")
     if lAnimCurve:
         #print("        TZ")
-        (dur, ang) = DisplayCurve(lAnimCurve, bone_anim.translation, "Z")
+        (dur, ang, tan) = DisplayCurve(lAnimCurve, bone_anim.translation, "Z")
         duration = max(duration, dur)
-
+        bone_anim.tan_inter[8] = tan
     lAnimCurve = pNode.LclRotation.GetCurve(pAnimLayer, "X")
     if lAnimCurve:
         #print("        RX")
-        (dur, ang) = DisplayCurve(lAnimCurve, bone_anim.rotation, "X")
+        (dur, ang, tan) = DisplayCurve(lAnimCurve, bone_anim.rotation, "X")
         duration = max(duration, dur)
         anglescale = max( anglescale, int( ang / 180) )
+        bone_anim.tan_inter[3] = tan
     lAnimCurve = pNode.LclRotation.GetCurve(pAnimLayer, "Y")
     if lAnimCurve:
         #print("        RY")
-        (dur, ang) = DisplayCurve(lAnimCurve, bone_anim.rotation, "Y")
+        (dur, ang, tan) = DisplayCurve(lAnimCurve, bone_anim.rotation, "Y")
         duration = max(duration, dur)
         anglescale = max( anglescale, int( ang / 180) )
+        bone_anim.tan_inter[4] = tan
     lAnimCurve = pNode.LclRotation.GetCurve(pAnimLayer, "Z")
     if lAnimCurve:
         #print("        RZ")
-        (dur, ang) = DisplayCurve(lAnimCurve, bone_anim.rotation, "Z")
+        (dur, ang, tan) = DisplayCurve(lAnimCurve, bone_anim.rotation, "Z")
         duration = max(duration, dur)
         anglescale = max( anglescale, int( ang / 180) )
+        bone_anim.tan_inter[5] = tan
     lAnimCurve = pNode.LclScaling.GetCurve(pAnimLayer, "X")
     if lAnimCurve:
         #print("        SX")
-        (dur, ang) = DisplayCurve(lAnimCurve, bone_anim.scale, "X")
+        (dur, ang, tan) = DisplayCurve(lAnimCurve, bone_anim.scale, "X")
         duration = max(duration, dur)
+        bone_anim.tan_inter[0] = tan
     lAnimCurve = pNode.LclScaling.GetCurve(pAnimLayer, "Y")
     if lAnimCurve:
         #print("        SY")
-        (dur, ang) = DisplayCurve(lAnimCurve, bone_anim.scale, "Y")
+        (dur, ang, tan) = DisplayCurve(lAnimCurve, bone_anim.scale, "Y")
         duration = max(duration, dur)
+        bone_anim.tan_inter[1] = tan
     lAnimCurve = pNode.LclScaling.GetCurve(pAnimLayer, "Z")
     if lAnimCurve:
         #print("        SZ")
-        (dur, ang) = DisplayCurve(lAnimCurve, bone_anim.scale, "Z")
+        (dur, ang, tan) = DisplayCurve(lAnimCurve, bone_anim.scale, "Z")
         duration = max(duration, dur)
-
+        bone_anim.tan_inter[2] = tan
+    #print(bone_anim.tan_inter)
     return (bone_anim, (duration, anglescale) )
 def DisplayCurve(pCurve, array, axis):
     # a curve are the frames
     from animations.general_animation import AnimComponent
-    interpolation = [ "?", "constant", "linear", "cubic"]
+    #interpolation = [ "?", "constant", "linear", "cubic"]
 
     lKeyCount = pCurve.KeyGetCount()
+
+    tan_inter = 0
 
     for lCount in range(lKeyCount):
         lKeyValue = pCurve.KeyGetValue(lCount)
         lKeyTime  = pCurve.KeyGetTime(lCount).GetFrameCount()
         lKeyTan = InterpolationFlagToIndex(pCurve.KeyGetInterpolation(lCount))
         anim_comp = AnimComponent(lKeyTime, lKeyValue, 0, 0, lKeyTan)
+        #anim_comp.tan_inter = max( lKeyTan - 2, 0)
+        tan_inter = max(tan_inter, lKeyTan - 2)
+        #print(axis, lKeyValue, lKeyTime, lKeyTan)
         array[axis].append(anim_comp)
-        
-    return (array[axis][-1].time, array[axis][-1].value)
+    #print(tan_inter)
+    return (array[axis][-1].time, array[axis][-1].value, tan_inter)
 
 
 def InterpolationFlagToIndex(flags):

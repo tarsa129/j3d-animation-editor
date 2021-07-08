@@ -18,7 +18,6 @@ import widgets.tree_view as tree_view
 
 from fbx import *
 import fbx as fbx
-import inspect, sys
 
 class GenEditor(QMainWindow):
     def __init__(self):
@@ -800,9 +799,10 @@ class GenEditor(QMainWindow):
             col_count = max(col_count, len( information [i] ) )
             
             for j in range( len(information[i] )):                    
-                if information[i][j] == "LLLL":
+                if information[i][j] == "LLLL" or information[i][j] == "SSSS":
                     first_vals.append(information[i][j+1])
                     break
+                
                 if information[i][j] != "":
                     first_vals.append(information[i][j])
                     break
@@ -921,7 +921,7 @@ class GenEditor(QMainWindow):
         if isinstance(item, QTableWidgetItem):
             icon = item.icon()
             
-            if not item.icon().isNull() and column == 0:
+            if not item.icon().isNull() and column <= 1:
                 if item.text().startswith("L"):
                     item.setText("Smooth")
                     icon = QIcon("icons/smooth.png")

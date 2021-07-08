@@ -20,7 +20,7 @@ class bone_anim(object):
         self.translation = {"X": [], "Y": [], "Z": []}
         self.name = ""
         
-        self.tan_inter = 0
+        self.tan_inter = [-1] * 9
         
         self._scale_offsets = {}
         self._rot_offsets = {}
@@ -119,13 +119,23 @@ class bck(j3d.basic_animation):
             
             bone_animation = bone_anim()
             
+            inter_count = 0
+            
+            #default tangent interpolation is smooth
             for scale, axis in ((x_scale, "X"), (y_scale, "Y"), (z_scale, "Z")):
                 count, offset, tan_type = scale 
                 tangent_type = max(tan_type, tangent_type)
+                tan_inter = 0
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, scales, tan_type)
+                    if comp.tangentIn == 0:
+                        bone_animation.tan_inter[inter_count] = 1
+              
                     bone_animation.add_scale(axis, comp)
                     #print(comp)
+                if bone_animation.tan_inter[inter_count] == -1:
+                    bone_animation.tan_inter[inter_count] = 0
+                inter_count += 1
             
             for rotation, axis in ((x_rot, "X"), (y_rot, "Y"), (z_rot, "Z")):
                 count, offset, tan_type = rotation 
@@ -133,17 +143,27 @@ class bck(j3d.basic_animation):
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, rotations, tan_type)
                     comp.convert_rotation(rotscale)
+                    if comp.tangentIn != 0:
+                        bone_animation.tan_inter[inter_count] = 0
+                   
                     bone_animation.add_rotation(axis, comp)
                     #print(comp)
+                if bone_animation.tan_inter[inter_count] == -1:
+                    bone_animation.tan_inter[inter_count] = 1
+                inter_count += 1   
                     
             for translation, axis in ((x_trans, "X"), (y_trans, "Y"), (z_trans, "Z")):
                 count, offset, tan_type = translation
                 tangent_type = max(tan_type, tangent_type)
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, trans, tan_type)
+                    if comp.tangentIn == 0:
+                        bone_animation.tan_inter[inter_count] = 1
                     bone_animation.add_translation(axis, comp)
                     #print(comp)
-                    
+                if bone_animation.tan_inter[inter_count] == -1:
+                    bone_animation.tan_inter[inter_count] = 0
+                inter_count += 1   
             bck.animations.append(bone_animation)
         bck.tan_type = tangent_type
         
@@ -226,9 +246,7 @@ class bck(j3d.basic_animation):
     def from_fbx_anim(self):
          
         return self.get_loading_information()
-        
 
-       
     
     def get_children_names(self):
         joints = []
@@ -242,7 +260,7 @@ class bck(j3d.basic_animation):
     def get_loading_information(self):
         info = []
         info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration, "Tan Type:", self.tan_type] )
-        info.append( ["Bone Name", "Component"])
+        info.append( ["Bone Name", "Tangent Interpolation", "Component"])
         
         keyframes_dictionary = {}
         keyframes_dictionary[0] = []
@@ -258,18 +276,27 @@ class bck(j3d.basic_animation):
                 info.append( [anim.name] )
             things = ["Scale X:", "Scale Y:", "Scale Z:", "Rotation X:", "Rotation Y:", "Rotation Z:",
                 "Translation X:", "Translation Y:", "Translation Z:"]
-            
-            for j in range (len ( things ) ):    
+            #print(anim.tan_inter)
+            for j in range (len ( things ) ):    # for each srt xyz component
                 comp = things[j]
                 if j == 0:
+                    if anim.tan_inter[j] == 1:
+                        info[i].append( "SSSS")                     
+                    else:
+                        info[i].append( "LLLL" )
                     info[i].append(comp)
-                elif j == 1:
-                    if anim.tan_inter == 0:
-                        info.append( ["LLLL", comp] )
-                    elif anim.tan_inter == 1:
-                        info.append( ["SSSS", comp] )
+                    """
+                    elif j == 1:
+                        if anim.tan_inter == 0:
+                            info.append( ["LLLL", comp] )
+                        elif anim.tan_inter == 1:
+                            info.append( ["SSSS", comp] ) """
                 else:
-                    info.append( ["", comp] )
+                    if anim.tan_inter[j] == 1:
+                        
+                        info.append( ["", "SSSS", comp] )
+                    else:
+                        info.append( ["", "LLLL", comp] )
                 
                 comp_dict = {}
                 if comp[0:1] == "S":
@@ -297,19 +324,20 @@ class bck(j3d.basic_animation):
     def empty_table(cls, created):
         info = []
         info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Tan Type:", j3d.tan_type[1] ] )
-        info.append( ["Joint Number", "Component"] )
+        info.append( ["Bone Name", "Tangent Interpolation", "Component"] )
 
         for i in range( int(created[3])):
             info[1].append("Frame " + str(i) )
         
         for i in range( int(created[1]) ):
-            info.append( ["Joint " + str(i), "Scale U:"] )
-            info.append( ["Linear", "Scale V:"] )
+            info.append( ["Joint " + str(i),"SSSS", "Scale X:"] )
+
             
-            things = ["Scale Z:", "Rotation X:", "Rotation Y:", "Rotation Z:",
-                "Translation X:", "Translation Y:", "Translation Z:"]
+            things = [ [ "", "SSSS", "Scale Y:"], ["", "SSSS", "Scale Z:"],
+                        ["", "LLLL", "Rotation X:"],["", "LLLL", "Rotation Y:"], ["", "LLLL", "Rotation Z:"],
+                        ["", "SSSS", "Translation X:"],["", "SSSS", "Translation Y:"], ["", "SSSS", "Translation Z:"] ]
             for comp in things:
-                info.append( ["", comp] )
+                info.append( comp )
         return info          
     
     @classmethod
@@ -321,9 +349,10 @@ class bck(j3d.basic_animation):
         
         keyframes = []
         
-        for i in range(2, len( info[1] ) ):
+        for i in range(3, len( info[1] ) ):
             if info[1][i] != "":
                 text = info[1][i][6:]
+                
                 text = int(text)
                 keyframes.append(text)
         
@@ -335,21 +364,27 @@ class bck(j3d.basic_animation):
             current_anim = bone_anim()
             
             current_anim.name = info[line][0]
-            
+            """
             if info[line + 1][0].startswith("S"):
                 current_anim.tan_inter = 1
-            
+            """
             for j in range(9):  #for each of thing in scale/rot/trans x/y/z/       
                 xyz = "XYZ"
                 xyz = xyz[j%3: j%3 + 1]
                               
-                for k in range(2, len(info[line + j])): #for each keyframe
+                for k in range(3, len(info[line + j])): #for each keyframe
                     if info[line + j][k] != "":
                         try:
-                            comp = j3d.AnimComponent( keyframes[k-2], float(info[line + j][k]))
+                            comp = j3d.AnimComponent( keyframes[k-3], float(info[line + j][k]))
+                            
                         except:
                             comp = j3d.AnimComponent( bck.duration, float(info[line + j][k]) )
-                                                                   
+                        
+                        if info[line + j][1].startswith("S"):
+                            current_anim.tan_inter[j] = 1
+                        else:
+                            current_anim.tan_inter[j] = 0                                               
+                        
                         if j < 3:
                             current_anim.add_scale(xyz, comp)
                             #print("scale " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
@@ -371,11 +406,11 @@ class bck(j3d.basic_animation):
                 xyz = xyz[j%3: j%3 + 1]
                 
                 if j < 3:
-                    current_anim.scale[xyz] = j3d.make_tangents(current_anim.scale[xyz], current_anim.tan_inter)
+                    current_anim.scale[xyz] = j3d.make_tangents(current_anim.scale[xyz], current_anim.tan_inter[j])
                 if j < 6:
-                    current_anim.rotation[xyz] = j3d.make_tangents(current_anim.rotation[xyz], current_anim.tan_inter)
+                    current_anim.rotation[xyz] = j3d.make_tangents(current_anim.rotation[xyz], current_anim.tan_inter[j])
                 else:
-                    current_anim.translation[xyz] = j3d.make_tangents(current_anim.translation[xyz], current_anim.tan_inter)
+                    current_anim.translation[xyz] = j3d.make_tangents(current_anim.translation[xyz], current_anim.tan_inter[j])
             
             bck.animations.append(current_anim)
         if f == "":

@@ -1,5 +1,4 @@
 import struct
-from sys import platform
 from animations.fbx_scripts import import_fbx_file
 import animations.fbx_scripts as fs
 
@@ -87,6 +86,8 @@ class AnimComponent(object):
         self.value = value
         self.tangentIn = tangentIn 
         self.tanType = tantype
+        
+        #self.tan_inter = -1
         
         if tangentOut is None:
             self.tangentOut = tangentIn
