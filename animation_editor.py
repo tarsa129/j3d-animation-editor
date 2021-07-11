@@ -493,8 +493,6 @@ class GenEditor(QMainWindow):
             with open(filepath, "wb") as f:           
                 bla.write_bla(f)
                 f.close()
-
-            
     
     def import_anim_file(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
@@ -533,12 +531,14 @@ class GenEditor(QMainWindow):
             print( self.list_of_animations[index].display_info[0] ) 
         
         compressed = False
-        with open(filepath, "rb") as f:
-            header = f.read(4)
-            
-            if header == b"Yaz0":
-                compressed = True
-        
+        try:
+            with open(filepath, "rb") as f:
+                header = f.read(4)
+                
+                if header == b"Yaz0":
+                    compressed = True
+        except:
+            pass
         new_anim.compressed = compressed
         
         self.list_of_animations.append(new_anim)            
