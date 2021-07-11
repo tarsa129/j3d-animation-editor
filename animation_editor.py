@@ -349,6 +349,7 @@ class GenEditor(QMainWindow):
         created_info = self.create_window.get_info() 
         if created_info is not None:
             table = j3d.create_empty( created_info )
+
             filepath = created_info[0]
             new_anim = all_anim_information(filepath, table)           
             
@@ -877,7 +878,7 @@ class GenEditor(QMainWindow):
         
 
     def get_vertical_headers(self, information):
-        col_count = 1
+        col_count = max( len(information[0]), len(information[1]))
         first_vals = []
         first_vals.append( information[0][0] )
         first_vals.append( information[1][0] )
@@ -910,10 +911,15 @@ class GenEditor(QMainWindow):
                 
         self.table_display.clearContents()
         
+
+        
         first_vals, col_count = self.get_vertical_headers(information)
 
         self.table_display.setColumnCount(col_count)
         self.table_display.setRowCount(len(information))
+        
+        print(information)
+        
         for i in range(self.table_display.rowCount()): # interate through all the rows of the middle table
             self.table_display.setRowHeight(i, 20) # make each row thinner
                 
