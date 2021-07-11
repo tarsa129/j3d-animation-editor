@@ -404,7 +404,6 @@ class bck(j3d.basic_animation):
             for j in range(9):
                 xyz = "XYZ"
                 xyz = xyz[j%3: j%3 + 1]
-                
                 if j < 3:
                     current_anim.scale[xyz] = j3d.make_tangents(current_anim.scale[xyz], current_anim.tan_inter[j])
                 if j < 6:

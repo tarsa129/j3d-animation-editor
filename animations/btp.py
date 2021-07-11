@@ -16,13 +16,12 @@ class btp_facial_entry(object):
 
 class btp(j3d.basic_animation):
   
-    def __init__(self, flag, anglescale, unknown1 = 1):
+    def __init__(self, flag, unknown1 = 1):
         self.animations = []
         self.flag = flag
-        self.anglescale = anglescale
         self.unknown_address = unknown1    
         
-        self.largest_duration = 0
+        self.largest_duration = unknown1
         
     
     @classmethod
@@ -42,7 +41,7 @@ class btp(j3d.basic_animation):
         tpt_sectionsize = j3d.read_uint32(f)
 
         flag = j3d.read_uint8(f)
-        angle = j3d.read_uint8(f)
+        j3d.read_uint8(f)
 
         anim_length = j3d.read_uint16(f)
         num_entries = j3d.read_uint16(f) #also known as "keyframe count in the documentation"
@@ -50,7 +49,7 @@ class btp(j3d.basic_animation):
         
         unknown1 = j3d.read_uint16(f)
         
-        btp = cls(flag, angle, unknown1)
+        btp = cls(flag, anim_length)
 
         #offsets
         facial_animation_entries_os = j3d.read_uint32(f) + tpt_start
@@ -96,7 +95,7 @@ class btp(j3d.basic_animation):
         
         information = []
         
-        information.append(["Flag: ", self.flag, "Anglescale", self.anglescale, "Unknown:", self.unknown_address])
+        information.append(["Flag / Loop Mode: ", self.flag, "Maximum Duration:", self.unknown_address])
         
         information.append( [ "Material Name", "Duration"] )
         
@@ -172,7 +171,7 @@ class btp(j3d.basic_animation):
     def empty_table(cls, created):
         information = []
         
-        information.append(["Flag: ", 0, "Anglescale", 0, "Unknown:", 0])
+        information.append(["Flag / Loop Mode: ", 0, "Maximum Duration:",int(created[3] )  ])
         
         information.append( [ "Material Name", "Duration"] )
         
@@ -189,7 +188,7 @@ class btp(j3d.basic_animation):
     def from_table(cls, f, info):
         
         
-        btp = cls(int(info[0][1]) , int(info[0][3]), int(info[0][5]))
+        btp = cls(int(info[0][1]) , int(info[0][3]))
         
         largest_duration = 0;
         
@@ -278,7 +277,7 @@ class btp(j3d.basic_animation):
         f.write(b"EFGH")  # Placeholder for tpt1 size
                     
         j3d.write_uint8(f, self.flag)
-        j3d.write_uint8(f, self.anglescale)
+        j3d.write_uint8(f, 0xff)
         j3d.write_uint16(f, self.largest_duration)
         j3d.write_uint16(f, len(self.animations) )
         j3d.write_uint16(f, self.unknown_address)

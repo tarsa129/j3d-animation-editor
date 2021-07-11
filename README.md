@@ -10,6 +10,7 @@ editor for a variety of j3d animation files. still a work in progress. any bugs 
 * .blk: cluster key 
 * .bla: cluster all 
 * .btp: texture palette all (integer values only)
+* .bva: mesh visibility all (boolean values only)
 
 can also import .anim and .fbx, both as .bck
 
@@ -27,6 +28,9 @@ The FBX SDK can be installed by
 More details about the FBX SDK installation can be found [here](https://gitlab.inria.fr/radili/fbxsdk_python).
 
 # special thanks:
-* Yoshi2, from whom a lot of the animation reading / writing code and gui code is adapted
+* Yoshi2, from whom a lot of the animation reading / writing code, gui code, and yaz0 decompression is adapted
 * NoClip.Website, which provided guidance on how to read/write certain file types (.brk, .bpk, .bva)
 * fon-22, for providing .bva files to test with
+* SuperHackio's Hack.io j3d scripts, which provided guidance on how to read certain file types (.bva)
+* LagoLunatic's GCFT, for a yaz0 compression script
+* BigSharkZ, for testing the script and suggesting new features

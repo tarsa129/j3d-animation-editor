@@ -33,7 +33,6 @@ class animation_bar(QTreeWidget):
             print(" emit close ")
             
             self.main_editor.is_remove = True
-
             
             items = self.selectedItems()         
             if ( len(items) > 1):
@@ -50,18 +49,21 @@ class animation_bar(QTreeWidget):
             if len( self.main_editor.list_of_animations ) == 0: #if there is nothing left, simply clear and return
                 self.main_editor.table_display.clearContents()
                 self.takeTopLevelItem(0)
+                self.main_editor.save_file_action.setDisabled(True)
+                self.main_editor.save_file_as_action.setDisabled(True)
                 self.main_editor.is_remove = False
+                self.main_editor.bt_add_frames_adv.setDisabled(True)
                 return
             else: #there are more animations - select the one below item
                 self.main_editor.current_index = max(index - 1, 0);
-                item = self.itemAt(self.current_index, 0);
+                item = self.itemAt(self.main_editor.current_index, 0);
                 
             print("remove item from the tree")
             self.takeTopLevelItem(index) #triggers selected_animation_changed 
             self.main_editor.table_display.clearContents()  
             
             print("load the previous animation to the middle. index: " + str(index) )
-            self.main_editor.load_animation_to_middle(main_editor.current_index)
+            self.main_editor.load_animation_to_middle(self.main_editor.current_index)
             
             
             self.setCurrentItem(item)
@@ -96,3 +98,4 @@ class animation_bar(QTreeWidget):
         context_menu.exec(self.mapToGlobal(pos))
         context_menu.destroy()
         del context_menu
+  

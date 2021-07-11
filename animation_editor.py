@@ -15,6 +15,9 @@ import animations.general_animation as j3d
 
 import widgets.create_anim as create_widget
 import widgets.tree_view as tree_view
+import widgets.add_frames as frames_widget
+from widgets.yaz0 import compress
+from io import BytesIO
 
 from fbx import *
 import fbx as fbx
@@ -30,6 +33,7 @@ class GenEditor(QMainWindow):
         self.is_remove = False
         
         self.create_window = None
+        self.frames_window = None
          
         self.setAcceptDrops(True)
         self.setup_ui()
@@ -259,6 +263,11 @@ class GenEditor(QMainWindow):
         self.bt_add_material.setText("Add Material / Bone")
         self.bt_add_material.clicked.connect(self.add_material)
         
+        self.bt_add_frames_adv = QPushButton(self)
+        self.bt_add_frames_adv.setText("Add Frames Dialogue")
+        self.bt_add_frames_adv.clicked.connect(self.frames_dialogue)
+        self.bt_add_frames_adv.setDisabled(True)
+        
         self.bottom_actions.addWidget(self.bt_addc_here, 0, 0)       
         self.bottom_actions.addWidget(self.bt_addr_here, 0, 1)
         self.bottom_actions.addWidget(self.bt_add_col, 1 ,0)
@@ -268,6 +277,7 @@ class GenEditor(QMainWindow):
         self.bottom_actions.addWidget(self.bt_rm_col, 3, 0)
         self.bottom_actions.addWidget(self.bt_rm_row, 3, 1)
         self.bottom_actions.addWidget(self.bt_add_material, 4, 0)
+        self.bottom_actions.addWidget(self.bt_add_frames_adv, 4, 1)
                
         self.left_vbox.addWidget(self.workaround)
         
@@ -298,6 +308,15 @@ class GenEditor(QMainWindow):
             self.convert_to_a()
         else: 
             j3d.sort_filepath(self.list_of_animations[index].filepath, info) 
+        
+        if self.list_of_animations[index].compressed:
+            filepath = self.list_of_animations[index].filepath
+            out = BytesIO()
+            with open(filepath, "rb") as f:
+                out = compress(f)
+            with open(filepath, "wb") as f:
+                f.write(out.getbuffer())
+            
     
     def button_save_as(self): 
         index = self.animation_bar.currentIndex().row()
@@ -312,6 +331,13 @@ class GenEditor(QMainWindow):
                 self.convert_to_a()
             else: 
                 j3d.sort_filepath(filepath, info) 
+            print(self.list_of_animations.compressed)
+            if self.list_of_animations[index].compressed:
+                out = BytesIO()
+                with open(filepath, "rb") as f:
+                    out = compress(f)
+                with open(filepath, "wb") as f:
+                    f.write(out.getbuffer())
             
     def create_new(self):
         
@@ -367,6 +393,13 @@ class GenEditor(QMainWindow):
             exten = filepath[filepath.rfind("."):].lower()
             if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva", ".anim", ".fbx" ]:
                 event.acceptProposedAction()
+            if exten in [".bmd", ".bdl"]:
+                index = self.animation_bar.currentIndex().row()
+                anim_exten = self.list_of_animations[index].filepath
+                anim_exten = anim_exten[anim_exten.rfind("."):].lower()
+                if anim_exten in [".bca", ".bck"]:
+                    event.acceptProposedAction()
+                
  
             
     def dropEvent(self, event):
@@ -387,10 +420,12 @@ class GenEditor(QMainWindow):
                 index_of_slash = filepath.rfind("/")
                 
                 filepath = filepath[0:index_of_slash + 1]
-                print(filepath)
+                #print(filepath)
                 for bck in bcks:
                     self.universal_new_animation(bck[1],filepath +  bck[0] + ".bck")
-        print(event.mimeData().text() )
+            elif exten in [".bmd", ".bdl"]:
+                self.load_bone_names(filepath)
+        #print(event.mimeData().text() )
     
     #convert stuff
     def edit_convert_actions(self, filename):
@@ -477,7 +512,7 @@ class GenEditor(QMainWindow):
             index_of_slash = filepath.rfind("/")
             
             filepath = filepath[0:index_of_slash + 1]
-            print(filepath)
+            #print(filepath)
             for bck in bcks:
                 self.universal_new_animation(bck[1],filepath +  bck[0] + ".bck")
                 
@@ -497,6 +532,14 @@ class GenEditor(QMainWindow):
             self.list_of_animations[index].display_info = self.get_on_screen()
             print( self.list_of_animations[index].display_info[0] ) 
         
+        compressed = False
+        with open(filepath, "rb") as f:
+            header = f.read(4)
+            
+            if header == b"Yaz0":
+                compressed = True
+        
+        new_anim.compressed = compressed
         
         self.list_of_animations.append(new_anim)            
         loaded_animation = QTreeWidgetItem(self.animation_bar)
@@ -517,6 +560,7 @@ class GenEditor(QMainWindow):
         self.setWindowTitle("j3d animation editor - " + filepath)
         
         self.animation_bar.setCurrentItem(loaded_animation)
+        self.bt_add_frames_adv.setDisabled(False)
         
         self.save_file_action.setDisabled(False)
         self.save_file_as_action.setDisabled(False)
@@ -533,10 +577,17 @@ class GenEditor(QMainWindow):
             child.setDisabled(True)
                
     #bmd stuff
-    def load_bone_names(self):
-        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)")
-        if filepath:   
-            strings = self.get_bones_from_bmd(filepath)
+    def load_bone_names(self, filename = None):
+        filepath = None
+        if filename == None or filename == False:
+            filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)")
+        print(filepath, filename)
+        if filepath or filename:
+            
+            if filepath:
+                strings = self.get_bones_from_bmd(filepath)
+            elif filename:
+                strings = self.get_bones_from_bmd(filename)
             #index = self.animation_bar.currentIndex().row()
             #information = self.get_on_screen()
             #information = self.list_of_animations[index].display_info
@@ -1012,8 +1063,12 @@ class GenEditor(QMainWindow):
         else:
             self.table_display.setColumnCount(self.table_display.columnCount() - 1)
     
-    def add_col_here(self):
-        curcol = self.table_display.currentColumn() + 2
+    def add_col_here(self, col_index = None):
+        
+        if col_index == None or col_index == False:
+            curcol = self.table_display.currentColumn() + 2
+        else:
+            curcol = col_index
         #print(self.table_display.currentColumn())
         self.add_column()
         if curcol > 2:
@@ -1125,20 +1180,115 @@ class GenEditor(QMainWindow):
                 rows_to_add = 9
             elif extension in {".brk", ".bpk"}:
                 rows_to_add = 4
-            elif extension in {".btp", ".blk", ".bla"}:
-                rows_to_add =1
+            elif extension in {".btp", ".blk", ".bla", ".bva"}:
+                rows_to_add = 1
             
             for i in range( rows_to_add ):
                 self.add_row()
     
+    def frames_dialogue(self):
+        if self.frames_window is None:
+            self.frames_window = frames_widget.frames_window()
+            self.frames_window.setWindowModality(QtCore.Qt.ApplicationModal)
+            self.frames_window.exec_()
+            
+        frames_to_add = self.frames_window.get_info()    
+
+        
+        if frames_to_add is not None:
+        
+            index = self.animation_bar.currentIndex().row()
+            extension = self.list_of_animations[index].filepath
+            info = self.get_on_screen()
+            extension = extension[-4:]
+            
+            duration = int( info[0][3] )
+            if extension in [".btk", ".bca", ".bck"]:
+                duration = int( info[0][5] )
+            if len(frames_to_add) >= 3 and frames_to_add[2] == "duration":              
+                frames_to_add = [ *range(frames_to_add[1], duration + 1, frames_to_add[0]) ]
+           
+            frames_column = 2
+            if extension in [".bca", ".bck", ".btk", ".brk"]:
+                frames_column = 3
+            elif extension == ".blk":
+                frames_column = 1
+            
+            frames_row = 1
+            if extension == ".brk":
+                frames_row = 2
+            
+            if frames_to_add[-1] > duration:
+                new = QTableWidgetItem(str(frames_to_add[-1]))
+                duration = frames_to_add[-1]
+                if extension in [".btk", ".bca", ".bck"]:
+                    self.table_display.setItem(0, 5, new)
+                else:
+                    self.table_display.setItem(0, 3, new)
+            
+            keyframes = []
+            
+                
+            before_adding = [0, frames_column]
+
+            for i in range( frames_column, len(info[frames_row]) ):
+                cell_text = info[frames_row][i].strip()
+                if cell_text != "":
+                    if not cell_text.isnumeric():
+                        cell_text = cell_text[6:]
+                            
+                    cell_text = int(cell_text)
+                    if cell_text in frames_to_add:
+                        frames_to_add.remove(cell_text)                    
+                    if cell_text <= frames_to_add[0] and cell_text > before_adding[0]:
+                        before_adding = [cell_text, i]
+                        
+                    
+                    if cell_text > frames_to_add[0]:
+                        keyframes.append( (cell_text, i) )
+            #assume keyframes are sorted
+            print(before_adding)
+            print (keyframes)
+            print(frames_to_add)
+            print("-")
+            
+            frames_added = 0
+            keyframes_passed = 0
+            
+            for frame in frames_to_add:
+
+                
+                if len(keyframes) == 0:
+                    insertion_column = before_adding[1] + keyframes_passed
+                    print("len is zero")
+                    #before_adding[1] += 1
+                elif frame < keyframes[0][0]:
+                    insertion_column = keyframes[0][1] -1
+                    print("frame " + str(frame) + " is less than first keyframe ", end = "")
+                elif frame > keyframes[0][0]:
+                    insertion_column = keyframes[0][1]
+                    keyframes.pop(0)
+                    keyframes_passed += 1
+                    print("frame " + str(frame)+ " is greater than first keyframe ", end = "")
+                
+                insertion_column += frames_added + 2
+                print(insertion_column) 
+                self.add_col_here(insertion_column)
+                frames_added += 1
+                
+                new = QTableWidgetItem("Frame " + str(frame))
+                self.table_display.setItem(frames_row, insertion_column - 1, new)
+        
+        self.frames_window = None
 import sys
 def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)
 
 class all_anim_information(object):
-    def __init__(self, filepath, current_array = []):
+    def __init__(self, filepath, current_array = [], compressed = False):
         self.filepath = filepath
         self.display_info = current_array
+        self.compressed = compressed
     
     @classmethod
     def get_copy(cls, entry):

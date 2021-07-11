@@ -1,6 +1,8 @@
 import struct
 from animations.fbx_scripts import import_fbx_file
 import animations.fbx_scripts as fs
+from widgets.yaz0 import decompress
+from io import BytesIO
 
 BTPFILEMAGIC = b"J3D1btp1"
 BTKFILEMAGIC = b"J3D1btk1"
@@ -313,7 +315,7 @@ def fix_array(info):
 def make_tangents(array, inter = 0 ):
     if len( array ) == 1:
         return array
-    elif inter == 1:
+    elif inter == 1 or inter == -1:
         for i in range( len( array ) ):    
             array[i].tangentOut = 0
             array[i].tangentIn = 0
@@ -384,6 +386,16 @@ def sort_file(filepath):
     with open(filepath, "rb") as f:
         magic = f.read(8)
         print(magic)
+        
+        if magic.startswith(b"Yaz0"):
+            decomp = BytesIO()
+            decompress(f, decomp)
+            #print(decomp)
+            f = decomp
+            f.seek(0)
+        
+            magic = f.read(8)
+            print(magic)
         
         if magic == BTPFILEMAGIC:
             return btp_file.btp.from_anim(f)       
