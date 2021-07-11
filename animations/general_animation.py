@@ -309,6 +309,12 @@ def fix_array(info):
         elif info[0][i] in tan_type:
             info[0][i] = str( tan_type.index( info[0][i] ) )
             
+            
+    for i in range (2, len (info[1]) ):
+        if str(info[1][i]).isnumeric():
+            info[1][i] = "Frame " + info[1][i]
+        
+            
     #print(info)
     return info 
     
@@ -324,15 +330,20 @@ def make_tangents(array, inter = 0 ):
             this_comp = array[i]
             next_comp = array[i+ 1]
             
-            tangent = (next_comp.value - this_comp.value) / (next_comp.time - this_comp.time)
+            tangent = 0
+            if next_comp.time != this_comp.time:       
+                tangent = (next_comp.value - this_comp.value) / (next_comp.time - this_comp.time)
             
             array[i].tangentOut = tangent
             array[i+1].tangentIn = tangent
 
         this_comp = array[-1]
         next_comp = array[0]
-
-        tangent = (next_comp.value - this_comp.value) / (next_comp.time - this_comp.time)
+        
+        tangent = 0
+        if next_comp.time != this_comp.time:       
+            tangent = (next_comp.value - this_comp.value) / (next_comp.time - this_comp.time)
+        #tangent = (next_comp.value - this_comp.value) / (next_comp.time - this_comp.time)
             
         array[-1].tangentOut = tangent
         array[0].tangentIn = tangent

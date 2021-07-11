@@ -125,7 +125,6 @@ class bck(j3d.basic_animation):
             for scale, axis in ((x_scale, "X"), (y_scale, "Y"), (z_scale, "Z")):
                 count, offset, tan_type = scale 
                 tangent_type = max(tan_type, tangent_type)
-                tan_inter = 0
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, scales, tan_type)
                     if comp.tangentIn == 0:

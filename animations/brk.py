@@ -176,98 +176,91 @@ class brk(j3d.basic_animation):
 
         info = []
         info.append( ["Loop Mode:", j3d.loop_mode[self.loop_mode] , "Duration:", self.duration, "Tan Type:", j3d.tan_type[1] ] )
-        info.append( ["Register Animations"])
         
         keyframes_dictionary = {}
         keyframes_dictionary[0] = []
         
-      
-        if len (self.register_animations) > 0:   
-            print("there are register animations")
-            info.append( ["Material Name", "Color Index", "Channel"] )
+        
+        info.append( ["Material Name", "Color Index", "Channel"] )
+        
+        i = len( info ) 
+        
+        for anim in self.register_animations:
+            things = ["Red", "Green", "Blue", "Alpha"]
             
-            i = len( info ) 
             
-            for anim in self.register_animations:
-                info.append( [anim.name, anim.unknown] )
-                things = ["Red", "Green", "Blue", "Alpha"]
+            for j in range (len ( things ) ):    
+                comp = things[j]
+                if j < 2:
                 
-                
-                for j in range (len ( things ) ):    
-                    comp = things[j]
                     if j == 0:
-                        info[i].append(comp)
-                    else:
-                        info.append( ["", "", comp] )
+                        info.append( [anim.name, anim.unknown, comp] )
+                    elif j == 1:
+                        info.append( ["Register", "", comp] )
+                else:
+                    info.append( ["", "", comp] )
+            
                 
-                    
-                    array = anim.component[comp[0:1]]
-                    
-                    #print (array)
-                    keyframes_dictionary = j3d.combine_dicts(array, keyframes_dictionary)
-                    
+                array = anim.component[comp[0:1]]
                 
-                i = len(info)
+                #print (array)
+                keyframes_dictionary = j3d.combine_dicts(array, keyframes_dictionary)
+                
             
-            write_values(info, keyframes_dictionary, 2)
+            i = len(info)
             
-        else:
-            print("there are no register animations")
-            info[1].append("None")
+            #write_values(info, keyframes_dictionary, 2)
+            
         
         
-        info.append( ["Constant Animations"] )
+        #info.append( ["Constant Animations"] )
         
-        if len (self.constant_animations) > 0:      
             
-            info.append( ["Material Name", "Color Index", "Channel"] )
-            
-            keyframes_dictionary = {}
-            keyframes_dictionary[0] = []   
-            
-            l = len( info )  
-            
-            print ("length " + str(l) )
+        l = len( info )  
+        
+        print ("length " + str(l) )
 
-            for anim in self.constant_animations:
-                info.append( [anim.name, anim.unknown] )
-                things = ["Red", "Green", "Blue", "Alpha"]
-                
-                
-                for j in range (len ( things ) ):    
-                    comp = things[j]
+        for anim in self.constant_animations:
+            things = ["Red", "Green", "Blue", "Alpha"]
+            
+            
+            for j in range (len ( things ) ):    
+                comp = things[j]
+                if j < 2:            
                     if j == 0:
-                        info[ len (info) - 1 ].append(comp)
-                    else:
-                        info.append( ["", "", comp] )
+                        info.append( [anim.name, anim.unknown, comp] )
+                    elif j == 1:
+                        info.append( ["Constant", "", comp] )
+                else:
+                    info.append( ["", "", comp] )
+            
                 
-                    thismat_kf = {}
-                    array = anim.component[comp[0:1]]
-                    #print (array)
-                    for value in array:
-                        thismat_kf[int(value.time)] = value.value
-                        
-                    for k in keyframes_dictionary.keys(): #if there is a keyframe that does not apply to the current material, pad
-                        if not k in thismat_kf.keys():
-                            keyframes_dictionary[int(k)].append("")
-                        
-                    for k in thismat_kf.keys():
-                        if k in keyframes_dictionary: 
-                            keyframes_dictionary[int(k)].append(thismat_kf[k])
-                        else: #if it's a new keyframe
-                            to_add = []
-                            #for count in range(int( len(info) - l - 4 )):
-                            for count in range( len(keyframes_dictionary[0]) - 1 ):
-                                to_add.append("")
-                            to_add.append(thismat_kf[k])
-                            keyframes_dictionary[int(k)] = (to_add) 
+                array = anim.component[comp[0:1]]
+                keyframes_dictionary = j3d.combine_dicts(array, keyframes_dictionary)
+                """
+                #print (array)
+                thismat_kf = {}
+                for value in array:
+                    thismat_kf[int(value.time)] = value.value
                     
-            #print( keyframes_dictionary)
-            
-            write_values(info, keyframes_dictionary, l - 1)
-            
-        else:
-            info[-1].append("None")
+                for k in keyframes_dictionary.keys(): #if there is a keyframe that does not apply to the current material, pad
+                    if not k in thismat_kf.keys():
+                        keyframes_dictionary[int(k)].append("")
+                    
+                for k in thismat_kf.keys():
+                    if k in keyframes_dictionary: 
+                        keyframes_dictionary[int(k)].append(thismat_kf[k])
+                    else: #if it's a new keyframe
+                        to_add = []
+                        #for count in range(int( len(info) - l - 4 )):
+                        for count in range( len(keyframes_dictionary[0]) - 1 ):
+                            to_add.append("")
+                        to_add.append(thismat_kf[k])
+                        keyframes_dictionary[int(k)] = (to_add) 
+                """
+        #print( keyframes_dictionary)
+        
+        write_values(info, keyframes_dictionary, 1)
         
         #print(info)
         return info  
@@ -276,22 +269,19 @@ class brk(j3d.basic_animation):
     def empty_table(cls, created):
         info = []
         info.append( ["Loop_mode", "", "Duration:", created[3], "Tangent Type:", j3d.tan_type[1] ] )
-        info.append( ["Register Animations"] )
         info.append( ["Material Name", "Color Index", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
 
         for i in range( int(created[1]) ):
             info.append( ["Material " + str(i), 0 ,"Red:"] )
-            
-            things = ["Green", "Blue", "Alpha"]
+            info.append( ["Register", 0, "Green"] )
+            things = ["Blue", "Alpha"]
             for chan in things:
                 info.append( ["", "", chan] )
                 
-        info.append( ["Constant Animations"] )
-        info.append( ["Material Name", "Color Index", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
         for i in range( int(created[2]) ):
-            info.append( ["Material " + str(i), 0,  "Red:"] )
-            
-            things = ["Green", "Blue", "Alpha"]
+            info.append( ["Material " + str(i), 0 ,"Red:"] )
+            info.append( ["Constant", 0, "Green"] )
+            things = ["Blue", "Alpha"]
             for chan in things:
                 info.append( ["", "", chan] )
         return info 
@@ -299,71 +289,36 @@ class brk(j3d.basic_animation):
     @classmethod
     def from_table(cls, f, info):
         brk = cls(int(info[0][1]), int(info[0][3]), int(info[0][5])  )
+             
+        keyframes = []
+        for i in range(3, len( info[1] ) ):
+            if info[1][i] != "":
+                text = info[1][i][6:]
+                text = int(text)
+                keyframes.append(text)
         
-        constant_line = 0;
+        print(keyframes)
         
-        for i in range( len(info) ):
-            if info[i][0].startswith("C"):
-                constant_line = i
-            if constant_line != 0:
-                break    
-        
-        print("constant line " + str(constant_line))
-        
-        if constant_line > 2: #there are register animations       
-            print("there are register animations")
-            keyframes = []
-            for i in range(3, len( info[2] ) ):
-                if info[2][i] != "":
-                    text = info[2][i][6:]
-                    text = int(text)
-                    keyframes.append(text)
+        for i in range(0, int( len(info) / 4) ):
+            curr_line = 4 * i + 2
             
-            print(keyframes)
+            color_anim = ColorAnimation(i, info[curr_line][0], int( info[curr_line][1] ) )
+                          
+            for j in range(0, 4):
+                rgba = "RGBA"
+                rgba = rgba[j: j+1]
+                for k in range(3, len( info[curr_line + j] ) ):
+                    if info[curr_line + j][k] != "":
+                        anim_comp = j3d.AnimComponent(keyframes[k - 3], int(info[curr_line + j][k]) )
+                        color_anim.add_component(rgba, anim_comp)                 
+                                           
+                color_anim.component[rgba] = j3d.make_tangents(color_anim.component[rgba])
             
-            for i in range(0, int( constant_line / 4) ):
-                curr_line = 4 * i + 3
-                
-                color_anim = ColorAnimation(i, info[curr_line][0], int( info[curr_line][1] ) )
-                              
-                for j in range(0, 4):
-                    rgba = "RGBA"
-                    rgba = rgba[j: j+1]
-                    for k in range(3, len( info[curr_line + j] ) ):
-                        if info[curr_line + j][k] != "":
-                            anim_comp = j3d.AnimComponent(keyframes[k - 3], int(info[curr_line + j][k]) )
-                            color_anim.add_component(rgba, anim_comp)
-                            
-                            
-                                               
-                    color_anim.component[rgba] = j3d.make_tangents(color_anim.component[rgba])
+            if info[curr_line + 1][0].startswith("Reg"):        
                 brk.register_animations.append(color_anim)
-            #print(brk.register_animations)
-                    
-        if constant_line + 1 < len( info ):
-            print("there are constant animations")
-            keyframes = []
-            for i in range(3, len( info[constant_line + 1] ) ):
-                if info[constant_line + 1][i] != "":
-                    text = info[constant_line + 1][i][6:]
-                    text = int(text)
-                    keyframes.append(text)
-            
-            for i in range(0, int( (len(info) - constant_line) / 4) ):
-                curr_line = constant_line + 4 * i + 2
-                            
-                color_anim = ColorAnimation(i, info[curr_line][0], int( info[curr_line][1] ) )
-                
-                
-                for j in range(0, 4):
-                    rgba = "RGBA"
-                    rgba = rgba[j: j+1]
-                    for k in range(3, len( info[curr_line + j] ) ):
-                        if info[curr_line + j][k] != "":
-                            anim_comp = j3d.AnimComponent( keyframes[k - 3], int(info[curr_line + j][k]))
-                            color_anim.add_component(rgba, anim_comp)
-                    color_anim.component[rgba] = j3d.make_tangents(color_anim.component[rgba])
+            else:
                 brk.constant_animations.append(color_anim)
+       
               
         if f == "":
             print("no saving")

@@ -17,6 +17,8 @@ class MatrixAnimation(object):
         self.scale = {"U": [], "V": [], "W": []}
         self.rotation = {"U": [], "V": [], "W": []}
         self.translation = {"U": [], "V": [], "W": []}
+        
+        self.tan_inter = [-1] * 9
 
         self._scale_offsets = {}
         self._rot_offsets = {}
@@ -182,16 +184,21 @@ class btk(j3d.basic_animation):
             
             matrix_animation = MatrixAnimation(i, mat_index, name, center)
             
-            
+            inter_count = 0
             
             for scale, axis in ((u_scale, "U"), (v_scale, "V"), (w_scale, "W")):
                 count, offset, tan_type = scale 
-                
+                tan_inter = 0
                 tangent_type = max(tan_type, tangent_type)
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, scales, tan_type)
+                   
+                    if comp.tangentIn == 0:
+                        matrix_animation.tan_inter[inter_count] = 1
                     matrix_animation.add_scale(axis, comp)
-            
+                if matrix_animation.tan_inter[inter_count] == -1:
+                    matrix_animation.tan_inter[inter_count] = 0
+                inter_count += 1 
             for rotation, axis in ((u_rot, "U"), (v_rot, "V"), (w_rot, "W")):
                 count, offset, tan_type = rotation 
                 
@@ -199,17 +206,26 @@ class btk(j3d.basic_animation):
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, rotations, tan_type)
                     comp.convert_rotation(rotscale)
-                    matrix_animation.add_rotation(axis, comp)
                     
+                    if comp.tangentIn != 0:
+                        matrix_animation.tan_inter[inter_count] = 0
+                    matrix_animation.add_rotation(axis, comp)
+                inter_count += 1 
+                if matrix_animation.tan_inter[inter_count] == -1:
+                    matrix_animation.tan_inter[inter_count] = 0
             for translation, axis in ((u_trans, "U"), (v_trans, "V"), (w_trans, "W")):
                 count, offset, tan_type = translation
                
                 tangent_type = max(tan_type, tangent_type)
                 for j in range(count):
                     comp = j3d.AnimComponent.from_array(offset, j, count, translations, tan_type)
+                    if comp.tangentIn != 0:
+                        matrix_animation.tan_inter[inter_count] = 0
                     matrix_animation.add_translation(axis, comp)        
-            
-            btk.tan_type = tangent_type
+                if matrix_animation.tan_inter[inter_count] == -1:
+                    matrix_animation.tan_inter[inter_count] = 0
+                inter_count += 1 
+            #btk.tan_type = tangent_type
             
             """
             print(u_scale, u_rot, u_trans)
@@ -226,7 +242,7 @@ class btk(j3d.basic_animation):
         info = []
         info.append( ["Loop_mode", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale,
             "Duration:", self.duration, "Unknown:", self.unknown_address, "Tan Type:", j3d.tan_type[self.tan_type] ] )
-        info.append( ["Material name", "Texture Index", "Center", "Component"] ) 
+        info.append( ["Material name", "Tangent Interpolation", "Component"] ) 
         
         keyframes_dictionary = {}
         keyframes_dictionary[0] = []
@@ -234,16 +250,35 @@ class btk(j3d.basic_animation):
         i = len( info ) 
         
         for anim in self.animations:
-            info.append( [anim.name, anim.matindex, anim.center] )
+            
             things = ["Scale U:", "Scale V:", "Scale W:", "Rotation U:", "Rotation V:", "Rotation W:",
                 "Translation U:", "Translation V:", "Translation W:"]
             
             for j in range (len ( things ) ):    
                 comp = things[j]
-                if j == 0:
-                    info[i].append(comp)
+                if j < 5:
+                    if j == 0:
+                        info.append( [anim.name] )
+                    elif j == 1:
+                        info.append(["Texture Index"])
+                    elif j == 2:
+                        info.append([str(anim.matindex)])
+                    elif j == 3:
+                        info.append(["Center"])
+                    elif j == 4:
+                        info.append([anim.center])
                 else:
-                    info.append( ["", "", "", comp] )
+                    info.append([""])
+                
+                if anim.tan_inter[j] == 1:
+                    info[-1].append( "SSSS")
+
+                else:
+                    info[-1].append( "LLLL")
+
+                
+                info[-1].append(comp)
+                
                 
                 comp_dict = {}
                 if comp[0:1] == "S":
@@ -251,6 +286,7 @@ class btk(j3d.basic_animation):
                 elif comp[0:1] == "R":
                     comp_dict = anim.rotation
                 else: 
+                    
                     comp_dict = anim.translation
                     
 
@@ -269,15 +305,18 @@ class btk(j3d.basic_animation):
     def empty_table(cls, created):
         info = []
         info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Unknown:", 0, "Tan Type:", j3d.tan_type[1] ] )
-        info.append( ["Material name", "Texture Index", "Center", "Component", "Frame 0", "Frame " + str(created[3]) ] ) 
+        info.append( ["Material name", "Tangent Interpolation", "Component", "Frame 0", "Frame " + str(created[3]) ] ) 
         
         for i in range( int(created[1]) ):
-            info.append( ["Material " + str(i), 0, "(0.5, 0.5, 0.5)", "Scale U:"] )
-            
-            things = ["Scale V:", "Scale W:", "Rotation U:", "Rotation V:", "Rotation W:",
-                "Translation U:", "Translation V:", "Translation W:"]
+            info.append( ["Material " + str(i),"SSSS", "Scale U:"] )
+            info.append( ["Texture Index", "SSSS", "Scale V:"])
+            info.append( ["0", "SSSS", "Scale W:" ] )
+            info.append( ["Center", "LLLL", "Rotation U:"])
+            info.append( ["(0.5, 0.5, 0.5)", "LLLL", "Rotation V:"] ) 
+            info.append( ["", "LLLL", "Rotation W:"] )
+            things = ["Translation U:", "Translation V:", "Translation W:"]
             for comp in things:
-                info.append( ["", "", "", comp] )
+                info.append( ["", "SSSS", comp] )
         return info
     
     
@@ -300,7 +339,7 @@ class btk(j3d.basic_animation):
              
         for i in range(num_of_mats): #for each material
             line = 9 * i + 2
-            centrum = info[line][2]
+            centrum = info[line + 4][2]
             if not isinstance(centrum, tuple):
                 print("convert centrum to float tuple")
                 centrum = centrum.strip("()")
@@ -308,16 +347,20 @@ class btk(j3d.basic_animation):
                 #centrum = tuple(filter(float, centrum.split(",") ) ) 
             assert isinstance(centrum, tuple)
             
-            current_anim = MatrixAnimation( i, int( info[line][1] ), info[line][0], centrum)
+            current_anim = MatrixAnimation( i, int( info[line + 2][0] ), info[line][0], centrum)
             
             for j in range(9):  #for each of thing in scale/rot/trans u/v/w/       
                 uvw = "UVW"
                 uvw = uvw[j%3: j%3 + 1]
                               
-                for k in range(4, len(info[line + j])): #for each keyframe
+                for k in range(3, len(info[line + j])): #for each keyframe
                     if info[line + j][k] != "":
                         comp = j3d.AnimComponent( keyframes[k-4], float(info[line + j][k]))
-                                       
+                        if info[line + j][1].startswith("S"):
+                            current_anim.tan_inter[j] = 1
+                        else:
+                            current_anim.tan_inter[j] = 0        
+                                    
                         if j < 3:
                             current_anim.add_scale(uvw, comp)
                             #print("scale " + uvw + " " + str(keyframes[k-4]) + ", " + str( float(info[line + j][k])))
@@ -334,11 +377,11 @@ class btk(j3d.basic_animation):
                 uvw = uvw[j%3: j%3 + 1]
                 
                 if j < 3:
-                    current_anim.scale[uvw] = j3d.make_tangents(current_anim.scale[uvw])
+                    current_anim.scale[uvw] = j3d.make_tangents(current_anim.scale[uvw], current_anim.tan_inter[j])
                 if j < 6:
-                    current_anim.rotation[uvw] = j3d.make_tangents(current_anim.rotation[uvw])
+                    current_anim.rotation[uvw] = j3d.make_tangents(current_anim.rotation[uvw], current_anim.tan_inter[j])
                 else:
-                    current_anim.translation[uvw] = j3d.make_tangents(current_anim.translation[uvw])
+                    current_anim.translation[uvw] = j3d.make_tangents(current_anim.translation[uvw], current_anim.tan_inter[j])
             
             
             btk.animations.append(current_anim)

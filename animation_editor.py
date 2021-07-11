@@ -820,6 +820,8 @@ class GenEditor(QMainWindow):
             lowest_row = list[0].row()
             lowest_col = list[0].column()
             
+            
+            
             for cell in list:
                 item = self.table_display.item(cell.row(), cell.column())
                 
@@ -831,7 +833,7 @@ class GenEditor(QMainWindow):
                 lowest_row = min(lowest_row, cell.row())
                 lowest_col = min(lowest_col, cell.column())
                 
-            print( len( self.copied_values) )
+            #print( len( self.copied_values) )
             
             for cell in self.copied_values:
                 cell[1] -= lowest_row
@@ -843,12 +845,14 @@ class GenEditor(QMainWindow):
         row = list[0].row()
         col = list[0].column()
         
+        max_row_length = self.table_display.columnCount()
+        
         for cell in self.copied_values:
             eff_row = cell[1] + row
             eff_col = cell[2] + col
-
+            if eff_col < max_row_length:
             
-            self.table_display.setItem(eff_row, eff_col, QTableWidgetItem(cell[3], cell[0] ))
+                self.table_display.setItem(eff_row, eff_col, QTableWidgetItem(cell[3], cell[0] ))
 
     def emit_clear_cells(self):
         list = self.table_display.selectedIndexes()
@@ -872,6 +876,26 @@ class GenEditor(QMainWindow):
                     self.table_display.item(i, j).setSelected(True)
         
 
+    def get_vertical_headers(self, information):
+        col_count = 1
+        first_vals = []
+        first_vals.append( information[0][0] )
+        first_vals.append( information[1][0] )
+        for i in range(2, len(information)):
+            col_count = max(col_count, len( information [i] ) )
+            
+            for j in range( len(information[i] )):          
+   
+                if not information[i][j] in ["LLLL", "SSSS", "Texture Index", "Center", "Register", "Constant", "Linear", "Smooth"]:
+                   
+                    if not str(information[i][j]).isnumeric() and information[i][j] != "":
+                      
+                        if not str(information[i][j]).startswith("("):
+                   
+                            first_vals.append(str(information[i][j]))
+                            break
+        return (first_vals, col_count)
+
     #table info stuff
     
     def load_animation_to_middle(self, index, array = None):      
@@ -886,19 +910,7 @@ class GenEditor(QMainWindow):
                 
         self.table_display.clearContents()
         
-        col_count = 1
-        first_vals = []
-        for i in range(len (information)):
-            col_count = max(col_count, len( information [i] ) )
-            
-            for j in range( len(information[i] )):                    
-                if information[i][j] == "LLLL" or information[i][j] == "SSSS":
-                    first_vals.append(information[i][j+1])
-                    break
-                
-                if information[i][j] != "":
-                    first_vals.append(information[i][j])
-                    break
+        first_vals, col_count = self.get_vertical_headers(information)
 
         self.table_display.setColumnCount(col_count)
         self.table_display.setRowCount(len(information))
@@ -1022,6 +1034,11 @@ class GenEditor(QMainWindow):
                     item.setText("Linear")
                     icon = QIcon("icons/linear.png")
                 item.setIcon(icon)
+            elif column == 0:
+                if item.text() == "Register":
+                    item.setText("Constant")
+                elif item.text() == "Constant":
+                    item.setText("Register")
             elif row == 0 and column > 0:
                 setting = self.table_display.item(row, column - 1).text()
                 value = self.table_display.item(row, column).text()
@@ -1202,6 +1219,9 @@ class GenEditor(QMainWindow):
             info = self.get_on_screen()
             extension = extension[-4:]
             
+            register_index = -1
+            constant_index = -1
+            
             duration = int( info[0][3] )
             if extension in [".btk", ".bca", ".bck"]:
                 duration = int( info[0][5] )
@@ -1214,10 +1234,7 @@ class GenEditor(QMainWindow):
             elif extension == ".blk":
                 frames_column = 1
             
-            frames_row = 1
-            if extension == ".brk":
-                frames_row = 2
-            
+         
             if frames_to_add[-1] > duration:
                 new = QTableWidgetItem(str(frames_to_add[-1]))
                 duration = frames_to_add[-1]
@@ -1247,11 +1264,12 @@ class GenEditor(QMainWindow):
                     if cell_text > frames_to_add[0]:
                         keyframes.append( (cell_text, i) )
             #assume keyframes are sorted
+            """
             print(before_adding)
             print (keyframes)
             print(frames_to_add)
             print("-")
-            
+            """
             frames_added = 0
             keyframes_passed = 0
             
@@ -1278,8 +1296,11 @@ class GenEditor(QMainWindow):
                 
                 new = QTableWidgetItem("Frame " + str(frame))
                 self.table_display.setItem(frames_row, insertion_column - 1, new)
+                
         
+        self.table_display.setHorizontalHeaderLabels(self.get_on_screen()[1])
         self.frames_window = None
+        
 import sys
 def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)
