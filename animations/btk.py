@@ -326,7 +326,7 @@ class btk(j3d.basic_animation):
         
         keyframes = []
         
-        for i in range(4, len( info[1] ) ):
+        for i in range(3, len( info[1] ) ):
             if info[1][i] != "":
                 text = info[1][i][6:]
                 text = int(text)
@@ -355,7 +355,7 @@ class btk(j3d.basic_animation):
                               
                 for k in range(3, len(info[line + j])): #for each keyframe
                     if info[line + j][k] != "":
-                        comp = j3d.AnimComponent( keyframes[k-4], float(info[line + j][k]))
+                        comp = j3d.AnimComponent( keyframes[k-3], float(info[line + j][k]))
                         if info[line + j][1].startswith("S"):
                             current_anim.tan_inter[j] = 1
                         else:
