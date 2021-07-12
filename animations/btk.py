@@ -339,7 +339,7 @@ class btk(j3d.basic_animation):
              
         for i in range(num_of_mats): #for each material
             line = 9 * i + 2
-            centrum = info[line + 4][2]
+            centrum = info[line + 4][0]
             if not isinstance(centrum, tuple):
                 print("convert centrum to float tuple")
                 centrum = centrum.strip("()")

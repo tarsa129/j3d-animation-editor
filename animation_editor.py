@@ -331,7 +331,7 @@ class GenEditor(QMainWindow):
                 self.convert_to_a()
             else: 
                 j3d.sort_filepath(filepath, info) 
-            print(self.list_of_animations.compressed)
+            print(self.list_of_animations[index].compressed)
             if self.list_of_animations[index].compressed:
                 out = BytesIO()
                 with open(filepath, "rb") as f:
