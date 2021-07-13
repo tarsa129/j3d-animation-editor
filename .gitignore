@@ -2,3 +2,4 @@ dist/
 FbxCommon.py
 fbxsip.pyd
 cxfreeze.bat
+*.zip
