@@ -19,9 +19,6 @@ import widgets.add_frames as frames_widget
 from widgets.yaz0 import compress
 from io import BytesIO
 
-from fbx import *
-import fbx as fbx
-
 class GenEditor(QMainWindow):
     def __init__(self):
     
