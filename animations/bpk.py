@@ -75,13 +75,13 @@ class bpk(j3d.basic_animation):
 
         color_anim_count = read_uint16(f)
 
-        print("num of anims: " + str(color_anim_count))
+        #print("num of anims: " + str(color_anim_count))
         #print(register_color_anim_count, "register color anims and", constant_color_anim_count, "constant collor anims")
         component_counts = {}      
             
         for comp in ("R", "G", "B", "A"):
             component_counts[comp] = read_uint16(f)
-            print(comp, "count:", component_counts[comp])
+            #print(comp, "count:", component_counts[comp])
         
         color_animation_offset  = read_uint32(f) + pak_start    #        
         index_offset            = read_uint32(f) + pak_start    #        
@@ -146,7 +146,7 @@ class bpk(j3d.basic_animation):
         
         for anim in self.animations:
             info.append( [anim.name] )
-            things = ["Red", "Green", "Blue", "Alpha"]
+            things = ["Red:", "Green:", "Blue:", "Alpha:"]
             
             
             for j in range (len ( things ) ):    
@@ -174,16 +174,26 @@ class bpk(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "Duration:", created[3], "Tan Type:", j3d.tan_type[1] ] )
+        info.append( ["Loop_mode:", "Duration:", created[3], "Tan Type:", j3d.tan_type[1] ] )
         info.append( ["Material Name", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
 
         for i in range( int(created[1]) ):
             info.append( ["Material " + str(i), "Red:"] )
             
-            things = ["Green", "Blue", "Alpha"]
+            things = ["Green:", "Blue:", "Alpha:"]
             for chan in things:
                 info.append( ["", chan] )
         return info          
+    
+    @classmethod 
+    def single_mat(cls):
+        info = []
+        info.append( ["Material Name", "Red:"] )
+            
+        things = ["Green:", "Blue:", "Alpha:"]
+        for chan in things:
+            info.append( ["", chan] )
+        return info
     
     @classmethod
     def from_table(cls, f, info):

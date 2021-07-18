@@ -319,6 +319,19 @@ class btk(j3d.basic_animation):
                 info.append( ["", "SSSS", comp] )
         return info
     
+    @classmethod
+    def single_mat(cls):
+        info = []
+        info.append( ["Material Name","SSSS", "Scale U:"] )
+        info.append( ["Texture Index", "SSSS", "Scale V:"])
+        info.append( ["0", "SSSS", "Scale W:" ] )
+        info.append( ["Center", "LLLL", "Rotation U:"])
+        info.append( ["(0.5, 0.5, 0.5)", "LLLL", "Rotation V:"] ) 
+        info.append( ["", "LLLL", "Rotation W:"] )
+        things = ["Translation U:", "Translation V:", "Translation W:"]
+        for comp in things:
+            info.append( ["", "SSSS", comp] )
+        return info
     
     @classmethod
     def from_table(cls, f, info):

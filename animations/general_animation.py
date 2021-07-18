@@ -187,7 +187,7 @@ class StringTable(object):
         
         offsets = []
         
-        print("string count", string_count)
+        #print("string count", string_count)
         
         for i in range(string_count):
             hash = read_uint16(f)
@@ -490,4 +490,14 @@ def match_bmd(filepath, information, strings):
     elif filepath.endswith(".bva"):
         table = bva_file.bva.match_bmd(information, strings) 
     return table
-    
+  
+def get_single_mat(extension):
+    if extension == ".bck" or extension == ".bca":
+        info = bck_file.bck.single_mat()
+    elif extension == ".btk":
+        info = btk_file.btk.single_mat()
+    elif extension == ".brk":
+        info = brk_file.brk.single_mat()
+    elif extension == ".bpk":
+        info = bpk_file.bpk.single_mat()
+    return info

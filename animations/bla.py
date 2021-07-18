@@ -41,7 +41,7 @@ class bla(j3d.basic_animation):
         cluster_count = read_uint16(f)
         scales_count = read_uint16(f)      
         
-        print(scales_count)
+        #print(scales_count)
         
         cluster_offset = read_uint32(f) + clf_start
         scales_offset = read_uint32(f) + clf_start
@@ -64,7 +64,7 @@ class bla(j3d.basic_animation):
             clus_durati = j3d.read_uint16(f)
             clus_offset = j3d.read_uint16(f)
             
-            print(clus_durati)
+            #print(clus_durati)
             
             for j in range( clus_durati ):
                 new_anim.seq.append( scales[j + clus_offset] ) 

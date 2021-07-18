@@ -15,18 +15,17 @@ import animations.general_animation as j3d
 
 import widgets.create_anim as create_widget
 import widgets.tree_view as tree_view
+import widgets.tree_item as tree_item
 import widgets.add_frames as frames_widget
-from widgets.yaz0 import compress
-from io import BytesIO
 
 class GenEditor(QMainWindow):
     def __init__(self):
     
         super().__init__()
        
-        self.list_of_animations = []
         self.copied_values = []
-        self.current_index = 0;
+        self.curr_index = 0
+        self.prev_index = 0
         self.is_remove = False
         
         self.create_window = None
@@ -73,6 +72,7 @@ class GenEditor(QMainWindow):
         self.file_load_action = QAction("Load", self)
         self.save_file_action = QAction("Save", self)
         self.save_file_as_action = QAction("Save As", self)
+        self.save_file_all_action = QAction("Save All", self)
         self.create_animation = QAction("Create Animation", self)
         #self.combine_animations = QAction("Combine Animations", self)
         self.toggle_dark_theme_action = QAction("Toggle Dark Theme", self) # create an option to toggle dark theme
@@ -80,21 +80,26 @@ class GenEditor(QMainWindow):
         self.save_file_action.setShortcut("Ctrl+S")
         self.file_load_action.setShortcut("Ctrl+O")
         self.save_file_as_action.setShortcut("Ctrl+Alt+S")
+        self.save_file_all_action.setShortcut("Shift+Ctrl+S")
         self.create_animation.setShortcut("Ctrl+N")
 
         self.file_load_action.triggered.connect(self.button_load_level)
         self.save_file_action.triggered.connect(self.button_save_level)
         self.save_file_as_action.triggered.connect(self.button_save_as)
+        self.save_file_all_action.triggered.connect(self.button_save_all)
         self.create_animation.triggered.connect(self.create_new)
         self.toggle_dark_theme_action.triggered.connect(self.toggle_dark_theme)
         
         self.save_file_action.setDisabled(True)
         self.save_file_as_action.setDisabled(True)
+        self.save_file_all_action.setDisabled(True)
+        
         #self.combine_animations.triggered.connct(self.combine_anims)
 
         self.file_menu.addAction(self.file_load_action)
         self.file_menu.addAction(self.save_file_action)
-        self.file_menu.addAction(self.save_file_as_action)   
+        self.file_menu.addAction(self.save_file_as_action) 
+        self.file_menu.addAction(self.save_file_all_action)
         self.file_menu.addAction(self.create_animation)
         #self.file_menu.addAction(self.combine_animations)
         self.file_menu.addSeparator()
@@ -184,6 +189,30 @@ class GenEditor(QMainWindow):
         
         self.menubar.addAction(self.model.menuAction())
         
+        #table operations
+        self.table_ops = QMenu(self)
+        self.table_ops.setTitle("Row Operations")
+        
+        self.remove_row_end = QAction("Remove Row from End", self)
+        self.remove_row_end.triggered.connect(self.rem_row)
+        
+        self.remove_row_here = QAction("Remove Current Row", self)
+        self.remove_row_here.triggered.connect(self.rem_row_here)
+        
+        self.add_row_end = QAction("Add Row to End", self)
+        self.add_row_end.triggered.connect(self.add_row)
+        
+        self.add_row_next = QAction("Add Row Here", self)
+        self.add_row_next.triggered.connect(self.add_row_here)
+        
+        self.table_ops.addAction(self.add_row_end)
+        self.table_ops.addAction(self.add_row_next)
+        self.table_ops.addAction(self.remove_row_end)
+        self.table_ops.addAction(self.remove_row_here)
+        
+        
+        self.menubar.addAction(self.table_ops.menuAction())
+        
         #main splitter
         
         self.horizontalLayout = QSplitter()
@@ -196,12 +225,11 @@ class GenEditor(QMainWindow):
         
         #tree view
         
-        self.animation_bar = tree_view.animation_bar(self, self.workaroundl)       
-        self.animation_bar.itemSelectionChanged.connect(self.selected_animation_changed) 
-        
-
-        
-        self.left_vbox.addWidget(self.animation_bar)
+        self.anim_bar = tree_view.animation_bar(self.workaroundl)      
+        self.anim_bar.set_main_editor(self)
+        self.anim_bar.itemSelectionChanged.connect(self.selected_animation_changed) 
+   
+        self.left_vbox.addWidget(self.anim_bar)
         
         #middle table
         
@@ -240,6 +268,9 @@ class GenEditor(QMainWindow):
         self.bt_rm_col.setText("Remove Column")
         self.bt_rm_col.clicked.connect(self.rem_column)
         
+       #necessary row operations: add material / bone, remove material / bone, remove empty
+        
+        """
         self.bt_add_row = QPushButton(self)
         self.bt_add_row.setText("Add Row To End")
         self.bt_add_row.clicked.connect(self.add_row)
@@ -247,14 +278,14 @@ class GenEditor(QMainWindow):
         self.bt_addr_here = QPushButton(self)
         self.bt_addr_here.setText("Add Row Next")
         self.bt_addr_here.clicked.connect(self.add_row_here)  
-             
+        """  
         self.bt_rm_row = QPushButton(self)
-        self.bt_rm_row.setText("Remove Row")
-        self.bt_rm_row.clicked.connect(self.rem_row) 
+        self.bt_rm_row.setText("Remove Empty Rows")
+        self.bt_rm_row.clicked.connect(self.rem_empty_rows) 
 
-        self.bt_remr_here = QPushButton(self)
-        self.bt_remr_here.setText("Rem. Current Row")
-        self.bt_remr_here.clicked.connect(self.rem_row_here)
+        self.bt_remmat_here = QPushButton(self)
+        self.bt_remmat_here.setText("Remove Material / Bone")
+        self.bt_remmat_here.clicked.connect(self.rem_material)
 
         self.bt_add_material = QPushButton(self)
         self.bt_add_material.setText("Add Material / Bone")
@@ -263,25 +294,25 @@ class GenEditor(QMainWindow):
         self.bt_add_frames_adv = QPushButton(self)
         self.bt_add_frames_adv.setText("Add Frames Dialogue")
         self.bt_add_frames_adv.clicked.connect(self.frames_dialogue)
-        self.bt_add_frames_adv.setDisabled(True)
         
         self.bottom_actions.addWidget(self.bt_addc_here, 0, 0)       
-        self.bottom_actions.addWidget(self.bt_addr_here, 0, 1)
+        #self.bottom_actions.addWidget(self.bt_addr_here, 0, 1)
         self.bottom_actions.addWidget(self.bt_add_col, 1 ,0)
-        self.bottom_actions.addWidget(self.bt_add_row, 1, 1)
+        #self.bottom_actions.addWidget(self.bt_add_row, 1, 1)
         self.bottom_actions.addWidget(self.bt_remc_here, 2, 0)
-        self.bottom_actions.addWidget(self.bt_remr_here, 2, 1)
+        self.bottom_actions.addWidget(self.bt_remmat_here, 1, 1)
         self.bottom_actions.addWidget(self.bt_rm_col, 3, 0)
-        self.bottom_actions.addWidget(self.bt_rm_row, 3, 1)
-        self.bottom_actions.addWidget(self.bt_add_material, 4, 0)
-        self.bottom_actions.addWidget(self.bt_add_frames_adv, 4, 1)
+        self.bottom_actions.addWidget(self.bt_rm_row, 2, 1)
+        self.bottom_actions.addWidget(self.bt_add_material, 0, 1)
+        self.bottom_actions.addWidget(self.bt_add_frames_adv, 3, 1)
                
+        self.workaround.setDisabled(True)       
+        
         self.left_vbox.addWidget(self.workaround)
         
-        #self.horizontalLayout.addWidget(self.animation_bar)
+        #self.horizontalLayout.addWidget(self.anim_bar)
         self.horizontalLayout.addWidget(self.workaroundl)
         self.horizontalLayout.addWidget(self.table_display)  
-
 
     #file stuff
       
@@ -292,50 +323,33 @@ class GenEditor(QMainWindow):
         for filepath in filepaths:
             if filepath:        
 
-                animation_object = j3d.sort_file(filepath)
-                
-                self.universal_new_animation(animation_object, filepath)
-            
-
+                animation_object = j3d.sort_file(filepath)               
+                self.new_animation_from_object(animation_object, filepath)
+         
+    def universal_save(self, filepath = ""):
+        
+        current_item = self.anim_bar.currentItem()
+        current_item.display_info = self.get_on_screen()
+        current_item.save_animation(filepath)
+        
     def button_save_level(self):
-        index = self.animation_bar.currentIndex().row()      
-        self.list_of_animations[index].display_info = self.get_on_screen()
-        info = j3d.fix_array(self.list_of_animations[index].display_info)
-        if (self.list_of_animations[index].filepath.endswith("a") and not self.list_of_animations[index].filepath.endswith(".bva")  ):
-            self.convert_to_a()
-        else: 
-            j3d.sort_filepath(self.list_of_animations[index].filepath, info) 
-        
-        if self.list_of_animations[index].compressed:
-            filepath = self.list_of_animations[index].filepath
-            out = BytesIO()
-            with open(filepath, "rb") as f:
-                out = compress(f)
-            with open(filepath, "wb") as f:
-                f.write(out.getbuffer())
+        self.universal_save()
             
-    
-    def button_save_as(self): 
-        index = self.animation_bar.currentIndex().row()
-        
+    def button_save_as(self):         
         filter =  "All Supported Files(*.bca *.bck *.bla *.blk *.bpk *.brk *.btk *.btp *.bva)"
-        filepath, choosentype = QFileDialog.getSaveFileName(self, "Save File", self.list_of_animations[index].filepath, filter)
+        filepath, choosentype = QFileDialog.getSaveFileName(self, "Save File", self.anim_bar.currentItem().filepath, filter)
         if filepath:
-            
-            self.list_of_animations[index].display_info = self.get_on_screen()
-            info = j3d.fix_array(self.list_of_animations[index].display_info)
-            if (self.list_of_animations[index].filepath.endswith(".bca") ):
-                self.convert_to_a()
-            else: 
-                j3d.sort_filepath(filepath, info) 
-            print(self.list_of_animations[index].compressed)
-            if self.list_of_animations[index].compressed:
-                out = BytesIO()
-                with open(filepath, "rb") as f:
-                    out = compress(f)
-                with open(filepath, "wb") as f:
-                    f.write(out.getbuffer())
-            
+            self.universal_save(filepath)
+        
+    def button_save_all(self):
+        for i in range( self.anim_bar.topLevelItemCount() ):
+            current_item = self.anim_bar.currentItem()
+            current_item.display_info = self.get_on_screen()
+            current_item.save_animation()
+            item = self.anim_bar.topLevelItem(i);
+            item.save_animation();
+    
+    
     def create_new(self):
         
         if self.create_window is None:
@@ -348,31 +362,8 @@ class GenEditor(QMainWindow):
             table = j3d.create_empty( created_info )
 
             filepath = created_info[0]
-            new_anim = all_anim_information(filepath, table)           
             
-            if len( self.list_of_animations ) > 0:
-                index = self.animation_bar.currentIndex().row()
-                self.list_of_animations[index].display_info = self.get_on_screen()
-            
-            self.list_of_animations.append(new_anim)            
-            loaded_animation = QTreeWidgetItem(self.animation_bar)
-            
-            filename = filepath[filepath.rfind("/") + 1:]
-            loaded_animation.setText(0, filename)
-            
-            self.edit_convert_actions(filename)
-            
-            
-            self.is_remove = True 
-            self.animation_bar.addTopLevelItem(loaded_animation)       
-            self.current_index = len(self.list_of_animations) - 1
-            self.load_animation_to_middle(len(self.list_of_animations) - 1)
-            self.animation_bar.setCurrentItem(loaded_animation)
-            
-            self.save_file_action.setDisabled(False)
-            self.save_file_as_action.setDisabled(False)
-            
-            self.is_remove = False
+            self.new_animation_from_array(table, filepath, False)
         
         self.create_window = None
                
@@ -392,14 +383,11 @@ class GenEditor(QMainWindow):
             if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva", ".anim", ".fbx" ]:
                 event.acceptProposedAction()
             if exten in [".bmd", ".bdl"]:
-                index = self.animation_bar.currentIndex().row()
-                anim_exten = self.list_of_animations[index].filepath
+                anim_exten = self.anim_bar.currentItem().filepath
                 anim_exten = anim_exten[anim_exten.rfind("."):].lower()
                 if anim_exten in [".bca", ".bck"]:
                     event.acceptProposedAction()
-                
- 
-            
+          
     def dropEvent(self, event):
         mime_data = event.mimeData()
         if mime_data.hasUrls:
@@ -408,11 +396,11 @@ class GenEditor(QMainWindow):
             exten = filepath[filepath.rfind("."):].lower()
             if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva" ]:
                 animation_object = j3d.sort_file(filepath)            
-                self.universal_new_animation(animation_object, filepath)
+                self.new_animation_from_object(animation_object, filepath)
             elif exten == ".anim": 
                 bck = j3d.import_anim_file(filepath)
                 filepath = filepath[0:-5] + ".bck"
-                self.universal_new_animation(bck, filepath)
+                self.new_animation_from_object(bck, filepath)
             elif exten == ".fbx":
                 bcks = j3d.import_fbx_file(filepath)
                 index_of_slash = filepath.rfind("/")
@@ -420,12 +408,14 @@ class GenEditor(QMainWindow):
                 filepath = filepath[0:index_of_slash + 1]
                 #print(filepath)
                 for bck in bcks:
-                    self.universal_new_animation(bck[1],filepath +  bck[0] + ".bck")
+                    self.new_animation_from_object(bck[1],filepath +  bck[0] + ".bck")
             elif exten in [".bmd", ".bdl"]:
                 self.load_bone_names(filepath)
-        #print(event.mimeData().text() )
+        
     
     #convert stuff
+    
+    #okay this is just a general ui thing
     def edit_convert_actions(self, filename):
         extension = filename[-4:]
         if extension in {".bck", ".blk"}:
@@ -449,48 +439,20 @@ class GenEditor(QMainWindow):
         else:
             self.load_bones.setDisabled(True)
             
+        are_no_anims = self.anim_bar.topLevelItemCount() == 0
+        self.workaround.setDisabled(are_no_anims)
+        self.save_file_action.setDisabled(are_no_anims)
+        self.save_file_as_action.setDisabled(are_no_anims)
+        self.save_file_all_action.setDisabled(are_no_anims)
+
+     
     def convert_to_k(self):
-        index = self.animation_bar.currentIndex().row()          
-        self.list_of_animations[index].display_info = self.get_on_screen()
-        
-        filepath = self.list_of_animations[index].filepath
-        if filepath.endswith(".bca"):
-            filepath = filepath[:-1] + "k"
-            info = j3d.fix_array(self.list_of_animations[index].display_info)            
-            bck = j3d.sort_filepath(filepath, info)
-        elif filepath.endswith(".bla"):
-            filepath = filepath[:-1] + "k"
-            info = j3d.fix_array(self.list_of_animations[index].display_info)             
-            blk = j3d.sort_filepath(filepath, info)
+        current_item = self.anim_bar.currentItem()
+        current_item.display_info = self.get_on_screen()
+        current_item.convert_to_k()
         
     def convert_to_a(self):
-        index = self.animation_bar.currentIndex().row()
-        filepath = self.list_of_animations[index].filepath
-        
-        info = self.get_on_screen()
-        info = j3d.fix_array( info )
-        
-        self.list_of_animations[index].display_info = info
-        
-        
-        if filepath.endswith(".bck") or filepath.endswith(".bca"):
-
-         
-            bca = j3d.convert_to_a(filepath, info) #this is a pure bck, no saving
-            filepath = filepath[:-1] + "a"
-            print("new filepath is " + filepath)
-            with open(filepath, "wb") as f:           
-                bca.write_bca(f)
-                f.close()
-        elif filepath.endswith(".blk") or filepath.endswith(".bla"):
-        
-            
-            bla = j3d.convert_to_a(filepath, info) #this is a pure bck, no saving
-            filepath = filepath[:-1] + "a"
-            print("new filepath is " + filepath)
-            with open(filepath, "wb") as f:           
-                bla.write_bla(f)
-                f.close()
+        self.anim_bar.currentItem().convert_to_a()
     
     def import_anim_file(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
@@ -498,7 +460,7 @@ class GenEditor(QMainWindow):
         if filepath:
             bck = j3d.import_anim_file(filepath)
             filepath = filepath[0:-5] + ".bck"
-            self.universal_new_animation(bck, filepath)
+            self.new_animation_from_object(bck, filepath)
       
     def import_fbx_file(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
@@ -510,24 +472,10 @@ class GenEditor(QMainWindow):
             filepath = filepath[0:index_of_slash + 1]
             #print(filepath)
             for bck in bcks:
-                self.universal_new_animation(bck[1],filepath +  bck[0] + ".bck")
-                
-            #filepath = filepath[0:-5] + ".bck"
-            #self.universal_new_animation(bck, filepath)
-      
-    def universal_new_animation(self, actual_animation_object, filepath):
-        
-        new_anim = all_anim_information(filepath)           
-        new_anim.display_info = actual_animation_object.get_loading_information()
-        
-        if len( self.list_of_animations ) > 0:
-            print( "this is not the first loaded animation " ) 
-            index = self.animation_bar.currentIndex().row()
-            print( "the old index is " + str(index) )
-            print( self.list_of_animations[index].display_info[0] ) 
-            self.list_of_animations[index].display_info = self.get_on_screen()
-            print( self.list_of_animations[index].display_info[0] ) 
-        
+                self.new_animation_from_object(bck[1],filepath +  bck[0] + ".bck")
+                    
+    def new_animation_from_object(self, actual_animation_object, filepath):
+        #deal with compression and keep track of whether or not to compress it
         compressed = False
         try:
             with open(filepath, "rb") as f:
@@ -537,44 +485,72 @@ class GenEditor(QMainWindow):
                     compressed = True
         except:
             pass
-        new_anim.compressed = compressed
+         
+        #tree view stuff
+        display_info = actual_animation_object.get_loading_information()
+      
         
-        self.list_of_animations.append(new_anim)            
-        loaded_animation = QTreeWidgetItem(self.animation_bar)
+        #self.anim_bar.addTopLevelItem(loaded_animation)
+             
+        """
+        print("loaded animation display info")
+        print(loaded_animation.display_info[0])
+        print("index of loaded animation in tree view")
+        print(self.anim_bar.indexOfTopLevelItem(loaded_animation) )
+        """
+        print("current list of animations - right after adding new one")
+        for i in range(self.anim_bar.topLevelItemCount() ): 
+            print(self.anim_bar.itemAt(i, 0).display_info[0])
         
-        filename = filepath[filepath.rfind("/") + 1:]
         
-        loaded_animation.setText(0, filename)
+        loaded_animation = self.new_animation_from_array(display_info, filepath, compressed)
         
-        self.edit_anim_bar_children(loaded_animation, actual_animation_object.get_children_names() )
-          
-        self.edit_convert_actions(filename)
-            
-        self.is_remove = True     
-        self.animation_bar.addTopLevelItem(loaded_animation)       
-        self.current_index = len(self.list_of_animations) - 1
-        self.load_animation_to_middle(len(self.list_of_animations) - 1)
+        loaded_animation.add_children( actual_animation_object.get_children_names() )
         
+        print("end of new animation from object")
+    
+    #bmd stuff
+    def new_animation_from_array(self, array, filepath, compressed):
+        if self.anim_bar.topLevelItemCount() > 0:
+            print( "this is not the first loaded animation " ) 
+            #print( "the old index is " + str(self.anim_bar.curr_index) )
+            #print("load in the current table to index " + str(self.anim_bar.curr_index) )
+            #self.anim_bar.itemAt(self.anim_bar.curr_index,0).display_info = self.get_on_screen()
+           
+           
+            self.anim_bar.currentItem().display_info = self.get_on_screen()
+            print(self.anim_bar.currentItem().text(0) )
+            print( self.anim_bar.currentItem().display_info[0])
+        print(self.anim_bar.topLevelItemCount())
+        if self.anim_bar.topLevelItemCount() == 0:
+            loaded_animation = tree_item.tree_item(self.anim_bar)    
+            self.anim_bar.curr_item = loaded_animation
+            print("curr_item set " + str( self.anim_bar.curr_item))
+        else:
+            loaded_animation = tree_item.tree_item(self.anim_bar)    
+        loaded_animation.set_values( array, filepath, compressed )
+        
+
+        # deal with the various ui stuff
+        self.edit_convert_actions(filepath)
         self.setWindowTitle("j3d animation editor - " + filepath)
-        
-        self.animation_bar.setCurrentItem(loaded_animation)
-        self.bt_add_frames_adv.setDisabled(False)
-        
+        self.bt_add_frames_adv.setDisabled(False)       
         self.save_file_action.setDisabled(False)
         self.save_file_as_action.setDisabled(False)
+            
+        #do the adding
+        self.is_remove = True  
+        self.anim_bar.curr_item = loaded_animation
+        self.anim_bar.setCurrentItem(loaded_animation)
         
-       
+        self.load_animation_to_middle(loaded_animation)
+          
         
+     
         self.is_remove = False
-    
-    def edit_anim_bar_children(self, item, strings):
-         item.takeChildren()
-         for name in strings:
-            child = QTreeWidgetItem(item)
-            child.setText(0, name)
-            child.setDisabled(True)
-               
-    #bmd stuff
+        
+        return loaded_animation
+
     def load_bone_names(self, filename = None):
         filepath = None
         if filename == None or filename == False:
@@ -586,7 +562,7 @@ class GenEditor(QMainWindow):
                 strings = self.get_bones_from_bmd(filepath)
             elif filename:
                 strings = self.get_bones_from_bmd(filename)
-            #index = self.animation_bar.currentIndex().row()
+            #index = self.anim_bar.currentIndex().row()
             #information = self.get_on_screen()
             #information = self.list_of_animations[index].display_info
             for i in range( len(strings) ):
@@ -610,19 +586,20 @@ class GenEditor(QMainWindow):
                         break
             self.table_display.setVerticalHeaderLabels(first_vals)
             
-            index = self.animation_bar.currentIndex().row()
-            self.edit_anim_bar_children( self.animation_bar.itemAt(0, index), strings)
+            index = self.anim_bar.currentIndex().row()
+            self.edit_anim_bar_children( self.anim_bar.itemAt(0, index), strings)
     
     def load_bone_names_all(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)")
         if filepath:   
             strings = self.get_bones_from_bmd(filepath)
-            #index = self.animation_bar.currentIndex().row()
+            #index = self.anim_bar.currentIndex().row()
             #information = self.get_on_screen()
             #information = self.list_of_animations[index].display_info
-            for j in range( len(self.list_of_animations)):
-                if self.list_of_animations[j].filepath.endswith(".bca") or self.list_of_animations[j].filepath.endswith(".bck"):
-                    info = self.list_of_animations[j].display_info
+            for j in range( self.anim_bar.topLevelItemCount() ):
+                item = self.anim_bar.itemFromIndex(j)
+                if item.filepath.endswith(".bca") or item.filepath.endswith(".bck"):
+                    info = item.display_info
                     for i in range( len(strings) ):
                         row = 9 * i + 2
                         if row < len( info ) :
@@ -649,10 +626,11 @@ class GenEditor(QMainWindow):
                         break
             self.table_display.setVerticalHeaderLabels(first_vals)
             
-            index = self.animation_bar.currentIndex().row()
-            self.edit_anim_bar_children( self.animation_bar.itemAt(0, index), strings)
+            item = self.anim_bar.currentItem()
+            item.add_children(strings)
+    
     def match_bmd(self):
-        index = self.animation_bar.currentIndex().row()
+        index = self.anim_bar.currentIndex().row()
         filepath = self.list_of_animations[index].filepath
         
         bmd_file, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)" )
@@ -671,9 +649,8 @@ class GenEditor(QMainWindow):
             
             array = j3d.match_bmd(filepath, info, strings)                
             self.load_animation_to_middle(index, array )                
-            self.edit_anim_bar_children( self.animation_bar.itemAt(0, index), strings)
-     
-        
+            self.edit_anim_bar_children( self.anim_bar.itemAt(0, index), strings)
+             
     def get_bones_from_bmd(self, bmd_file):
         strings = []
         with open(bmd_file, "rb") as f:
@@ -722,7 +699,7 @@ class GenEditor(QMainWindow):
             
         return strings
 
-    #tree view stuff
+    #table view stuff
     def contextMenuEvent(self, event):
         
         if len( self.list_of_animations ) < 1:
@@ -768,7 +745,7 @@ class GenEditor(QMainWindow):
                             try:
                                 new_value = operations( [ float(item.text()) , float(info[1])], info[0] )
                                 
-                                index = self.animation_bar.currentIndex().row()   
+                                index = self.anim_bar.currentIndex().row()   
                                 if self.list_of_animations[index].filepath.endswith(".btp"):
                                     new_value = int( new_value )
                                 
@@ -800,7 +777,7 @@ class GenEditor(QMainWindow):
         
         quick_change_action.triggered.connect(emit_quick_change)
         
-        context_menu = QMenu(self.animation_bar)
+        context_menu = QMenu(self.anim_bar)
         
         context_menu.addAction(self.copy_cells_action)
         context_menu.addAction(self.paste_cells_action)
@@ -812,30 +789,30 @@ class GenEditor(QMainWindow):
         del context_menu
     
     def emit_copy_cells(self):
-            list = self.table_display.selectedIndexes()
-            self.copied_values = []
-            #print( list.column() )
-            lowest_row = list[0].row()
-            lowest_col = list[0].column()
+        list = self.table_display.selectedIndexes()
+        self.copied_values = []
+        #print( list.column() )
+        lowest_row = list[0].row()
+        lowest_col = list[0].column()
+        
+        
+        
+        for cell in list:
+            item = self.table_display.item(cell.row(), cell.column())
             
+            if isinstance(item, QTableWidgetItem):
+                self.copied_values.append( [item.text(), cell.row(), cell.column(), item.icon() ] )                  
+            else:
+                self.copied_values.append( ["", cell.row(), cell.column(), QIcon() ] )
+                           
+            lowest_row = min(lowest_row, cell.row())
+            lowest_col = min(lowest_col, cell.column())
             
-            
-            for cell in list:
-                item = self.table_display.item(cell.row(), cell.column())
-                
-                if isinstance(item, QTableWidgetItem):
-                    self.copied_values.append( [item.text(), cell.row(), cell.column(), item.icon() ] )                  
-                else:
-                    self.copied_values.append( ["", cell.row(), cell.column(), QIcon() ] )
-                               
-                lowest_row = min(lowest_row, cell.row())
-                lowest_col = min(lowest_col, cell.column())
-                
-            #print( len( self.copied_values) )
-            
-            for cell in self.copied_values:
-                cell[1] -= lowest_row
-                cell[2] -= lowest_col
+        #print( len( self.copied_values) )
+        
+        for cell in self.copied_values:
+            cell[1] -= lowest_row
+            cell[2] -= lowest_col
                      
     def emit_paste_cells(self):
         list = self.table_display.selectedIndexes()
@@ -896,30 +873,7 @@ class GenEditor(QMainWindow):
 
     #table info stuff
     
-    def load_animation_to_middle(self, index, array = None):      
-        
-        if array is not None:
-            information = array
-        else:
-            if index < len( self.list_of_animations ) :
-                information = self.list_of_animations[index].display_info
-            else:
-                return
-                
-        self.table_display.clearContents()
-        
-
-        
-        first_vals, col_count = self.get_vertical_headers(information)
-
-        self.table_display.setColumnCount(col_count)
-        self.table_display.setRowCount(len(information))
-        
-        print(information)
-        
-        for i in range(self.table_display.rowCount()): # interate through all the rows of the middle table
-            self.table_display.setRowHeight(i, 20) # make each row thinner
-                
+    def fix_table(self, information, col_count):
         for row in range(len(information)):
             for col in range(col_count):
                 if len( information[row] ) > col:
@@ -933,28 +887,60 @@ class GenEditor(QMainWindow):
                     else:
                         item = QTableWidgetItem(str(information[row][col]) )
                     self.table_display.setItem(row, col, item)
+    
+    #ONLY loads what it is given, backup MUST be done before calling this
+    def load_animation_to_middle(self, treeitem):      
+        
+        print("beginning of load animation to middle")
+        
+        self.table_display.clearContents()
+        
+        print("new loaded animation")
+        print(treeitem)
+        
+        information = treeitem.display_info
+        filepath = treeitem.filepath
+        
+        first_vals, col_count = self.get_vertical_headers(information)
+
+        self.table_display.setColumnCount(col_count)
+        self.table_display.setRowCount(len(information))
+
+        for i in range(self.table_display.rowCount()): # interate through all the rows of the middle table
+            self.table_display.setRowHeight(i, 20) # make each row thinner
+                
+        self.fix_table(information, col_count)
                       
         self.table_display.setHorizontalHeaderLabels(information[1])
         self.table_display.setVerticalHeaderLabels(first_vals)
         
-        if array is None:
-            filepath = self.list_of_animations[index].filepath
-            self.setWindowTitle("j3d animation editor - " + filepath)
-            self.edit_convert_actions(filepath)
+        self.setWindowTitle("j3d animation editor - " + filepath)
+        self.edit_convert_actions(filepath)
         
+
+
+        print("end of load animation to middle")
     def selected_animation_changed(self):
 
         if self.is_remove:
             return
         
-        if len(self.list_of_animations)  > 0:
+        if self.anim_bar.topLevelItemCount()  > 0:
+            #load in previous values
+            #print("load in previous value")
+            print(self.anim_bar.curr_item.text(0))
 
-            self.list_of_animations[self.current_index].display_info = self.get_on_screen()          
-            index = self.animation_bar.currentIndex().row()
-            print( "new selected index is " + str(index) )
-            print( self.list_of_animations[index].display_info[0] )
-            self.current_index = index
-            self.load_animation_to_middle(index)       
+            self.anim_bar.curr_item.display_info = self.get_on_screen()          
+
+            self.anim_bar.curr_item = self.anim_bar.currentItem()
+            """
+            print("updated curr item")
+            print(self.anim_bar.curr_item.text(0))
+            print( "new selected index is " + str(self.anim_bar.curr_item ) )
+            print( self.anim_bar.currentItem().display_info )
+            """
+            self.load_animation_to_middle(self.anim_bar.currentItem() )
+             
 
     def get_on_screen(self):
     
@@ -973,56 +959,7 @@ class GenEditor(QMainWindow):
     
             collected_info.append(row_info)
         return collected_info
-                        
-    def display_info_changes(self): #not used anymroe
-        global count
-        index = self.animation_bar.currentIndex().row() 
-        
-        #collected_info = []
-        
-        first_vals = []
-        
-        for i in range( self.table_display.rowCount() ):
-            row_info = []
-               
-            for j in range (self.table_display.columnCount() ):
-                item = self.table_display.item(i, j)
-                if isinstance(item, QTableWidgetItem):
-                    row_info.append(item.text())
-                    
-                    #if j == 0:
-                    if item.text() != "" and len(first_vals) <= i:
-                        first_vals.append(item.text())
-                    
-
-                else:
-                    row_info.append("")
-                    
-                    if j == 0:
-                        first_vals.append("")
-            current_info.append(row_info)
-        #print(collected_info)
-        
-        #self.table_display.clearContents()
-
-        self.table_display.setHorizontalHeaderLabels(current_info[1])
-        self.table_display.setVerticalHeaderLabels(first_vals)
-        
-        print( "display info of " + str(index) + " was changed") 
-        
-        #self.list_of_animations[index].display_info = collected_info
-        
-        
-        
-        print("new list for the " + str(count) + " time")
-        
-        count += 1
-        for anim in self.list_of_animations:
-            print("new animation")
-            print( anim.display_info ) 
-       
-        #self.load_animation_to_middle(index)
-       
+                             
     def cell_clicked(self, row, column):
         item = self.table_display.item(row, column)
         
@@ -1062,16 +999,14 @@ class GenEditor(QMainWindow):
    
     def add_column(self):
         self.table_display.setColumnCount(self.table_display.columnCount() + 1)
-        if len(self.list_of_animations) > 0:
-            index = self.animation_bar.currentIndex().row()
-            minimum = len (self.list_of_animations[index].display_info[0] )
+        if self.anim_bar.topLevelItemCount() > 0:
+            minimum = len (self.anim_bar.currentItem().display_info[0] )
             if self.table_display.columnCount() > minimum:
                 self.bt_rm_col.setDisabled(False)
         
     def rem_column(self):
-        if len(self.list_of_animations) > 0:
-            index = self.animation_bar.currentIndex().row()
-            vals = self.list_of_animations[index].display_info[0]
+        if self.anim_bar.topLevelItemCount() > 0:
+            vals = self.anim_bar.currentItem().display_info[0]
             
             minimum = 0;
             
@@ -1108,7 +1043,7 @@ class GenEditor(QMainWindow):
         curcol = self.table_display.currentColumn() + 1
         print(curcol)
         if len(self.list_of_animations) > 0:          
-            index = self.animation_bar.currentIndex().row()
+            index = self.anim_bar.currentIndex().row()
             vals = self.list_of_animations[index].display_info[0]
             
             minimum = 0;
@@ -1137,11 +1072,35 @@ class GenEditor(QMainWindow):
         else:
             self.rem_column()
     
-    def add_row(self):
+    def add_row(self, value = None):
         self.table_display.setRowCount(self.table_display.rowCount() + 1)
         self.table_display.setRowHeight(self.table_display.rowCount() - 1, 20)
-        if self.table_display.rowCount() > 2:
-            self.bt_rm_row.setDisabled(False)
+        
+        self.bt_rm_row.setDisabled(self.table_display.rowCount() <= 2)
+        print(value)
+        if value is not None and value is not False:
+            
+            for i in range(len (value)):
+                new_item = QTableWidgetItem( str(value[i] ))
+                self.table_display.setItem(self.table_display.rowCount() - 1, i, new_item)
+
+    def rem_empty_rows(self):
+        print("column count " + str( self.table_display.columnCount() ) )
+        if self.anim_bar.topLevelItemCount() > 0:
+            for i in reversed(range( 2, self.table_display.rowCount() )):
+                is_empty = True
+                j = 0
+                while is_empty and j < self.table_display.columnCount():
+                    item = self.table_display.item(i, j)
+                    if item is not None and item.text() != "":
+                        is_empty = False
+                    j += 1
+                if is_empty:
+                    print( "removing row " + str(i) )
+                    self.rem_row_here(i)
+                    i -= 1
+                    
+                
     
     def rem_row(self):
         if self.table_display.rowCount() > 2:
@@ -1149,62 +1108,148 @@ class GenEditor(QMainWindow):
         if self.table_display.rowCount() == 2:
             self.bt_rm_row.setDisabled(True)
     
-    def add_row_here(self):
-        currow = self.table_display.currentRow() + 2
-        print(self.table_display.currentRow())
+    def add_row_here(self, currow):
+        if currow is not False and currow is not None:
+            currow += 1
+        else:
+            currow = self.table_display.currentRow()
+        #currow = self.table_display.currentRow() + 1
+        
         self.add_row()
         if currow > 2:
             for i in reversed( range( currow, self.table_display.rowCount() ) ):
                 for j in range( 0, self.table_display.columnCount() ):
-                    old = self.table_display.item(i - 1, j)
+                    if i != currow:
+                        old = self.table_display.item(i - 1, j)
+                        
+                        
+                        if old is not None:
+                            self.table_display.setItem(i, j, old.clone())
+                    else:
+                        self.table_display.setItem(i, j, QTableWidgetItem(""))
+                    """
+                    except:
+                        new = QTableWidgetItem("")
+                        self.table_display.setItem(i - 1, j, QTableWidgetItem(""))
+                    #self.table_display.setItem(i, j, new)
+                    self.table_display.setItem(i, j, old.clone())
+                    """
+    
+    def find_row(self, step, look_col, start, end):
+            row = self.table_display.currentRow()
+            stop_row =  self.table_display.rowCount()
+            found = False
+            while found == False and row > 1 and row < stop_row:
+                item = self.table_display.item(row, look_col)
+                if item is not None and item.text().lower().startswith(start) and item.text().lower().endswith(end):
+                    found = True
+                else:
+                    row += step
+            
+            if not found:
+                return None
+            else:
+                return row
+    
+    def rem_material(self):
+        if self.anim_bar.topLevelItemCount() > 0:
+            extension = self.anim_bar.currentItem().filepath
+            extension = extension[-4:]
+            if extension in [ ".bla" ,".blk", ".bva", ".btp"]:
+                self.rem_row_here()
+            else:
+                look_col = 2
+                top_row  = self.table_display.currentRow()
+                bot_row = self.table_display.currentRow()
+                if extension in [".bca", ".bck"]:
+                    # look for scalex and to transz
+                    
+                    top_row = self.find_row(-1, look_col, "scale", "x:")
+                    if top_row is None:
+                        return 
+                    bot_row = self.find_row(1, look_col, "trans", "z:" )
+                    if bot_row is None:
+                        return
+
+                    print(top_row, bot_row)
+                
+                    
+                elif extension == ".btk":
+                    top_row = self.find_row(-1, look_col, "scale", "u:")
+                    if top_row is None:
+                        return 
+                    bot_row = self.find_row(1, look_col, "trans", "w:" )
+                    if bot_row is None:
+                        return
+
+                    print(top_row, bot_row)
+                elif extension in [".brk", ".bpk"]:
+                    if extension == ".bpk":
+                        look_col = 1
+                    top_row = self.find_row(-1, look_col, "re", "d:")
+                    if top_row is None:
+                        return 
+                    bot_row = self.find_row(1, look_col, "alp", "ha:" )
+                    if bot_row is None:
+                        return
+                    # look for red and alpha
+                for i in range(top_row, bot_row + 1):
+                    self.rem_row_here(top_row)
+                information = self.get_on_screen()
+                first_vals, col_count = self.get_vertical_headers(information)
+                self.table_display.setVerticalHeaderLabels(first_vals)
+                self.fix_table(information, col_count)
+                
+    def rem_row_here(self, currow = None):
+        if currow is None or currow == False:
+            currow = self.table_display.currentRow()
+        if currow == 0:
+            self.rem_row()
+        elif self.anim_bar.topLevelItemCount() > 0:       
+            currow += 1
+            for i in range( currow, self.table_display.rowCount() ):
+                for j in range( 0, self.table_display.columnCount() ):
+                    old = self.table_display.item(i, j)
                     try:
                         new = QTableWidgetItem(old.text())
                         old.setText("")
                     except:
                         new = QTableWidgetItem("")
-                        self.table_display.setItem(i - 1, j, QTableWidgetItem(""))
-                    self.table_display.setItem(i, j, new)
-    
-    def rem_row_here(self):
-        currow = self.table_display.currentRow() + 1
-        if currow == 0:
+                        self.table_display.setItem(i, j, QTableWidgetItem(""))
+                    self.table_display.setItem(i - 1, j, new)
             self.rem_row()
-        elif len(self.list_of_animations) > 0:          
-            index = self.animation_bar.currentIndex().row()
-            minimum = len (self.list_of_animations[index].display_info[0] )
-            
-            if self.table_display.rowCount() > minimum: #if you can remove a col          
-                for i in range( currow, self.table_display.rowCount() ):
-                    for j in range( 0, self.table_display.columnCount() ):
-                        old = self.table_display.item(i, j)
-                        try:
-                            new = QTableWidgetItem(old.text())
-                            old.setText("")
-                        except:
-                            new = QTableWidgetItem("")
-                            self.table_display.setItem(i, j, QTableWidgetItem(""))
-                        self.table_display.setItem(i - 1, j, new)
-                self.rem_row()
         else:
             self.rem_row()
             
     def add_material(self):
-        if len( self.list_of_animations ) > 0:
-            index = self.animation_bar.currentIndex().row()
-            extension = self.list_of_animations[index].filepath
+        if self.anim_bar.topLevelItemCount() > 0:
+            extension = self.anim_bar.currentItem().filepath
             extension = extension[-4:]
             
             rows_to_add = 0
             
-            if extension in {".bck", ".bca", ".btk"}:
-                rows_to_add = 9
-            elif extension in {".brk", ".bpk"}:
-                rows_to_add = 4
-            elif extension in {".btp", ".blk", ".bla", ".bva"}:
-                rows_to_add = 1
+            
+            
+            if extension == ".bla" or extension == ".blk":
+                self.add_row(["Cluster #"])
+            elif extension == ".btp":
+                self.add_row(["Material Name"])
+            elif extension == ".bva":
+                self.add_row(["Mesh #"])
+            else:
+                single_mat = j3d.get_single_mat(extension)
+                for i in range( len(single_mat)):
+                    self.add_row(single_mat[i])
+           
             
             for i in range( rows_to_add ):
                 self.add_row()
+            
+            information = self.get_on_screen()
+            first_vals, col_count = self.get_vertical_headers(information)
+            self.table_display.setVerticalHeaderLabels(first_vals)
+            self.fix_table(information, col_count)
+            
     
     def frames_dialogue(self):
         if self.frames_window is None:
@@ -1217,8 +1262,7 @@ class GenEditor(QMainWindow):
         
         if frames_to_add is not None:
         
-            index = self.animation_bar.currentIndex().row()
-            extension = self.list_of_animations[index].filepath
+            extension = self.anim_bar.currentItem().filepath
             info = self.get_on_screen()
             extension = extension[-4:]
             
@@ -1307,17 +1351,6 @@ class GenEditor(QMainWindow):
 import sys
 def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)
-
-class all_anim_information(object):
-    def __init__(self, filepath, current_array = [], compressed = False):
-        self.filepath = filepath
-        self.display_info = current_array
-        self.compressed = compressed
-    
-    @classmethod
-    def get_copy(cls, entry):
-        copy = cls(entry.filepath, entry.display_info)
-        return copy
 
 if __name__ == "__main__":
     #import sys

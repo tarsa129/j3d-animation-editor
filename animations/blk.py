@@ -47,7 +47,7 @@ class blk(j3d.basic_animation):
         cluster_count = read_uint16(f)
         scales_count = int(read_uint16(f))
         
-        print("scales count " + str(scales_count) )
+        #print("scales count " + str(scales_count) )
         
         cluster_offset = read_uint32(f) + clk_start
         scales_offset = read_uint32(f) + clk_start

@@ -186,7 +186,7 @@ class brk(j3d.basic_animation):
         i = len( info ) 
         
         for anim in self.register_animations:
-            things = ["Red", "Green", "Blue", "Alpha"]
+            things = ["Red:", "Green:", "Blue:", "Alpha:"]
             
             
             for j in range (len ( things ) ):    
@@ -273,18 +273,29 @@ class brk(j3d.basic_animation):
 
         for i in range( int(created[1]) ):
             info.append( ["Material " + str(i), 0 ,"Red:"] )
-            info.append( ["Register", 0, "Green"] )
-            things = ["Blue", "Alpha"]
+            info.append( ["Register", "", "Green"] )
+            things = ["Blue:", "Alpha:"]
             for chan in things:
                 info.append( ["", "", chan] )
                 
         for i in range( int(created[2]) ):
             info.append( ["Material " + str(i), 0 ,"Red:"] )
-            info.append( ["Constant", 0, "Green"] )
-            things = ["Blue", "Alpha"]
+            info.append( ["Constant", "", "Green:"] )
+            things = ["Blue:", "Alpha:"]
             for chan in things:
                 info.append( ["", "", chan] )
         return info 
+    
+    @classmethod 
+    def single_mat(cls):
+        info = []
+        info.append( ["Material Name", 0 ,"Red:"] )
+        info.append( ["Register:", "", "Green:"] )
+        things = ["Blue:", "Alpha:"]
+        for chan in things:
+            info.append( ["", "", chan] )
+        return info
+    
     
     @classmethod
     def from_table(cls, f, info):

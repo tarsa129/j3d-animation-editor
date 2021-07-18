@@ -143,8 +143,8 @@ class bva(j3d.basic_animation):
                         to_add.append("")
                     to_add.append(thismat_kf[j])
                     keyframes_dictionary[j] = (to_add)
-            print("keyframes dic")
-            print(keyframes_dictionary)
+            #print("keyframes dic")
+            #print(keyframes_dictionary)
             
             info.append(curr_info)
         
@@ -336,7 +336,7 @@ class bva(j3d.basic_animation):
         f.seek(data_offsets)
         write_uint32(f, anim_start        - vaf1_start)
         write_uint32(f, table_offset        - vaf1_start)
-\
+
 
     @classmethod
     def match_bmd(cls, info, strings):

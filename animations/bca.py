@@ -72,7 +72,7 @@ class bca(j3d.basic_animation):
     def from_anim(cls, f):
 
         size = read_uint32(f)
-        print("Size of btk: {} bytes".format(size))
+        #print("Size of btk: {} bytes".format(size))
         sectioncount = read_uint32(f)
         assert sectioncount == 1
 
@@ -269,20 +269,22 @@ class bca(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Unknown:", 0] )
-        info.append( ["Joint Number", "Component"] )
+        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Tan Type:", j3d.tan_type[1] ] )
+        info.append( ["Bone Name", "Tangent Interpolation", "Component"] )
 
         for i in range( int(created[3])):
             info[1].append("Frame " + str(i) )
         
         for i in range( int(created[1]) ):
-            info.append( ["Joint " + str(i), "Scale U:"] )
+            info.append( ["Joint " + str(i),"SSSS", "Scale X:"] )
+
             
-            things = ["Scale V:", "Scale W:", "Rotation U:", "Rotation V:", "Rotation W:",
-                "Translation U:", "Translation V:", "Translation W:"]
+            things = [ [ "", "SSSS", "Scale Y:"], ["", "SSSS", "Scale Z:"],
+                        ["", "LLLL", "Rotation X:"],["", "LLLL", "Rotation Y:"], ["", "LLLL", "Rotation Z:"],
+                        ["", "SSSS", "Translation X:"],["", "SSSS", "Translation Y:"], ["", "SSSS", "Translation Z:"] ]
             for comp in things:
-                info.append( ["", comp] )
-        return info 
+                info.append( comp )
+        return info          
      
     @classmethod
     def from_table(cls, f, info):
@@ -481,19 +483,19 @@ class bca(j3d.basic_animation):
             new_bone_anim = bone_anim()
             
             if len( joint_anim.scale["X"] ) < bck.duration:
-                val_array = interpolate( joint_anim.scale["X"] )
+                val_array = interpolate( joint_anim.scale["X"], joint_anim.tan_inter[0] )
                 new_bone_anim.scale["X"] = val_array
             else:
                 new_bone_anim.scale["X"] = joint_anim.scale["X"]
             
             if len( joint_anim.scale["Y"] ) < bck.duration:
-                val_array = interpolate( joint_anim.scale["Y"])
+                val_array = interpolate( joint_anim.scale["Y"], joint_anim.tan_inter[1])
                 new_bone_anim.scale["Y"] = val_array
             else:
                 new_bone_anim.scale["Y"] = joint_anim.scale["Y"]
             
             if len( joint_anim.scale["Z"] ) < bck.duration:   
-                val_array = interpolate( joint_anim.scale["Z"])
+                val_array = interpolate( joint_anim.scale["Z"], joint_anim.tan_inter[2])
                 new_bone_anim.scale["Z"] = val_array
             else:
                 new_bone_anim.scale["Z"] = joint_anim.scale["Z"]
@@ -501,7 +503,7 @@ class bca(j3d.basic_animation):
             rotscale = (2.0**bck.anglescale)*(180.0 / 32768.0)
             
             if len( joint_anim.rotation["X"] ) < bck.duration:  
-                val_array = interpolate( joint_anim.rotation["X"])
+                val_array = interpolate( joint_anim.rotation["X"], joint_anim.tan_inter[3])
                 new_bone_anim.rotation["X"] = val_array
             else:
                 new_bone_anim.rotation["X"] = joint_anim.rotation["X"]
@@ -510,7 +512,7 @@ class bca(j3d.basic_animation):
                 #pass
             
             if len( joint_anim.rotation["Y"] ) < bck.duration:  
-                val_array = interpolate( joint_anim.rotation["Y"])
+                val_array = interpolate( joint_anim.rotation["Y"], joint_anim.tan_inter[4])
                 new_bone_anim.rotation["Y"] = val_array
             else:
                 new_bone_anim.rotation["Y"] = joint_anim.rotation["Y"]            
@@ -519,7 +521,7 @@ class bca(j3d.basic_animation):
                 #pass
             
             if len( joint_anim.rotation["Z"] ) < bck.duration:  
-                val_array = interpolate( joint_anim.rotation["Z"])
+                val_array = interpolate( joint_anim.rotation["Z"], joint_anim.tan_inter[5])
                 new_bone_anim.rotation["Z"] = val_array
             else:
                 new_bone_anim.rotation["Z"] = joint_anim.rotation["Z"]            
@@ -529,19 +531,19 @@ class bca(j3d.basic_animation):
                 #pass
             
             if len( joint_anim.translation["X"] ) < bck.duration:  
-                val_array = interpolate( joint_anim.translation["X"] )
+                val_array = interpolate( joint_anim.translation["X"] , joint_anim.tan_inter[6])
                 new_bone_anim.translation["X"] = val_array
             else:
                 new_bone_anim.translation["X"] = joint_anim.translation["X"]
             
             if len( joint_anim.translation["Y"] ) < bck.duration:  
-                val_array = interpolate( joint_anim.translation["Y"] )
+                val_array = interpolate( joint_anim.translation["Y"], joint_anim.tan_inter[7] )
                 new_bone_anim.translation["Y"] = val_array
             else:
                 new_bone_anim.translation["Y"] = joint_anim.translation["Y"]
                 
             if len( joint_anim.translation["Z"] ) < bck.duration:  
-                val_array = interpolate( joint_anim.translation["Z"] )
+                val_array = interpolate( joint_anim.translation["Z"], joint_anim.tan_inter[8] )
                 new_bone_anim.translation["Z"] = val_array
             else:
                 new_bone_anim.translation["Z"] = joint_anim.translation["Z"]
@@ -551,7 +553,7 @@ class bca(j3d.basic_animation):
         return bca
         
         
-def interpolate(entry_array):
+def interpolate(entry_array, tantype = 0):
 
     all_values = []
     
@@ -559,9 +561,11 @@ def interpolate(entry_array):
         return entry_array
 
     for i in range( len( entry_array ) - 1):
-        
-        some_values = inter_helper(entry_array[i], entry_array[i + 1])
-        
+        some_values = []
+        if tantype == 0:
+            some_values = inter_helper(entry_array[i], entry_array[i + 1])
+        else:
+            some_values = inter_cubic( entry_array[i], entry_array[i + 1] )
         for value in some_values:
             all_values.append(value)
     
@@ -575,4 +579,19 @@ def inter_helper(start, end):
         comp = bone_entry( start.value + (i / (end.time - start.time)) * (end.value - start.value))
         values.append( comp )
     #print (values)
+    return values
+    
+def inter_cubic(start, end):
+    values = []
+    for i in range(end.time - start.time):
+        deriv = (end.value - start.value) / (end.time - start.time)
+        a = 2 * start.value - 2 * end.value  + 2 * deriv
+        b = -3 * start.value + 3 * end.value - 3 * deriv
+        c = deriv
+        d = start.value
+        x = (i / (end.time - start.time)) 
+        comp = bone_entry( a * x **3 + b * x **2 + c * x + d  )
+        values.append( comp )
+    print("generated cubic values")
+    print (values)
     return values

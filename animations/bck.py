@@ -201,20 +201,41 @@ class bck(j3d.basic_animation):
                 thing = values[2]
                 
                 i += 8     
+                
+                tan_inter_index = 0
+                tan_inter_type = 1
+   
+                if thing.startswith("r"):
+                    tan_inter_index += 3
+                elif thing.startswith("t"):
+                    tan_inter_index += 6
+   
+                if thing.endswith("Y"):
+                    tan_inter_index += 1
+                elif thing.endswith("Z"):
+                    tan_inter_index += 2
    
                 #read the keyframes
                 while( not "}" in lines[i]):
                     values = lines[i].split()
                     
                     new_entry = j3d.AnimComponent(int(values[0]), float(values[1]))
-                
+                    
+                    
+                    
+                    if values[2].lower() in ["linear", "fixed"]:
+                        tan_inter_type = 0
+                    
                     if len(thing) == 6:
                         new_bone.add_scale( thing[-1], new_entry )
                     elif len(thing) == 7:
                         max_angle = max( abs(max_angle), abs(new_entry.value) )
                         new_bone.add_rotation( thing[-1], new_entry )
                     elif thing.startswith("translate"):
-                        new_bone.add_translation( thing[-1], new_entry )                  
+                        new_bone.add_translation( thing[-1], new_entry )        
+                        
+                    
+                    
                     i += 1
                 
                 i += 2
@@ -223,6 +244,7 @@ class bck(j3d.basic_animation):
                     new_bone_name = lines[i].split()[3]
                 else:
                     new_bone_name = current_bone + "asdf"
+                new_bone.tan_inter[tan_inter_index] = tan_inter_type
         
         bck.anglescale = int( max_angle / 180) ;
         
@@ -338,6 +360,17 @@ class bck(j3d.basic_animation):
             for comp in things:
                 info.append( comp )
         return info          
+    
+    @classmethod
+    def single_mat(cls):
+        info = []
+        info.append([ "Joint #", "SSSS", "Scale X:"])
+        things = [ [ "", "SSSS", "Scale Y:"], ["", "SSSS", "Scale Z:"],
+                        ["", "LLLL", "Rotation X:"],["", "LLLL", "Rotation Y:"], ["", "LLLL", "Rotation Z:"],
+                        ["", "SSSS", "Translation X:"],["", "SSSS", "Translation Y:"], ["", "SSSS", "Translation Z:"] ]
+        for comp in things:
+            info.append( comp )
+        return info
     
     @classmethod
     def from_table(cls, f, info):

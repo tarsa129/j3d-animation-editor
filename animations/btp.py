@@ -45,7 +45,7 @@ class btp(j3d.basic_animation):
 
         anim_length = j3d.read_uint16(f)
         num_entries = j3d.read_uint16(f) #also known as "keyframe count in the documentation"
-        print("there are " + str(num_entries) + " entries")
+        #print("there are " + str(num_entries) + " entries")
         
         unknown1 = j3d.read_uint16(f)
         
@@ -69,10 +69,10 @@ class btp(j3d.basic_animation):
         for i in range(num_entries):
         
             f.seek(facial_animation_entries_os + i * 8)
-            print(f.tell())
+            #print(f.tell())
         
             this_length = j3d.read_uint16(f)
-            print("length of " + str(i) + " is " + str(this_length))
+            #print("length of " + str(i) + " is " + str(this_length))
             this_start = j3d.read_uint16(f)
             
             indices = []
@@ -143,8 +143,8 @@ class btp(j3d.basic_animation):
                         to_add.append("")
                     to_add.append(thismat_kf[j])
                     keyframes_dictionary[j] = (to_add)
-            print("keyframes dic")
-            print(keyframes_dictionary)
+            #print("keyframes dic")
+            #print(keyframes_dictionary)
             
             information.append(curr_info)
         
