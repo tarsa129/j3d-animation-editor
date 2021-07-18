@@ -630,13 +630,13 @@ class GenEditor(QMainWindow):
             item.add_children(strings)
     
     def match_bmd(self):
-        index = self.anim_bar.currentIndex().row()
-        filepath = self.list_of_animations[index].filepath
+        current_item = self.anim_bar.currentItem()
+        filepath = current_item.filepath
         
         bmd_file, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)" )
         if bmd_file:
-            self.list_of_animations[index].display_info = self.get_on_screen()
-            info = j3d.fix_array(self.list_of_animations[index].display_info)
+            current_item.display_info = self.get_on_screen()
+            info = j3d.fix_array(current_item.display_info)
             strings = []
 
             if filepath.endswith(".bck") or filepath.endswith(".bca"):
@@ -647,9 +647,10 @@ class GenEditor(QMainWindow):
             else:
                 strings = self.get_materials_from_bmd(bmd_file)
             
-            array = j3d.match_bmd(filepath, info, strings)                
-            self.load_animation_to_middle(index, array )                
-            self.edit_anim_bar_children( self.anim_bar.itemAt(0, index), strings)
+            array = j3d.match_bmd(filepath, info, strings)     
+            current_item.display_info = array
+            self.load_animation_to_middle( current_item )                
+            current_item.add_children( strings) 
              
     def get_bones_from_bmd(self, bmd_file):
         strings = []
