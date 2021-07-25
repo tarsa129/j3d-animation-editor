@@ -3,7 +3,7 @@ import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 from PyQt5.QtCore import Qt, QRect, QModelIndex
 
-from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter, 
+from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter, QCheckBox,
                              QSpacerItem, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QHBoxLayout,
                              QScrollArea, QGridLayout, QMenuBar, QMenu, QAction, QApplication, QStatusBar, QLineEdit,
                              QTreeWidget, QTreeWidgetItem, QTableWidget, QTableWidgetItem)
@@ -17,6 +17,7 @@ import widgets.create_anim as create_widget
 import widgets.tree_view as tree_view
 import widgets.tree_item as tree_item
 import widgets.add_frames as frames_widget
+import widgets.mass_edit as maedit_widget
 
 class GenEditor(QMainWindow):
     def __init__(self):
@@ -30,6 +31,7 @@ class GenEditor(QMainWindow):
         
         self.create_window = None
         self.frames_window = None
+        self.maedit_window = None
          
         self.setAcceptDrops(True)
         self.setup_ui()
@@ -70,6 +72,7 @@ class GenEditor(QMainWindow):
 
         
         self.file_load_action = QAction("Load", self)
+        self.folder_load_action = QAction("Load Folder", self)
         self.save_file_action = QAction("Save", self)
         self.save_file_as_action = QAction("Save As", self)
         self.save_file_all_action = QAction("Save All", self)
@@ -84,6 +87,7 @@ class GenEditor(QMainWindow):
         self.create_animation.setShortcut("Ctrl+N")
 
         self.file_load_action.triggered.connect(self.button_load_level)
+        self.folder_load_action.triggered.connect(self.button_load_folder)
         self.save_file_action.triggered.connect(self.button_save_level)
         self.save_file_as_action.triggered.connect(self.button_save_as)
         self.save_file_all_action.triggered.connect(self.button_save_all)
@@ -97,6 +101,7 @@ class GenEditor(QMainWindow):
         #self.combine_animations.triggered.connct(self.combine_anims)
 
         self.file_menu.addAction(self.file_load_action)
+        #self.file_menu.addAction(self.folder_load_action)
         self.file_menu.addAction(self.save_file_action)
         self.file_menu.addAction(self.save_file_as_action) 
         self.file_menu.addAction(self.save_file_all_action)
@@ -129,10 +134,31 @@ class GenEditor(QMainWindow):
         self.clear_cells_action.setShortcut("Delete")
         self.select_all_action.setShortcut("Ctrl+A")
         
+        
+        self.remove_row_end = QAction("Remove Row from End", self)
+        self.remove_row_end.triggered.connect(self.rem_row)
+        
+        self.remove_row_here = QAction("Remove Current Row", self)
+        self.remove_row_here.triggered.connect(self.rem_row_here)
+        
+        self.add_row_end = QAction("Add Row to End", self)
+        self.add_row_end.triggered.connect(self.add_row)
+        
+        self.add_row_next = QAction("Add Row Here", self)
+        self.add_row_next.triggered.connect(self.add_row_here)
+        
+      
         self.edit_menu.addAction(self.copy_cells_action)
         self.edit_menu.addAction(self.paste_cells_action)
         self.edit_menu.addAction(self.clear_cells_action)
         self.edit_menu.addAction(self.select_all_action)
+        
+        self.edit_menu.addAction(self.add_row_end)
+        self.edit_menu.addAction(self.add_row_next)
+        self.edit_menu.addAction(self.remove_row_end)
+        self.edit_menu.addAction(self.remove_row_here)
+        
+        
         
         self.menubar.addAction(self.edit_menu.menuAction())
         
@@ -189,29 +215,13 @@ class GenEditor(QMainWindow):
         
         self.menubar.addAction(self.model.menuAction())
         
-        #table operations
-        self.table_ops = QMenu(self)
-        self.table_ops.setTitle("Row Operations")
         
-        self.remove_row_end = QAction("Remove Row from End", self)
-        self.remove_row_end.triggered.connect(self.rem_row)
+        #mass edit
+        self.mass_edit = QAction(self)
+        self.mass_edit.setText("Mass Animation Editor")
+        self.mass_edit.triggered.connect(self.maedit_dialogue)
         
-        self.remove_row_here = QAction("Remove Current Row", self)
-        self.remove_row_here.triggered.connect(self.rem_row_here)
-        
-        self.add_row_end = QAction("Add Row to End", self)
-        self.add_row_end.triggered.connect(self.add_row)
-        
-        self.add_row_next = QAction("Add Row Here", self)
-        self.add_row_next.triggered.connect(self.add_row_here)
-        
-        self.table_ops.addAction(self.add_row_end)
-        self.table_ops.addAction(self.add_row_next)
-        self.table_ops.addAction(self.remove_row_end)
-        self.table_ops.addAction(self.remove_row_here)
-        
-        
-        self.menubar.addAction(self.table_ops.menuAction())
+        self.menubar.addAction(self.mass_edit)
         
         #main splitter
         
@@ -325,7 +335,15 @@ class GenEditor(QMainWindow):
 
                 animation_object = j3d.sort_file(filepath)               
                 self.new_animation_from_object(animation_object, filepath)
-         
+    def button_load_folder(self):
+        folders_dia = QFileDialog(self)
+        self.subdirecs = QCheckBox(self)
+        self.subdirecs.setText("Include Subdirectories")
+        folders_dia.layout().addWidget(self.subdirecs)
+        directory = folders_dia.getExistingDirectory(self, "Open Folder")
+        if folders_dia:
+            pass
+        
     def universal_save(self, filepath = ""):
         
         current_item = self.anim_bar.currentItem()
@@ -342,10 +360,11 @@ class GenEditor(QMainWindow):
             self.universal_save(filepath)
         
     def button_save_all(self):
+        current_item = self.anim_bar.currentItem()
+        current_item.display_info = self.get_on_screen()
+        current_item.save_animation()
         for i in range( self.anim_bar.topLevelItemCount() ):
-            current_item = self.anim_bar.currentItem()
-            current_item.display_info = self.get_on_screen()
-            current_item.save_animation()
+            
             item = self.anim_bar.topLevelItem(i);
             item.save_animation();
     
@@ -559,9 +578,9 @@ class GenEditor(QMainWindow):
         if filepath or filename:
             
             if filepath:
-                strings = self.get_bones_from_bmd(filepath)
+                strings = j3d.get_bones_from_bmd(filepath)
             elif filename:
-                strings = self.get_bones_from_bmd(filename)
+                strings = j3d.get_bones_from_bmd(filename)
             #index = self.anim_bar.currentIndex().row()
             #information = self.get_on_screen()
             #information = self.list_of_animations[index].display_info
@@ -592,12 +611,12 @@ class GenEditor(QMainWindow):
     def load_bone_names_all(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)")
         if filepath:   
-            strings = self.get_bones_from_bmd(filepath)
+            strings = j3d.get_bones_from_bmd(filepath)
             #index = self.anim_bar.currentIndex().row()
             #information = self.get_on_screen()
             #information = self.list_of_animations[index].display_info
             for j in range( self.anim_bar.topLevelItemCount() ):
-                item = self.anim_bar.itemFromIndex(j)
+                item = self.anim_bar.topLevelItem(j)
                 if item.filepath.endswith(".bca") or item.filepath.endswith(".bck"):
                     info = item.display_info
                     for i in range( len(strings) ):
@@ -640,70 +659,126 @@ class GenEditor(QMainWindow):
             strings = []
 
             if filepath.endswith(".bck") or filepath.endswith(".bca"):
-                strings = self.get_bones_from_bmd(bmd_file)
-            elif filepath.endswith(".bva"):
+                strings = j3d.get_bones_from_bmd(bmd_file)
+            elif filepath.endswith(".bva") or filepath.endswith(".blk") or filepath.endswith(".bla"):
                 return
                 #string = self.get_meshes_from_bmd(bmd_file)
             else:
-                strings = self.get_materials_from_bmd(bmd_file)
+                strings = j3d.get_materials_from_bmd(bmd_file)
             
-            array = j3d.match_bmd(filepath, info, strings)     
+            array = j3d.match_bmd(filepath, info, strings, bmd_file)     
             current_item.display_info = array
             self.load_animation_to_middle( current_item )                
             current_item.add_children( strings) 
-             
-    def get_bones_from_bmd(self, bmd_file):
-        strings = []
-        with open(bmd_file, "rb") as f:
-                s = f.read()
-                a = s.find(b'\x4A\x4E\x54\x31')
-                print(a)
-                f.seek(a + 0x14);
-                address = j3d.read_uint32(f)
-                print(address)
-                f.seek(address + a)
-                strings = j3d.StringTable.from_file(f).strings;
-                print(strings)
-                f.close()
-            
-        return strings
 
-    def get_materials_from_bmd(self, bmd_file):
-        strings = []
-        with open(bmd_file, "rb") as f:
-                s = f.read()
-                a = s.find(b'\x4D\x41\x54\x33')
-                print(a)
-                f.seek(a + 0x14);
-                address = j3d.read_uint32(f)
-                print(address)
-                f.seek(address + a)
-                strings = j3d.StringTable.from_file(f).strings;
-                print(strings)
-                f.close()
+    # mass editor
+    def maedit_dialogue(self):
+    
+        
+    
+        print("mass edit")
+        if self.maedit_window is None:
+            self.maedit_window = maedit_widget.maedit_window()
+            self.maedit_window.setWindowModality(QtCore.Qt.ApplicationModal)
+            self.maedit_window.exec_()
+        maedit_info = self.maedit_window.get_info() 
+        
+        if maedit_info is not None:
+            anim_type = maedit_info[0]
+            anim_name = maedit_info[2]
+                     
             
-        return strings
-
-    def get_meshes_from_bmd(self, bmd_file):
-        strings = []
-        with open(bmd_file, "rb") as f:
-                s = f.read()
-                a = s.find(b'\x53\x48\x50\x31')
-                print(a)
-                f.seek(a + 0x14);
-                address = j3d.read_uint32(f)
-                print(address)
-                f.seek(address + a)
-                strings = j3d.StringTable.from_file(f).strings;
-                print(strings)
-                f.close()
+            look_col = 2
+            if maedit_info[0] in[ ".bla" ,".blk", ".bva", ".btp"]:
+                look_col = 0
+            elif maedit_info[0] == ".bpk":
+                look_col = 1
             
-        return strings
+            for j in range( self.anim_bar.topLevelItemCount() ):
+                item = self.anim_bar.topLevelItem(j)
+                if item.filepath.endswith(maedit_info[0]):
+                    info = item.display_info
+                    item.display_info = self.find_and_edit(info, maedit_info[1], maedit_info[2], look_col, maedit_info[0])
+    
 
+
+            self.load_animation_to_middle(self.anim_bar.currentItem() )
+
+        self.maedit_window = None
+    def find_and_edit(self, info, name, values, look_col, exten = None):
+            def operations( array, operation ) :
+                print("operation " + str(operation ), array)
+                if operation == 0:
+                    return array[0] + array[1]
+                elif operation == 1:
+                    
+                    return array[0] - array[1]
+                elif operation == 2:
+                    return array[0] * array[1]
+                elif operation == 3:
+                    return array[0] / array[1]
+                elif operation == 4:
+                    try:
+                        if array[1].strip() != "" and float(array[1]):
+                            return float(array[1])                 
+                    except:
+                        pass
+                    finally:
+                        sum = 0
+                        for val in array:
+                            sum += val
+                        return sum / len(array)
+            def change_row(info, i, look_col, values):
+                for j in range( look_col + 1 , len( info[i ]) ):
+                    item = info[i][j]
+                    if item != "":
+                        new_val = operations( [float(item), float(values[2]) ], values[1] )
+                        if exten == ".btp" or exten == ".bva":
+                            new_val = int(round(new_val))
+                        info[i][j] = str(new_val) 
+            #print(info, name, values, look_col, exten)
+            for i in range(len(info)):
+                item = self.table_display.item(i, 0) 
+                print(item.text(), name)
+                if item.text() == name:
+                    #single line animation
+                    if len(values) == 1:
+                        look_col += 1
+                        if exten == ".blk":
+                            look_col -= 1
+                        print(look_col)
+                        change_row(info, i, look_col, values[0])
+
+                    else:
+                        curr_row = i
+                        for j in range( len(values) ):
+                            if values[j][2] != "" or values[j][1] == 4:
+                                curr_row = self.find_row_2(info, look_col, curr_row, values[j][0])
+                                change_row(info, curr_row, look_col, values[j]) 
+                    break
+            return info
+    def find_row_2(self, table, look_col, row, value):
+        found_row = row
+        stop_row =  self.table_display.rowCount()
+        found = False
+        while found == False and found_row > 1 and found_row < stop_row:
+            item = self.table_display.item(found_row, look_col)
+            print(item.text(), value)
+            if item is not None and item.text() == value:
+                found = True
+            else:
+                found_row += 1
+        
+        if not found:
+            return None
+        else:
+            return found_row
+    
+    
     #table view stuff
     def contextMenuEvent(self, event):
         
-        if len( self.list_of_animations ) < 1:
+        if  self.anim_bar.topLevelItemCount() < 1:
             return
             
         quick_change_action = QAction("Quick Edit Menu", self)
@@ -1100,9 +1175,7 @@ class GenEditor(QMainWindow):
                     print( "removing row " + str(i) )
                     self.rem_row_here(i)
                     i -= 1
-                    
-                
-    
+                     
     def rem_row(self):
         if self.table_display.rowCount() > 2:
             self.table_display.setRowCount(self.table_display.rowCount() - 1)
@@ -1137,20 +1210,23 @@ class GenEditor(QMainWindow):
                     """
     
     def find_row(self, step, look_col, start, end):
-            row = self.table_display.currentRow()
-            stop_row =  self.table_display.rowCount()
-            found = False
-            while found == False and row > 1 and row < stop_row:
-                item = self.table_display.item(row, look_col)
-                if item is not None and item.text().lower().startswith(start) and item.text().lower().endswith(end):
-                    found = True
-                else:
-                    row += step
-            
-            if not found:
-                return None
+        row = self.table_display.currentRow()
+        stop_row =  self.table_display.rowCount()
+        found = False
+        while found == False and row > 1 and row < stop_row:
+            item = self.table_display.item(row, look_col)
+            if item is not None and item.text().lower().startswith(start) and item.text().lower().endswith(end):
+                found = True
             else:
-                return row
+                row += step
+        
+        if not found:
+            return None
+        else:
+            return row
+    
+
+        
     
     def rem_material(self):
         if self.anim_bar.topLevelItemCount() > 0:
@@ -1250,8 +1326,7 @@ class GenEditor(QMainWindow):
             first_vals, col_count = self.get_vertical_headers(information)
             self.table_display.setVerticalHeaderLabels(first_vals)
             self.fix_table(information, col_count)
-            
-    
+               
     def frames_dialogue(self):
         if self.frames_window is None:
             self.frames_window = frames_widget.frames_window()

@@ -54,7 +54,7 @@ def write_padding(f, multiple):
         pos = i%len(PADDING)
         f.write(PADDING[pos:pos+1])
 
-loop_mode = ("Play once", "Unknown", "Loop", "Mirror once", "Mirror")
+loop_mode = ("Play once", "Play Once - Stop at 1st Frame", "Loop", "Mirror once", "Mirror Loop")
 tan_type = ("Tan out only", "Tan in and out") 
 
 class basic_animation(object):
@@ -70,7 +70,7 @@ class basic_animation(object):
     
     @classmethod
     def match_bmd(cls, object, strings):
-                      
+        
         i = 0
         while i < len( object.animations):
             anim = object.animations[i]
@@ -78,7 +78,7 @@ class basic_animation(object):
                 object.animations.pop(i)
             else:
                 i += 1
-        
+
         return object
         
 
@@ -289,7 +289,85 @@ def find_sequence(in_list, seq):
 def find_single_value(in_list, value):
     
     return find_sequence(in_list, [value])
-    
+
+def get_bone_transforms(bmd_file):
+    with open(bmd_file, "rb") as f:
+        s = f.read()
+        a = s.find(b'\x4A\x4E\x54\x31')
+        
+        
+        
+        f.seek(a + 0x08);
+        bone_count = read_uint16(f)
+        f.seek(a + 0x0c);
+        address = read_uint32(f)
+        f.seek(address + a)
+        
+        values = []
+        for i in range(bone_count):
+            this_bone = []
+            f.read(4)
+            this_bone.append( read_float(f) )
+            this_bone.append( read_float(f) )
+            this_bone.append( read_float(f) )
+            this_bone.append( read_sint16(f) )
+            this_bone.append( read_sint16(f) )
+            this_bone.append( read_sint16(f) )
+            f.read(2)
+            this_bone.append( read_float(f) )
+            this_bone.append( read_float(f) )
+            this_bone.append( read_float(f) )
+            f.read(28)
+            values.append(this_bone)
+        return values
+        
+
+def get_bones_from_bmd(bmd_file):
+    strings = []
+    with open(bmd_file, "rb") as f:
+        s = f.read()
+        a = s.find(b'\x4A\x4E\x54\x31')
+        #print(a)
+        f.seek(a + 0x14);
+        address = read_uint32(f)
+        #print(address)
+        f.seek(address + a)
+        strings = StringTable.from_file(f).strings;
+        print(strings)
+        f.close()
+        
+    return strings
+
+def get_materials_from_bmd(bmd_file):
+    strings = []
+    with open(bmd_file, "rb") as f:
+        s = f.read()
+        a = s.find(b'\x4D\x41\x54\x33')
+        #print(a)
+        f.seek(a + 0x14);
+        address = read_uint32(f)
+        #print(address)
+        f.seek(address + a)
+        strings = StringTable.from_file(f).strings;
+        print(strings)
+        f.close()
+        
+    return strings 
+
+def get_meshes_from_bmd( bmd_file):
+    strings = []
+    with open(bmd_file, "rb") as f:
+        s = f.read()
+        a = s.find(b'\x53\x48\x50\x31')
+        #print(a)
+        f.seek(a + 0x8);
+        count = read_uint16(f)
+        strings = [ "Shape " + str(i) for i in range(count) ]
+        print(strings)
+        f.close()
+        
+    return strings
+ 
 def fix_array(info):
     # the arrays should be pure text
     for i in range( len( info )):
@@ -472,23 +550,23 @@ def create_empty(information):
         table = bva_file.bva.empty_table(information) 
     return table
 
-def match_bmd(filepath, information, strings):
+def match_bmd(filepath, information, strings, filepathh):
     print(filepath)
 
     if filepath.endswith(".btp"):
-        table = btp_file.btp.match_bmd(information, strings) 
+        table = btp_file.btp.match_bmd(information, strings, filepathh) 
     elif filepath.endswith(".btk"):
-        table = btk_file.btk.match_bmd(information, strings)   
+        table = btk_file.btk.match_bmd(information, strings, filepathh)   
     elif filepath.endswith(".brk"):
-        table = brk_file.brk.match_bmd(information, strings)   
+        table = brk_file.brk.match_bmd(information, strings, filepathh)   
     elif filepath.endswith(".bck") or filepath.endswith(".bca"):
-        table = bck_file.bck.match_bmd(information, strings) 
+        table = bck_file.bck.match_bmd(information, strings, filepathh) 
     elif filepath.endswith(".bpk"):
-        table = bpk_file.bpk.match_bmd(information, strings) 
+        table = bpk_file.bpk.match_bmd(information, strings, filepathh) 
     elif filepath.endswith(".blk") or filepath.endswith(".bla"):
-        table = blk_file.blk.match_bmd(information, strings) 
+        table = blk_file.blk.match_bmd(information, strings, filepathh) 
     elif filepath.endswith(".bva"):
-        table = bva_file.bva.match_bmd(information, strings) 
+        table = bva_file.bva.match_bmd(information, strings, filepathh) 
     return table
   
 def get_single_mat(extension):

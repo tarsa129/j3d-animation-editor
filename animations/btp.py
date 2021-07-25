@@ -95,7 +95,7 @@ class btp(j3d.basic_animation):
         
         information = []
         
-        information.append(["Flag / Loop Mode: ", self.flag, "Maximum Duration:", self.unknown_address])
+        information.append(["Loop Mode: ", self.flag, "Maximum Duration:", self.unknown_address])
         
         information.append( [ "Material Name", "Duration"] )
         

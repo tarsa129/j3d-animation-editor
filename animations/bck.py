@@ -45,6 +45,26 @@ class bone_anim(object):
 
     def _set_translation_offsets(self, axis, val):
         self._translation_offsets[axis] = val
+        
+    @classmethod 
+    def get_empty_bone_anim(cls, name, values = [1.0, 1.0, 1.0, 0, 0, 0, 0, 0, 0], angle_scale = 0):
+        new_anim = bone_anim()
+        new_anim.name = name;
+
+            
+        new_anim.add_scale("X", j3d.AnimComponent(0, values[0] ))
+        new_anim.add_scale("Y", j3d.AnimComponent(0, values[1]))
+        new_anim.add_scale("Z", j3d.AnimComponent(0, values[2]))
+        new_anim.add_rotation("X", j3d.AnimComponent(0, values[3]))
+        new_anim.add_rotation("Y", j3d.AnimComponent(0, values[4]))
+        new_anim.add_rotation("Z", j3d.AnimComponent(0, values[5]))
+        new_anim.add_translation("X", j3d.AnimComponent(0, values[6]))
+        new_anim.add_translation("Y", j3d.AnimComponent(0, values[7]))
+        new_anim.add_translation("Z", j3d.AnimComponent(0, values[8]))
+        
+        
+        return new_anim
+
 
 class bck(j3d.basic_animation):
 
@@ -374,6 +394,7 @@ class bck(j3d.basic_animation):
     
     @classmethod
     def from_table(cls, f, info):
+        print("loop mode " + str( info[0][1] ) )
         bck = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
         
         if len(info[0]) >= 7 and info[0][7] != "":
@@ -629,14 +650,14 @@ class bck(j3d.basic_animation):
         return bck
       
     @classmethod
-    def match_bmd(cls, info, strings):
+    def match_bmd(cls, info, strings, filepath = None):
         bck = cls.from_table("", info)
         
         #bone_names = bck.get_children_names()
         #print("current bck bones")
         #print(bone_names)
         j3d.basic_animation.match_bmd(bck, strings)
-                
+        
         #bone_names = bck.get_children_names()
         #print("reduced bone names")
         #print(bone_names)
@@ -649,9 +670,27 @@ class bck(j3d.basic_animation):
 
         z = sorted( bck.animations, key = sort_function)
         bck.animations = z
+        
+        jnt_vals = j3d.get_bone_transforms(filepath)
+        rotscale = (2.0**bck.anglescale) * (180.0 / 32768.0);
+        for i in range(len(jnt_vals)):
+            jnt_vals[i][3] = jnt_vals[i][3] * rotscale    
+            jnt_vals[i][4] *= rotscale
+            jnt_vals[i][5] *= rotscale
+        
+        i = 0
+        
+        while i < len(strings) and i < len(bck.animations):
+            
+            anim = bck.animations[i]
+            print(strings[i], anim.name)
+            if anim.name != strings[i]:
+                print(strings[i])
+                bck.animations.insert(i, bone_anim.get_empty_bone_anim(strings[i], jnt_vals[i]) )
+            i += 1
         #print("sorted bone names")
         #print( bck.get_children_names() )
-                
+        
         return bck.get_loading_information()
         
     

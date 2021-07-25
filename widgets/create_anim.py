@@ -144,7 +144,7 @@ class create_window(QDialog):
         return (self.filepath, self.number_text.text(), self.const_text.text(), self.duration_text.text() )
          
     def open_file_dialog(self):
-        filepath, choosentype = QFileDialog.getSaveFileName(self.other_info_layout, "Choose File Path", "", self.selected + " files (*" + self.selected + ")")
+        filepath, choosentype = QFileDialog.getOpenFileName(self.other_info_layout, "Choose File Path", "", self.selected + " files (*" + self.selected + ")")
         if filepath:
             self.filename_text.setText(filepath)
             self.filepath = filepath
