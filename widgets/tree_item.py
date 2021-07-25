@@ -15,7 +15,11 @@ class tree_item(QTreeWidgetItem):
         self.display_info = display_info
         self.filepath = filepath
         self.compressed = compressed
-        self.setText(0, filepath[filepath.rfind("/") + 1:])
+        
+        forward_i = filepath.rfind("/") + 1
+        backwad_i = filepath.rfind("\\") + 1
+        
+        self.setText(0, filepath[max(forward_i, backwad_i):])
     
     def save_animation(self, other_filepath = ""):
         

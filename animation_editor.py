@@ -3,7 +3,7 @@ import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 from PyQt5.QtCore import Qt, QRect, QModelIndex
 
-from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter, QCheckBox,
+from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter, QCheckBox, QDialog,
                              QSpacerItem, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QHBoxLayout,
                              QScrollArea, QGridLayout, QMenuBar, QMenu, QAction, QApplication, QStatusBar, QLineEdit,
                              QTreeWidget, QTreeWidgetItem, QTableWidget, QTableWidgetItem)
@@ -18,6 +18,9 @@ import widgets.tree_view as tree_view
 import widgets.tree_item as tree_item
 import widgets.add_frames as frames_widget
 import widgets.mass_edit as maedit_widget
+import widgets.open_folder as folder_widget
+import widgets.select_model as select_widget
+import glob
 
 class GenEditor(QMainWindow):
     def __init__(self):
@@ -32,6 +35,7 @@ class GenEditor(QMainWindow):
         self.create_window = None
         self.frames_window = None
         self.maedit_window = None
+        self.folder_window = None
          
         self.setAcceptDrops(True)
         self.setup_ui()
@@ -101,7 +105,7 @@ class GenEditor(QMainWindow):
         #self.combine_animations.triggered.connct(self.combine_anims)
 
         self.file_menu.addAction(self.file_load_action)
-        #self.file_menu.addAction(self.folder_load_action)
+        self.file_menu.addAction(self.folder_load_action)
         self.file_menu.addAction(self.save_file_action)
         self.file_menu.addAction(self.save_file_as_action) 
         self.file_menu.addAction(self.save_file_all_action)
@@ -336,13 +340,50 @@ class GenEditor(QMainWindow):
                 animation_object = j3d.sort_file(filepath)               
                 self.new_animation_from_object(animation_object, filepath)
     def button_load_folder(self):
-        folders_dia = QFileDialog(self)
-        self.subdirecs = QCheckBox(self)
-        self.subdirecs.setText("Include Subdirectories")
-        folders_dia.layout().addWidget(self.subdirecs)
-        directory = folders_dia.getExistingDirectory(self, "Open Folder")
-        if folders_dia:
-            pass
+        if self.folder_window == None:
+            self.folder_window = folder_widget.folder_dia()
+            
+            if self.folder_window.exec_() == QDialog.Accepted:
+                directory = self.folder_window.selectedUrls()[0].toLocalFile() 
+                print(directory)
+                
+                files = []
+                types = ("*.bca", "*.bck", "*.bla", "*.blk", "*.bpk", "*.brk", "*.btk", "*.btp", "*.bva")  
+                if self.folder_window.isChecked():
+                    for exten in types:
+                        files.extend(glob.glob(directory+"/**/"+exten, recursive = True ) )
+                else:
+                    for exten in types:
+                        files.extend(glob.glob(directory+"/"+exten ) )
+                
+                #print (files)
+                
+                for file in files:
+                    animation_object = j3d.sort_file(file)               
+                    self.new_animation_from_object(animation_object, file)
+                    
+                if self.folder_window.load_model():
+                    model_files = []
+                    model_types = ("*.bmd", "*.bdl")
+                    
+                    if self.folder_window.isChecked():
+                        for exten in model_types:
+                            model_files.extend(glob.glob(directory+"/**/"+exten, recursive = True ) )
+                    else:
+                        for exten in model_types:
+                            model_files.extend(glob.glob(directory+"/"+exten ) )
+                    
+                    if len(model_files) == 1:
+                        self.load_bone_names_all_file(model_files[0])
+                    else:
+                        load_model = select_widget.model_select( model_files)
+                        load_model.setWindowModality(QtCore.Qt.ApplicationModal)
+                        load_model.exec_()
+                        model_filepath = load_model.selected
+                        if model_filepath is not None:
+                            self.load_bone_names_all_file(model_filepath)
+
+        self.folder_window = None
         
     def universal_save(self, filepath = ""):
         
@@ -367,8 +408,7 @@ class GenEditor(QMainWindow):
             
             item = self.anim_bar.topLevelItem(i);
             item.save_animation();
-    
-    
+        
     def create_new(self):
         
         if self.create_window is None:
@@ -463,8 +503,7 @@ class GenEditor(QMainWindow):
         self.save_file_action.setDisabled(are_no_anims)
         self.save_file_as_action.setDisabled(are_no_anims)
         self.save_file_all_action.setDisabled(are_no_anims)
-
-     
+    
     def convert_to_k(self):
         current_item = self.anim_bar.currentItem()
         current_item.display_info = self.get_on_screen()
@@ -517,9 +556,6 @@ class GenEditor(QMainWindow):
         print("index of loaded animation in tree view")
         print(self.anim_bar.indexOfTopLevelItem(loaded_animation) )
         """
-        print("current list of animations - right after adding new one")
-        for i in range(self.anim_bar.topLevelItemCount() ): 
-            print(self.anim_bar.itemAt(i, 0).display_info[0])
         
         
         loaded_animation = self.new_animation_from_array(display_info, filepath, compressed)
@@ -531,20 +567,20 @@ class GenEditor(QMainWindow):
     #bmd stuff
     def new_animation_from_array(self, array, filepath, compressed):
         if self.anim_bar.topLevelItemCount() > 0:
-            print( "this is not the first loaded animation " ) 
+            #print( "this is not the first loaded animation " ) 
             #print( "the old index is " + str(self.anim_bar.curr_index) )
             #print("load in the current table to index " + str(self.anim_bar.curr_index) )
             #self.anim_bar.itemAt(self.anim_bar.curr_index,0).display_info = self.get_on_screen()
            
            
             self.anim_bar.currentItem().display_info = self.get_on_screen()
-            print(self.anim_bar.currentItem().text(0) )
-            print( self.anim_bar.currentItem().display_info[0])
+            #print(self.anim_bar.currentItem().text(0) )
+            #print( self.anim_bar.currentItem().display_info[0])
         print(self.anim_bar.topLevelItemCount())
         if self.anim_bar.topLevelItemCount() == 0:
             loaded_animation = tree_item.tree_item(self.anim_bar)    
             self.anim_bar.curr_item = loaded_animation
-            print("curr_item set " + str( self.anim_bar.curr_item))
+            #print("curr_item set " + str( self.anim_bar.curr_item))
         else:
             loaded_animation = tree_item.tree_item(self.anim_bar)    
         loaded_animation.set_values( array, filepath, compressed )
@@ -611,42 +647,49 @@ class GenEditor(QMainWindow):
     def load_bone_names_all(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)")
         if filepath:   
-            strings = j3d.get_bones_from_bmd(filepath)
-            #index = self.anim_bar.currentIndex().row()
-            #information = self.get_on_screen()
-            #information = self.list_of_animations[index].display_info
-            for j in range( self.anim_bar.topLevelItemCount() ):
-                item = self.anim_bar.topLevelItem(j)
-                if item.filepath.endswith(".bca") or item.filepath.endswith(".bck"):
-                    info = item.display_info
-                    for i in range( len(strings) ):
-                        row = 9 * i + 2
-                        if row < len( info ) :
-                            info[row][0] = strings[i]
-
-            for i in range( len(strings) ):
-                row = 9 * i + 2
-                item = self.table_display.item(row, 0)
-                if isinstance(item, QTableWidgetItem):
-                    item.setText(strings[i])
-                else:
-                    self.table_display.setItem(i, 0, QTableWidgetItem( strings[i] ) )
-            #self.list_of_animations[index].display_info = information
-            #self.load_animation_to_middle(0, information)
-            information = self.get_on_screen()
-            first_vals = []
-            for i in range(len (information)):             
-                for j in range( len(information[i] )):                    
-                    if information[i][j] == "Linear" or information[i][j] == "Smooth":
-                        first_vals.append(information[i][j+1])
-                        break
-                    if information[i][j] != "":
-                        first_vals.append(information[i][j])
-                        break
-            self.table_display.setVerticalHeaderLabels(first_vals)
+            self.load_bone_names_all_file(filepath)
             
-            item = self.anim_bar.currentItem()
-            item.add_children(strings)
+    def load_bone_names_all_file(self, filepath):
+        strings = j3d.get_bones_from_bmd(filepath)
+        #index = self.anim_bar.currentIndex().row()
+        #information = self.get_on_screen()
+        #information = self.list_of_animations[index].display_info
+        for j in range( self.anim_bar.topLevelItemCount() ):
+            item = self.anim_bar.topLevelItem(j)
+            if item.filepath.endswith(".bca") or item.filepath.endswith(".bck"):
+                info = item.display_info
+                for i in range( len(strings) ):
+                    row = 9 * i + 2
+                    if row < len( info ) :
+                        info[row][0] = strings[i]
+
+        """
+        for i in range( len(strings) ):
+            row = 9 * i + 2
+            item = self.table_display.item(row, 0)
+            if isinstance(item, QTableWidgetItem):
+                item.setText(strings[i])
+            else:
+                self.table_display.setItem(i, 0, QTableWidgetItem( strings[i] ) )
+        #self.list_of_animations[index].display_info = information
+        #self.load_animation_to_middle(0, information)
+        
+        information = self.get_on_screen()
+        first_vals = []
+        for i in range(len (information)):             
+            for j in range( len(information[i] )):                    
+                if information[i][j] == "Linear" or information[i][j] == "Smooth":
+                    first_vals.append(information[i][j+1])
+                    break
+                if information[i][j] != "":
+                    first_vals.append(information[i][j])
+                    break
+        
+        self.table_display.setVerticalHeaderLabels(first_vals)
+        """
+        self.load_animation_to_middle(self.anim_bar.currentItem() )
+        item = self.anim_bar.currentItem()
+        item.add_children(strings)
     
     def match_bmd(self):
         current_item = self.anim_bar.currentItem()
@@ -672,10 +715,7 @@ class GenEditor(QMainWindow):
             current_item.add_children( strings) 
 
     # mass editor
-    def maedit_dialogue(self):
-    
-        
-    
+    def maedit_dialogue(self): 
         print("mass edit")
         if self.maedit_window is None:
             self.maedit_window = maedit_widget.maedit_window()
@@ -693,7 +733,7 @@ class GenEditor(QMainWindow):
                 look_col = 0
             elif maedit_info[0] == ".bpk":
                 look_col = 1
-            
+            self.anim_bar.currentItem().display_info = self.get_on_screen()
             for j in range( self.anim_bar.topLevelItemCount() ):
                 item = self.anim_bar.topLevelItem(j)
                 if item.filepath.endswith(maedit_info[0]):
@@ -926,7 +966,6 @@ class GenEditor(QMainWindow):
                 if isinstance(item, QTableWidgetItem):
                     self.table_display.item(i, j).setSelected(True)
         
-
     def get_vertical_headers(self, information):
         col_count = max( len(information[0]), len(information[1]))
         first_vals = []
@@ -1224,10 +1263,7 @@ class GenEditor(QMainWindow):
             return None
         else:
             return row
-    
-
-        
-    
+      
     def rem_material(self):
         if self.anim_bar.topLevelItemCount() > 0:
             extension = self.anim_bar.currentItem().filepath
