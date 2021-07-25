@@ -855,19 +855,27 @@ class GenEditor(QMainWindow):
                 for cell in list:
                     
                     item = self.table_display.item(cell.row(), cell.column())
-
+                    frames_row = cell.row() == 1
                     if isinstance(item, QTableWidgetItem):
                         if info[0] < 4:
                             try:
-                                new_value = operations( [ float(item.text()) , float(info[1])], info[0] )
-                                
+                                if frames_row and not item.text().isnumeric():
+                                   base_value = float( item.text()[6:] )
+                                else:
+                                    base_value =  float(item.text())
+                                new_value = operations( [ base_value , float(info[1])], info[0] )
                                 index = self.anim_bar.currentIndex().row()   
-                                if self.list_of_animations[index].filepath.endswith(".btp"):
+                                if self.anim_bar.currentItem().filepath.endswith(".btp"):
                                     new_value = int( new_value )
                                 
-                                item.setText(str( new_value) )
+                                if frames_row:
+                                    new_value = "Frame " + str(int(new_value)) 
+                                    item.setText(new_value )
+                                else:
+                                    item.setText(str( new_value) )
                                 print(new_value)
-                            except:
+                            except Exception as e:
+                                print(e)
                                 print( "error with " +  item.text())
                         else:
                             print("added")
