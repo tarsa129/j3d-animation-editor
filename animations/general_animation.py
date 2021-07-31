@@ -554,19 +554,19 @@ def match_bmd(filepath, information, strings, filepathh):
     print(filepath)
 
     if filepath.endswith(".btp"):
-        table = btp_file.btp.match_bmd(information, strings, filepathh) 
+        table = btp_file.btp.match_bmd(information, strings) 
     elif filepath.endswith(".btk"):
-        table = btk_file.btk.match_bmd(information, strings, filepathh)   
+        table = btk_file.btk.match_bmd(information, strings)   
     elif filepath.endswith(".brk"):
-        table = brk_file.brk.match_bmd(information, strings, filepathh)   
+        table = brk_file.brk.match_bmd(information, strings)   
     elif filepath.endswith(".bck") or filepath.endswith(".bca"):
         table = bck_file.bck.match_bmd(information, strings, filepathh) 
     elif filepath.endswith(".bpk"):
-        table = bpk_file.bpk.match_bmd(information, strings, filepathh) 
+        table = bpk_file.bpk.match_bmd(information, strings) 
     elif filepath.endswith(".blk") or filepath.endswith(".bla"):
-        table = blk_file.blk.match_bmd(information, strings, filepathh) 
+        table = blk_file.blk.match_bmd(information, strings) 
     elif filepath.endswith(".bva"):
-        table = bva_file.bva.match_bmd(information, strings, filepathh) 
+        table = bva_file.bva.match_bmd(information, strings) 
     return table
   
 def get_single_mat(extension):
