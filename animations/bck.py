@@ -1,8 +1,6 @@
 import struct 
 from collections import OrderedDict
 
-from fbx import *
-from FbxCommon import * 
 import sys, inspect
 
 from animations.general_animation import *
@@ -644,6 +642,51 @@ class bck(j3d.basic_animation):
         j3d.write_uint32(f, rotations_start     - ank1_start)
         j3d.write_uint32(f, translations_start  - ank1_start)
     
+    def write_anim(self, filepath, children, bones):
+        with open(filepath, "w") as f:
+            f.write("animVersion 1.1;\n")
+            f.write("mayaVersion 2015;\n")
+            f.write("timeUnit ntscf;\n")
+            f.write("linearUnit cm;\n")
+            f.write("angularUnit deg;\n")
+            f.write("startTime 0;\n")
+            f.write("endTime " + str(self.duration)+ ";\n")
+            
+            
+            for i in range( len( self.animations) ):
+                anim = self.animations[i]
+                child = children[i]
+                j = 0
+                if len( anim.scale["X"] ) > 0:
+                    write_single_comp(f, "scaleX", child, j, anim.scale["X"], anim.tan_inter[0], bones[i])
+                    j += 1
+                if len( anim.scale["Y"] ) > 0:
+                    write_single_comp(f, "scaleY", child, j, anim.scale["Y"], anim.tan_inter[1], bones[i])
+                    j += 1
+                if len( anim.scale["Z"] ) > 0:
+                    write_single_comp(f, "scaleZ", child, j, anim.scale["Z"], anim.tan_inter[2], bones[i])
+                    j += 1
+                if len( anim.rotation["X"] ) > 0:
+                    write_single_comp(f, "rotateX", child, j, anim.rotation["X"], anim.tan_inter[3], bones[i])
+                    j += 1
+                if len( anim.rotation["Y"] ) > 0:
+                    write_single_comp(f, "rotateY", child, j, anim.rotation["Y"], anim.tan_inter[4], bones[i])
+                    j += 1
+                if len( anim.rotation["Z"] ) > 0:
+                    write_single_comp(f, "rotateZ", child, j, anim.rotation["Z"], anim.tan_inter[5], bones[i])
+                    j += 1
+                if len( anim.translation["X"] ) > 0:
+                    write_single_comp(f, "translateX", child, j, anim.translation["X"], anim.tan_inter[6], bones[i])
+                    j += 1
+                if len( anim.translation["Y"] ) > 0:
+                    write_single_comp(f, "translateY", child, j, anim.translation["Y"], anim.tan_inter[7], bones[i])
+                    j += 1
+                if len( anim.translation["Z"] ) > 0:
+                    write_single_comp(f, "translateZ", child, j, anim.translation["Z"], anim.tan_inter[8], bones[i])
+                    j += 1
+            
+        f.close()
+    
     @classmethod
     def get_bck(cls, info):
         bck = cls.from_table("", info)    
@@ -693,4 +736,22 @@ class bck(j3d.basic_animation):
         
         return bck.get_loading_information()
         
+def write_single_comp(f, comp, children, j, array, tan_inter, name):
+    f.write("anim " + comp[0:-1] + "." + comp + " " + comp + " " + name + " " + str(children) + " " + str(j) + ";\n" )
+    output_type = "linear"
+    if len(comp) == 7:
+        output_type = "angular"
+    f.write("animData {\n\tinput time;\n\toutput "+output_type+";\n\tweighted 1;\n\tpreInfinity constant;\n\tpostInfinity constant;\n\tkeys {\n");
     
+    if tan_inter == 0:
+        tan_inter = "linear"
+    else:
+        tan_inter = "spline"
+    
+    
+    
+    for frame in array:
+        f.write("\t\t" + str(frame.time) + " " + str(frame.value) + " " + tan_inter + " " + tan_inter + " 1 1 0;\n")
+    
+    
+    f.write("\t}\n}\n");

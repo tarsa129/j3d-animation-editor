@@ -58,11 +58,6 @@ class animation_bar(QTreeWidget):
                 print("load the previous animation to the middle. index: " + str(index) )
                 self.curr_item = self.currentItem()
                 self.main_editor.load_animation_to_middle(self.currentItem())
-            else:
-                self.main_editor.workaround.setDisabled(True)
-                self.bt_add_frames_adv.setDisabled(True)       
-                self.save_file_action.setDisabled(True)
-                self.save_file_as_action.setDisabled(True)
             self.main_editor.is_remove = False
             print("done with removing")
                             

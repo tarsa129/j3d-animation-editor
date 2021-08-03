@@ -173,11 +173,13 @@ class GenEditor(QMainWindow):
         self.convert_to_key = QAction("Save as .bck / .blk", self)
         self.convert_to_all = QAction("Save as .bca / .bla", self)
         self.import_anim = QAction("Import Maya .anim", self)
+        self.export_anim = QAction("Export Maya .anim", self)
         self.import_fbx = QAction("Import .fbx", self)
         
         self.convert_to_key.triggered.connect(self.convert_to_k)
         self.convert_to_all.triggered.connect(self.convert_to_a)
         self.import_anim.triggered.connect(self.import_anim_file)
+        self.export_anim.triggered.connect(self.export_anim_file)
         self.import_fbx.triggered.connect(self.import_fbx_file)
         
         self.convert_to_key.setShortcut("Ctrl+K")
@@ -185,6 +187,7 @@ class GenEditor(QMainWindow):
         self.convert.addAction(self.convert_to_key)
         self.convert.addAction(self.convert_to_all)
         self.convert.addAction(self.import_anim)
+        self.convert.addAction(self.export_anim)
         self.convert.addAction(self.import_fbx)
         
         self.convert_to_key.setDisabled(True)
@@ -403,7 +406,7 @@ class GenEditor(QMainWindow):
     def button_save_all(self):
         current_item = self.anim_bar.currentItem()
         current_item.display_info = self.get_on_screen()
-        current_item.save_animation()
+        #current_item.save_animation()
         for i in range( self.anim_bar.topLevelItemCount() ):
             
             item = self.anim_bar.topLevelItem(i);
@@ -519,6 +522,13 @@ class GenEditor(QMainWindow):
             bck = j3d.import_anim_file(filepath)
             filepath = filepath[0:-5] + ".bck"
             self.new_animation_from_object(bck, filepath)
+    
+    def export_anim_file(self):
+        current_item = self.anim_bar.currentItem()
+        current_item.display_info = self.get_on_screen()
+        current_item.export_anim()
+        
+        
       
     def import_fbx_file(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
@@ -642,7 +652,12 @@ class GenEditor(QMainWindow):
             self.table_display.setVerticalHeaderLabels(first_vals)
             
             index = self.anim_bar.currentIndex().row()
-            self.edit_anim_bar_children( self.anim_bar.itemAt(0, index), strings)
+            item = self.anim_bar.itemAt(0, index)
+            if filepath:
+                item.bmd_file = filepath
+            elif filename:
+                item.bmd_file = filename
+            item.add_children(strings)
     
     def load_bone_names_all(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)")
@@ -656,6 +671,7 @@ class GenEditor(QMainWindow):
         #information = self.list_of_animations[index].display_info
         for j in range( self.anim_bar.topLevelItemCount() ):
             item = self.anim_bar.topLevelItem(j)
+            item.bmd_file = filepath
             if item.filepath.endswith(".bca") or item.filepath.endswith(".bck"):
                 info = item.display_info
                 for i in range( len(strings) ):
@@ -698,6 +714,7 @@ class GenEditor(QMainWindow):
         bmd_file, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)" )
         if bmd_file:
             current_item.display_info = self.get_on_screen()
+            current_item.bmd_file = bmd_file
             info = j3d.fix_array(current_item.display_info)
             strings = []
 
@@ -1165,9 +1182,8 @@ class GenEditor(QMainWindow):
     def rem_col_here(self):
         curcol = self.table_display.currentColumn() + 1
         print(curcol)
-        if len(self.list_of_animations) > 0:          
-            index = self.anim_bar.currentIndex().row()
-            vals = self.list_of_animations[index].display_info[0]
+        if len(self.anim_bar.topLevelItemCount()) > 0:          
+            vals = self.anim_bar.currentItem().display_info[0]
             
             minimum = 0;
             

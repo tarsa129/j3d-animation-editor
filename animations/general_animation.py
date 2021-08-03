@@ -1,6 +1,5 @@
 import struct
-from animations.fbx_scripts import import_fbx_file
-import animations.fbx_scripts as fs
+
 from widgets.yaz0 import decompress
 from io import BytesIO
 
@@ -368,6 +367,68 @@ def get_meshes_from_bmd( bmd_file):
         
     return strings
  
+def read_hierachy( bmd_file):
+    children = []
+    
+    #bones = get_bones_from_bmd(bmd_file)
+    
+    with open(bmd_file, "rb") as f:
+        s = f.read()
+        
+        
+        #get bone count
+        a = s.find(b'\x4A\x4E\x54\x31')
+        f.seek(a + 0x8);
+        bone_count = read_uint16(f)
+        children = [0] * bone_count
+        
+        #get size of inf1 section
+        a = s.find(b'\x49\x4e\x46\x31')
+        f.seek(a + 0x4)
+        inf_size = read_uint32(f)
+        
+        #
+        f.seek(a + 0x14);
+        address = read_uint32(f)
+        f.seek(address + a)
+        
+        stack = [0]
+        curr_bone = 0x0
+        last_bone = 0x0
+        while address < inf_size:
+            f.seek(address)
+            node = read_uint16(f)
+            address += 2
+            if node == 0x11 or node == 0x12:
+                read_uint16(f)
+                address += 2
+            elif node == 0x01:
+                read_uint16(f)
+                address += 2
+                curr_bone = last_bone
+                stack.append(curr_bone)
+                #print("child mode for bone " + bones[curr_bone])
+            elif node == 0x02:
+                read_uint16(f)
+                address += 2
+                
+                stack.pop()
+                curr_bone = stack[-1]
+                #print("return to parent " + bones[curr_bone])
+                #curr_bone = prev_bone
+            elif node == 0x10:
+                children[curr_bone] += 1
+                #prev_bone = curr_bone
+                last_bone = read_uint16(f)
+                address += 2
+                #print("at bone " + bones[last_bone] + " - a child of " + bones[curr_bone])
+   
+        f.close()
+    children[0] = children[0] - 1
+    print(children)     
+    return children
+ 
+ 
 def fix_array(info):
     # the arrays should be pure text
     for i in range( len( info )):
@@ -431,6 +492,7 @@ def make_tangents(array, inter = 0 ):
     
     return array
 
+
 #import statements
 import animations.btp as btp_file
 import animations.btk as btk_file
@@ -463,7 +525,8 @@ def import_anim_file(filepath):
         return info
 
 def import_fbx_file(filepath):
-    
+    from animations.fbx_scripts import import_fbx_file
+    import animations.fbx_scripts as fs
     animations = fs.import_fbx_file(filepath)
 
     return animations
@@ -579,3 +642,10 @@ def get_single_mat(extension):
     elif extension == ".bpk":
         info = bpk_file.bpk.single_mat()
     return info
+    
+def export_anim(filepath, info, bmd_file):
+    bck = bck_file.bck.from_table("", info)
+    children = read_hierachy(bmd_file)
+    bones = get_bones_from_bmd(bmd_file)
+    bck.write_anim(filepath, children, bones)
+    

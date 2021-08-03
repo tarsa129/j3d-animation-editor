@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QAction, QTreeWidget, QTreeWidgetItem
+from PyQt5.QtWidgets import QAction, QTreeWidget, QTreeWidgetItem, QFileDialog
 from PyQt5.QtCore import Qt
 import animations.general_animation as j3d
 from widgets.yaz0 import compress
@@ -10,16 +10,20 @@ class tree_item(QTreeWidgetItem):
         self.display_info = []
         self.filepath = ""
         self.compressed = False
+        self.bmd_file = None
         
     def set_values(self, display_info, filepath, compressed ):
         self.display_info = display_info
         self.filepath = filepath
         self.compressed = compressed
         
+        
         forward_i = filepath.rfind("/") + 1
         backwad_i = filepath.rfind("\\") + 1
         
         self.setText(0, filepath[max(forward_i, backwad_i):])
+    
+
     
     def save_animation(self, other_filepath = ""):
         
@@ -71,6 +75,18 @@ class tree_item(QTreeWidgetItem):
             with open(filepath, "wb") as f:           
                 bla.write_bla(f)
                 f.close()
+    
+    def export_anim(self):
+        info = j3d.fix_array(self.display_info)  
+        filepath = self.filepath[0:-4] + ".anim"
+        if self.bmd_file is None:
+            bmd_file, choosentype = QFileDialog.getOpenFileName( None, "Open File","" , "Model files (*.bmd *.bdl)")
+            if bmd_file:
+                
+                bck = j3d.export_anim(filepath, info, bmd_file)
+        else:
+            bck = j3d.export_anim(filepath, info, self.bmd_file)
+        
     def add_children(self, strings):
         self.takeChildren()
         for name in strings:
