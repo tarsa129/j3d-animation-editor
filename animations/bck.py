@@ -737,7 +737,7 @@ class bck(j3d.basic_animation):
         return bck.get_loading_information()
         
 def write_single_comp(f, comp, children, j, array, tan_inter, name):
-    f.write("anim " + comp[0:-1] + "." + comp + " " + comp + " " + name + " " + str(children) + " " + str(j) + ";\n" )
+    f.write("anim " + comp[0:-1] + "." + comp + " " + comp + " " + name + " 0 " + str(children) + " " + str(j) + ";\n" )
     output_type = "linear"
     if len(comp) == 7:
         output_type = "angular"
