@@ -775,16 +775,20 @@ class GenEditor(QMainWindow):
                 elif operation == 3:
                     return array[0] / array[1]
                 elif operation == 4:
-                    try:
-                        if array[1].strip() != "" and float(array[1]):
-                            return float(array[1])                 
-                    except:
-                        pass
-                    finally:
-                        sum = 0
-                        for val in array:
-                            sum += val
-                        return sum / len(array)
+                    print( array[1] )
+                    if array[1] == "":
+                        try:
+                            if array[1].strip() != "" and float(array[1]):
+                                return float(array[1])                 
+                        except:
+                            pass
+                        finally:
+                            sum = 0
+                            for val in array:
+                                sum += val
+                            return sum / len(array)
+                    else:
+                        return array[1]
             def change_row(info, i, look_col, values):
                 for j in range( look_col + 1 , len( info[i ]) ):
                     item = info[i][j]
