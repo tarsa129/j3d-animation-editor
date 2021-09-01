@@ -22,6 +22,9 @@ import widgets.open_folder as folder_widget
 import widgets.select_model as select_widget
 import glob
 
+
+from configparser import ConfigParser
+
 class GenEditor(QMainWindow):
     def __init__(self):
     
@@ -51,7 +54,31 @@ class GenEditor(QMainWindow):
         self.setWindowTitle("j3d animation editor")
         self.setup_ui_menubar()
  
+        #read ini settings
+        configur = ConfigParser()
+        configur.read('settings.ini')
+        theme = configur.get('menu options', 'theme')
+        theme = theme.lower()
+        self.toggle_dark_theme("./themes/"+theme+".qss")
         
+        comp_level = configur.get('menu options', 'compression')
+        comp_level = comp_level.lower()
+        
+        if comp_level == "auto":
+            self.set_compression_level(0)
+            self.auto_compression.setChecked(True)
+        elif comp_level == "none": 
+            self.set_compression_level(1)
+            self.no_compression.setChecked(True)
+        elif comp_level in [ "low", "fast"]: 
+            self.set_compression_level(2)
+            self.low_compression.setChecked(True)
+        elif comp_level == "mid": 
+            self.set_compression_level(3)
+            self.mid_compression.setChecked(True)
+        elif comp_level in [ "high", "slow" ]: 
+            self.set_compression_level(4)
+            self.high_compression.setChecked(True)
         self.show()
     
     def toggle_dark_theme(self, file = "", window = None): # simple little function to swap stylesheets
