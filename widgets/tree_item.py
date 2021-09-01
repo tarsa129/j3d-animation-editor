@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QAction, QTreeWidget, QTreeWidgetItem, QFileDialog
 from PyQt5.QtCore import Qt
 import animations.general_animation as j3d
-from widgets.yaz0 import compress
+from widgets.yaz0 import compress, compress_slow, compress_fast
 from io import BytesIO
 
 class tree_item(QTreeWidgetItem):
@@ -9,7 +9,7 @@ class tree_item(QTreeWidgetItem):
         QTreeWidgetItem.__init__(self, parent,1000)
         self.display_info = []
         self.filepath = ""
-        self.compressed = False
+        self.compressed = 1
         self.bmd_file = None
         
     def set_values(self, display_info, filepath, compressed ):
@@ -25,7 +25,7 @@ class tree_item(QTreeWidgetItem):
     
 
     
-    def save_animation(self, other_filepath = ""):
+    def save_animation(self, other_filepath = "", compress_dis = 1):
         
         
         if other_filepath != "":
@@ -40,10 +40,19 @@ class tree_item(QTreeWidgetItem):
             info = j3d.fix_array( self.display_info)
             j3d.sort_filepath(working_filepath, info) 
         
-        if self.compressed:
+        compress_status = self.compressed
+        if compress_dis != 0:
+            compress_status = compress_dis
+        print(compress_status)
+        if compress_status > 1:
             out = BytesIO()
             with open(working_filepath, "rb") as f:
-                out = compress(f)
+                if compress_status == 2:
+                    out = compress_fast(f)
+                elif compress_status == 3:
+                    out = compress(f)
+                elif compress_status == 4:
+                    out = compress_slow(f)
             with open(working_filepath, "wb") as f:
                 f.write(out.getbuffer())
     

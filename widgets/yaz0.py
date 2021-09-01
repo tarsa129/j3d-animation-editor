@@ -10,9 +10,14 @@ import re
 import hashlib
 import math
 
+
+
 from timeit import default_timer as time
 from io import BytesIO
 
+def data_len(data):
+  data_length = data.seek(0, 2)
+  return data_length
 
 def read_uint32(f):
     return struct.unpack(">I", f.read(4))[0]
@@ -84,7 +89,7 @@ def write_padding(f, multiple):
 #class yaz0():
 #    def __init__(self, inputobj, outputobj = None, compress = False):
 
-
+DEFAULT_SEARCH_DEPTH = 0x1000
 
 def write_limited(f, data, limit):
     if f.tell() >= limit:
@@ -96,6 +101,10 @@ class Yaz0:
     num_bytes_1 = 0
     match_pos = 0
     prev_flag = False
+    MAX_RUN_LENGTH = 0xFF + 0x12
+    next_num_bytes = 0
+    next_match_pos = 0
+    next_flag = False
     
 
 def decompress(f, out, suppress_error=False):
@@ -196,6 +205,88 @@ def decompress(f, out, suppress_error=False):
     if out.tell() > decompressed_size:
         print(  "Warning: output is longer than decompressed size for some reason: "
                 "{}/decompressed: {}".format(out.tell(), decompressed_size))
+
+
+def compress_slow(uncomp_data, search_depth=0x1000, should_pad_data=False):
+    comp_data = BytesIO()
+    write_magic_str(comp_data, 0, "Yaz0", 4)
+    
+    uncomp_size = data_len(uncomp_data)
+    write_u32(comp_data, 4, uncomp_size)
+    
+    write_u32(comp_data, 8, 0)
+    write_u32(comp_data, 0xC, 0)
+    
+    Yaz0.next_num_bytes = 0
+    Yaz0.next_match_pos = None
+    Yaz0.next_flag = False
+    
+    uncomp_offset = 0
+    uncomp = read_and_unpack_bytes(uncomp_data, 0, uncomp_size, "B"*uncomp_size)
+    comp_offset = 0x10
+    dst = []
+    valid_bit_count = 0
+    curr_code_byte = 0
+    while uncomp_offset < uncomp_size:
+      num_bytes, match_pos = get_num_bytes_and_match_pos(uncomp, uncomp_offset, search_depth=search_depth)
+      
+      if num_bytes < 3:
+        # Copy the byte directly
+        dst.append(uncomp[uncomp_offset])
+        uncomp_offset += 1
+        
+        curr_code_byte |= (0x80 >> valid_bit_count)
+      else:
+        dist = (uncomp_offset - match_pos - 1)
+        
+        if num_bytes >= 0x12:
+          dst.append((dist & 0xFF00) >> 8)
+          dst.append((dist & 0x00FF))
+          
+          if num_bytes > Yaz0.MAX_RUN_LENGTH:
+            num_bytes = Yaz0.MAX_RUN_LENGTH
+          dst.append(num_bytes - 0x12)
+        else:
+          byte = (((num_bytes - 2) << 4) | (dist >> 8) & 0x0F)
+          dst.append(byte)
+          dst.append(dist & 0xFF)
+        
+        uncomp_offset += num_bytes
+      
+      valid_bit_count += 1
+      
+      if valid_bit_count == 8:
+        # Finished 8 codes, so write this block
+        write_u8(comp_data, comp_offset, curr_code_byte)
+        comp_offset += 1
+        
+        for byte in dst:
+          write_u8(comp_data, comp_offset, byte)
+          comp_offset += 1
+        
+        curr_code_byte = 0
+        valid_bit_count = 0
+        dst = []
+    
+    if valid_bit_count > 0:
+      # Still some codes leftover that weren't written yet, so write them now.
+      write_u8(comp_data, comp_offset, curr_code_byte)
+      comp_offset += 1
+      
+      for byte in dst:
+        write_u8(comp_data, comp_offset, byte)
+        comp_offset += 1
+    else:
+      # If there are no codes leftover to be written, we instead write a single zero at the end for some reason.
+      # I don't think it's necessary in practice, but we do it for maximum accuracy with the original algorithm.
+      write_u8(comp_data, comp_offset, 0)
+      comp_offset += 1
+    
+    if should_pad_data:
+      align_data_to_nearest(comp_data, 0x20, padding_bytes=b'\0')
+    
+    return comp_data
+
 def compress(uncomp_data):
     comp_data = BytesIO()
     write_magic_str(comp_data, 0, "Yaz0", 4)
@@ -268,81 +359,10 @@ def compress(uncomp_data):
     
     return comp_data
 
-def write_magic_str(data, offset, new_string, max_length):
-  # Writes a fixed-length string that does not have to end with a null byte.
-  # This is for magic file format identifiers.
-  
-  str_len = len(new_string)
-  if str_len > max_length:
-    raise Exception("String %s is too long (max length 0x%X)" % (new_string, max_length))
-  
-  padding_length = max_length - str_len
-  null_padding = b"\x00"*padding_length
-  new_value = new_string.encode("shift_jis") + null_padding
-  
-  data.seek(offset)
-  data.write(new_value)
-  
-def read_and_unpack_bytes(data, offset, length, format_string):
-  data.seek(offset)
-  requested_data = data.read(length)
-  unpacked_data = struct.unpack(format_string, requested_data)
-  return unpacked_data
-
-
-def get_num_bytes_and_match_pos(uncomp, uncomp_offset):
-    num_bytes = 1
+def compress_fast(uncomp_data): #formerly,f, out
+    out = BytesIO()
     
-    if Yaz0.prev_flag:
-      Yaz0.prev_flag = False
-      return (Yaz0.num_bytes_1, Yaz0.match_pos)
-    
-    Yaz0.prev_flag = False
-    num_bytes, Yaz0.match_pos = simple_rle_encode(uncomp, uncomp_offset)
-    match_pos = Yaz0.match_pos
-    
-    if num_bytes >= 3:
-      Yaz0.num_bytes_1, Yaz0.match_pos = simple_rle_encode(uncomp, uncomp_offset+1)
-      
-      if Yaz0.num_bytes_1 >= num_bytes+2:
-        num_bytes = 1
-        Yaz0.prev_flag = True
-    
-    return (num_bytes, match_pos)
-def data_len(data):
-  data_length = data.seek(0, 2)
-  return data_length
-
-def simple_rle_encode(uncomp, uncomp_offset):
-    # How far back to search. Can search as far back as 0x1000 bytes, but the farther back we search the slower it is.
-    start_offset = uncomp_offset - 0x400
-    if start_offset < 0:
-      start_offset = 0
-    
-    num_bytes = 1
-    match_pos = 0
-    
-    for i in range(start_offset, uncomp_offset):
-      for j in range(len(uncomp) - uncomp_offset):
-        if uncomp[i + j] != uncomp[uncomp_offset + j]:
-          break
-        #if j == Yaz0.MAX_RUN_LENGTH:
-        #  break
-      
-      if j > num_bytes:
-        num_bytes = j
-        match_pos = i
-        
-        #if num_bytes == Yaz0.MAX_RUN_LENGTH:
-        #  break
-    
-    #if num_bytes == 2:
-    #  num_bytes = 1
-    
-    return (num_bytes, match_pos)
-
-def compress_fast(f, out):
-    data = f.read()
+    data = uncomp_data.read()
     
     maxsize = len(data)
     
@@ -365,3 +385,72 @@ def compress_fast(f, out):
         
         out_write(b"\xFF") # Set all bits in the code byte to 1 to mark the following 8 bytes as copy
         out_write(tocopy)
+    return out
+
+def write_magic_str(data, offset, new_string, max_length):
+  # Writes a fixed-length string that does not have to end with a null byte.
+  # This is for magic file format identifiers.
+  
+  str_len = len(new_string)
+  if str_len > max_length:
+    raise Exception("String %s is too long (max length 0x%X)" % (new_string, max_length))
+  
+  padding_length = max_length - str_len
+  null_padding = b"\x00"*padding_length
+  new_value = new_string.encode("shift_jis") + null_padding
+  
+  data.seek(offset)
+  data.write(new_value)
+  
+def read_and_unpack_bytes(data, offset, length, format_string):
+  data.seek(offset)
+  requested_data = data.read(length)
+  unpacked_data = struct.unpack(format_string, requested_data)
+  return unpacked_data
+
+
+def get_num_bytes_and_match_pos(uncomp, uncomp_offset, search_depth=DEFAULT_SEARCH_DEPTH):
+    num_bytes = 1
+    
+    if Yaz0.next_flag:
+      Yaz0.next_flag = False
+      return (Yaz0.next_num_bytes, Yaz0.next_match_pos)
+    
+    Yaz0.next_flag = False
+    num_bytes, match_pos = simple_rle_encode(uncomp, uncomp_offset, search_depth=search_depth)
+    
+    if num_bytes >= 3:
+      # Check if the next byte has a match that would compress better than the current byte.
+      Yaz0.next_num_bytes, Yaz0.next_match_pos = simple_rle_encode(uncomp, uncomp_offset+1, search_depth=search_depth)
+      
+      if Yaz0.next_num_bytes >= num_bytes+2:
+        # If it does, then only copy one byte for this match and reserve the next match for later so we save more space.
+        num_bytes = 1
+        match_pos = None
+        Yaz0.next_flag = True
+    
+    return (num_bytes, match_pos)
+
+
+def simple_rle_encode(uncomp, uncomp_offset, search_depth=DEFAULT_SEARCH_DEPTH):
+    start_offset = uncomp_offset - search_depth
+    if start_offset < 0:
+      start_offset = 0
+
+    num_bytes = 0
+    match_pos = None
+    max_num_bytes_to_check = len(uncomp) - uncomp_offset
+    if max_num_bytes_to_check > Yaz0.MAX_RUN_LENGTH:
+      max_num_bytes_to_check = Yaz0.MAX_RUN_LENGTH
+
+    for possible_match_pos in range(start_offset, uncomp_offset):
+      for index_in_match in range(max_num_bytes_to_check):
+        if uncomp[possible_match_pos + index_in_match] != uncomp[uncomp_offset + index_in_match]:
+          break
+        
+        num_bytes_matched = index_in_match + 1
+        if num_bytes_matched > num_bytes:
+          num_bytes = num_bytes_matched
+          match_pos = possible_match_pos
+
+    return (num_bytes, match_pos)

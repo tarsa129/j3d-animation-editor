@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, QRect, QModelIndex
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter, QCheckBox, QDialog,
                              QSpacerItem, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QHBoxLayout,
                              QScrollArea, QGridLayout, QMenuBar, QMenu, QAction, QApplication, QStatusBar, QLineEdit,
-                             QTreeWidget, QTreeWidgetItem, QTableWidget, QTableWidgetItem)
+                             QTreeWidget, QTreeWidgetItem, QTableWidget, QTableWidgetItem, QActionGroup)
 
 from PyQt5.QtGui import QMouseEvent, QImage, QIcon
 import PyQt5.QtGui as QtGui
@@ -36,6 +36,8 @@ class GenEditor(QMainWindow):
         self.frames_window = None
         self.maedit_window = None
         self.folder_window = None
+        
+        self.compression = 0
          
         self.setAcceptDrops(True)
         self.setup_ui()
@@ -48,18 +50,25 @@ class GenEditor(QMainWindow):
         
         self.setWindowTitle("j3d animation editor")
         self.setup_ui_menubar()
-        
-        # establish UI themes
-        self.default_style_sheet = ""
-        self.dark_style_sheet = "color: rgb(230, 230, 230); background-color: rgb(40, 40, 40);"  # dark theme, todo: darken disabled text   
+ 
         
         self.show()
     
-    def toggle_dark_theme(self): # simple little function to swap stylesheets
-        if self.styleSheet() == self.default_style_sheet:
-            self.setStyleSheet(self.dark_style_sheet)
+    def toggle_dark_theme(self, file = "", window = None): # simple little function to swap stylesheets
+        if file == "":
+            if window is None:
+                self.setStyleSheet("")
+            else:
+                window.setShortcut("")
         else:
-            self.setStyleSheet(self.default_style_sheet)
+            with open (file) as f:
+                lines = f.read()
+                lines = lines.strip()
+                if window is None:
+                    self.setStyleSheet(lines)
+                else:
+                    window.setStyleSheet(lines)
+
     
     def setup_ui_menubar(self):
         
@@ -77,15 +86,65 @@ class GenEditor(QMainWindow):
         
         self.file_load_action = QAction("Load", self)
         self.folder_load_action = QAction("Load Folder", self)
+        self.save_file_parent = QMenu("Save...", self)
+        
         self.save_file_action = QAction("Save", self)
         self.save_file_as_action = QAction("Save As", self)
         self.save_file_all_action = QAction("Save All", self)
+        
+        self.save_file_parent.addAction(self.save_file_action)
+        self.save_file_parent.addAction(self.save_file_as_action)
+        self.save_file_parent.addAction(self.save_file_all_action)
+        
+        
         self.create_animation = QAction("Create Animation", self)
         #self.combine_animations = QAction("Combine Animations", self)
-        self.toggle_dark_theme_action = QAction("Toggle Dark Theme", self) # create an option to toggle dark theme
+        self.disable_compression_menu = QMenu("Set Compression Level", self)
+        self.compression_group = QActionGroup(self)
+        self.compression_group.setExclusive(True)
         
+        self.auto_compression = QAction("Auto Compression", self, checkable = True)
+        self.auto_compression.setChecked(True);
+        self.no_compression = QAction("No Compression", self, checkable = True)
+        self.low_compression = QAction("Little Compression", self, checkable = True)
+        self.mid_compression = QAction("Moderate Compression", self, checkable = True)
+        self.high_compression = QAction("Maximum Compression", self, checkable = True)
+        
+        self.disable_compression_menu.addAction(self.auto_compression)
+        self.disable_compression_menu.addSeparator()
+        self.disable_compression_menu.addAction(self.no_compression)
+        self.disable_compression_menu.addAction(self.low_compression)
+        self.disable_compression_menu.addAction(self.mid_compression)
+        self.disable_compression_menu.addAction(self.high_compression)
+        
+        self.compression_group.addAction(self.auto_compression)
+        self.compression_group.addAction(self.no_compression)
+        self.compression_group.addAction(self.low_compression)
+        self.compression_group.addAction(self.mid_compression)
+        self.compression_group.addAction(self.high_compression)
+        
+        self.toggle_dark_theme_menu = QMenu("Choose Theme", self) # give different theme options
+        
+        self.theme_group = QActionGroup(self)
+        self.theme_group.setExclusive(True)
+        
+        self.normal_theme = QAction("Default Theme (Light)", self, checkable = True)
+        self.dark_theme = QAction("Dark Theme", self, checkable = True)
+        self.fall_theme = QAction("Fall Theme", self, checkable = True)
+        self.toadette_theme = QAction("Toadette Theme", self, checkable = True)
+        self.toggle_dark_theme_menu.addAction(self.normal_theme)
+        self.toggle_dark_theme_menu.addAction(self.dark_theme)
+        self.toggle_dark_theme_menu.addAction(self.fall_theme)
+        self.toggle_dark_theme_menu.addAction(self.toadette_theme)
+        
+        self.theme_group.addAction(self.normal_theme)
+        self.theme_group.addAction(self.dark_theme)
+        self.theme_group.addAction(self.fall_theme)
+        self.theme_group.addAction(self.toadette_theme)
+
         self.save_file_action.setShortcut("Ctrl+S")
         self.file_load_action.setShortcut("Ctrl+O")
+        self.folder_load_action.setShortcut("Shift+Ctrl+O")
         self.save_file_as_action.setShortcut("Ctrl+Alt+S")
         self.save_file_all_action.setShortcut("Shift+Ctrl+S")
         self.create_animation.setShortcut("Ctrl+N")
@@ -96,7 +155,19 @@ class GenEditor(QMainWindow):
         self.save_file_as_action.triggered.connect(self.button_save_as)
         self.save_file_all_action.triggered.connect(self.button_save_all)
         self.create_animation.triggered.connect(self.create_new)
-        self.toggle_dark_theme_action.triggered.connect(self.toggle_dark_theme)
+        
+        self.auto_compression.triggered.connect(lambda: self.set_compression_level(0))
+        self.no_compression.triggered.connect(lambda: self.set_compression_level(1))
+        self.low_compression.triggered.connect(lambda: self.set_compression_level(2))
+        self.mid_compression.triggered.connect(lambda: self.set_compression_level(3))
+        self.high_compression.triggered.connect(lambda: self.set_compression_level(4))
+        
+        self.normal_theme.triggered.connect(lambda: self.toggle_dark_theme() )
+        self.dark_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/dark.qss") )
+        self.fall_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/fall.qss") )
+        self.toadette_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/toadette.qss") )
+        
+        
         
         self.save_file_action.setDisabled(True)
         self.save_file_as_action.setDisabled(True)
@@ -106,13 +177,17 @@ class GenEditor(QMainWindow):
 
         self.file_menu.addAction(self.file_load_action)
         self.file_menu.addAction(self.folder_load_action)
-        self.file_menu.addAction(self.save_file_action)
-        self.file_menu.addAction(self.save_file_as_action) 
-        self.file_menu.addAction(self.save_file_all_action)
+        self.file_menu.addMenu(self.save_file_parent)
+        #self.file_menu.addAction(self.save_file_action)
+        #self.file_menu.addAction(self.save_file_as_action) 
+        #self.file_menu.addAction(self.save_file_all_action)
         self.file_menu.addAction(self.create_animation)
         #self.file_menu.addAction(self.combine_animations)
         self.file_menu.addSeparator()
-        self.file_menu.addAction(self.toggle_dark_theme_action) # add the button to the File menu
+        self.file_menu.addMenu(self.disable_compression_menu)
+        
+        self.file_menu.addSeparator()
+        self.file_menu.addMenu(self.toggle_dark_theme_menu) # add the button to the File menu
         
         self.menubar.addAction(self.file_menu.menuAction())
         self.setMenuBar(self.menubar)
@@ -265,6 +340,7 @@ class GenEditor(QMainWindow):
         #bottom bar
         
         self.workaround = QWidget(self)
+        self.workaround.setObjectName("white_bg")
         self.bottom_actions = QGridLayout(self.workaround)
         self.workaround.setGeometry(50, 50, 50, 50)
         #self.bottom_actions.setGeometry(QRect(800, 0, self.width(), self.height()) )            
@@ -392,7 +468,7 @@ class GenEditor(QMainWindow):
         
         current_item = self.anim_bar.currentItem()
         current_item.display_info = self.get_on_screen()
-        current_item.save_animation(filepath)
+        current_item.save_animation(filepath, compress_dis = self.compression)
         
     def button_save_level(self):
         self.universal_save()
@@ -410,7 +486,7 @@ class GenEditor(QMainWindow):
         for i in range( self.anim_bar.topLevelItemCount() ):
             
             item = self.anim_bar.topLevelItem(i);
-            item.save_animation();
+            item.save_animation(compress_dis = self.compression);
         
     def create_new(self):
         
@@ -425,7 +501,7 @@ class GenEditor(QMainWindow):
 
             filepath = created_info[0]
             
-            self.new_animation_from_array(table, filepath, False)
+            self.new_animation_from_array(table, filepath, 1)
         
         self.create_window = None
                
@@ -474,7 +550,8 @@ class GenEditor(QMainWindow):
             elif exten in [".bmd", ".bdl"]:
                 self.load_bone_names(filepath)
         
-    
+    def set_compression_level(self, level):
+        self.compression = level
     #convert stuff
     
     #okay this is just a general ui thing
@@ -544,13 +621,13 @@ class GenEditor(QMainWindow):
                     
     def new_animation_from_object(self, actual_animation_object, filepath):
         #deal with compression and keep track of whether or not to compress it
-        compressed = False
+        compressed = 1
         try:
             with open(filepath, "rb") as f:
                 header = f.read(4)
                 
                 if header == b"Yaz0":
-                    compressed = True
+                    compressed = 4
         except:
             pass
          
@@ -566,7 +643,6 @@ class GenEditor(QMainWindow):
         print("index of loaded animation in tree view")
         print(self.anim_bar.indexOfTopLevelItem(loaded_animation) )
         """
-        
         
         loaded_animation = self.new_animation_from_array(display_info, filepath, compressed)
         
@@ -592,7 +668,8 @@ class GenEditor(QMainWindow):
             self.anim_bar.curr_item = loaded_animation
             #print("curr_item set " + str( self.anim_bar.curr_item))
         else:
-            loaded_animation = tree_item.tree_item(self.anim_bar)    
+            loaded_animation = tree_item.tree_item(self.anim_bar)  
+        
         loaded_animation.set_values( array, filepath, compressed )
         
 
@@ -775,7 +852,7 @@ class GenEditor(QMainWindow):
                 elif operation == 3:
                     return array[0] / array[1]
                 elif operation == 4:
-                    print( array[1] )
+                    #print( array[1] )
                     if array[1] == "":
                         try:
                             if array[1].strip() != "" and float(array[1]):

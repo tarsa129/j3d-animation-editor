@@ -35,6 +35,7 @@ class animation_bar(QTreeWidget):
         
         context_menu = QMenu(self)
         close_action = QAction("Close Current Animation", self)
+        close_all_action = QAction("Close All Animations", self)
         #copy_action = QAction("Copy Animation", self)
         
         
@@ -60,7 +61,18 @@ class animation_bar(QTreeWidget):
                 self.main_editor.load_animation_to_middle(self.currentItem())
             self.main_editor.is_remove = False
             print("done with removing")
-                            
+        def emit_close_all():
+            
+            print(" emit close ")
+            
+            self.main_editor.is_remove = True
+            self.clear()
+
+            self.main_editor.table_display.clearContents()  
+            
+           
+            self.main_editor.is_remove = False
+            print("done with removing")                    
         def emit_copy():
             items = self.selectedItems()
             
@@ -79,10 +91,12 @@ class animation_bar(QTreeWidget):
          
         
         close_action.triggered.connect(emit_close)
+        close_all_action.triggered.connect(emit_close_all)
         #copy_action.triggered.connect(emit_copy)
         
        
         context_menu.addAction(close_action)
+        context_menu.addAction(close_all_action)
         
         context_menu.exec(self.mapToGlobal(pos))
         context_menu.destroy()

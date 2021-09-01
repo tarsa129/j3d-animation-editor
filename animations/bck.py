@@ -66,10 +66,11 @@ class bone_anim(object):
 
 class bck(j3d.basic_animation):
 
-    def __init__(self, loop_mode = 0, anglescale = 0, duration = 1, tantype = 1):
+    def __init__(self, loop_mode = 0, anglescale = 0, duration = 1, tantype = 1, sound = 0xFFFF):
         self.loop_mode = loop_mode
         self.anglescale = anglescale
         self.duration = duration
+        self.sound = sound
         
         self.animations = []
     
@@ -85,7 +86,9 @@ class bck(j3d.basic_animation):
         sectioncount = j3d.read_uint32(f)
         assert sectioncount == 1
         
-        svr_data = f.read(16)
+        svr_data = f.read(12)
+        sound = j3d.read_uint32(f)
+        #print("sound " + str(sound) )
         
         ank_start = f.tell()
         ank_magic = f.read(4) #ank1
@@ -95,7 +98,7 @@ class bck(j3d.basic_animation):
         angle_scale = j3d.read_sint8(f) 
         rotscale = (2.0**angle_scale) * (180.0 / 32768.0);
         duration = j3d.read_uint16(f)
-        bck = cls(loop_mode, angle_scale, duration)
+        bck = cls(loop_mode, angle_scale, duration, 1, sound)
         
         bone_count = read_uint16(f)
         scale_count = read_uint16(f)
@@ -298,9 +301,12 @@ class bck(j3d.basic_animation):
             
     def get_loading_information(self):
         info = []
-        info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration, "Tan Type:", self.tan_type] )
+        if self.sound == 66535:
+            
+            info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration, "Tan Type:", self.tan_type] )
+        else:
+            info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration, "Tan Type:", self.tan_type, "Sound:", self.sound] )
         info.append( ["Bone Name", "Tangent Interpolation", "Component"])
-        
         keyframes_dictionary = {}
         keyframes_dictionary[0] = []
         
@@ -477,7 +483,9 @@ class bck(j3d.basic_animation):
         filesize_offset = f.tell()
         f.write(b"ABCD") # Placeholder for file size
         j3d.write_uint32(f, 1) # Always a section count of 1
-        f.write(b"\xFF"*16)
+        f.write(b"\xFF"*12)
+        print("sound " + str(self.sound) )
+        j3d.write_uint32(f, self.sound)
         
         ank1_start = f.tell()
         f.write(b"ANK1")
