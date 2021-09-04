@@ -9,9 +9,80 @@ from PyQt5.QtWidgets import (QWidget, QDialog, QFrame,
 
 from PyQt5.QtGui import QMouseEvent, QImage
 import PyQt5.QtGui as QtGui
+from widgets.theme_handler import *
 
-class frames_window(QDialog):
+class frames_window(QDialog, themed_window):
     def __init__(self):
+        super().__init__()
+        self.setup_ui(theme)
+        self.set_theme(theme)
+        
+
+    def setup_ui(self):
+        self.resize(1600, 400)
+        self.resize_mw=QAction()
+        self.setWindowTitle("edit all open animations")
+        
+        self.main_widget = frames_widget(self, theme)
+        self.horizontalLayout = QVBoxLayout()
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        
+        
+        self.setLayout(self.horizontalLayout)
+        self.horizontalLayout.addWidget(self.main_widget)
+        
+        
+        self.close_button = QPushButton(self)
+        self.close_button.setText("Finish")
+        self.close_button.clicked.connect(self.close_window)
+        
+        self.horizontalLayout.addWidget(self.close_button)
+            
+    def close_window(self):
+        self.close()
+    
+    def close_window(self):
+        return self.main_widget.get_info()
+class frames_box(QWidget):
+    def __init__(self, parent, one_time):
+        super().__init__()
+        self.setup_ui(parent.theme)
+        
+        self.parent = parent
+        self.one_time = one_time
+
+    def setup_ui(self, theme):
+        self.resize(1600, 400)
+        self.resize_mw=QAction()
+        self.main_widget = frames_widget(self, theme)
+        
+        self.horizontalLayout = QVBoxLayout()
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.horizontalLayout)
+          
+        self.box_title = QLabel(self)
+        self.box_title.setText("Add Frames")
+
+        self.horizontalLayout.addWidget(self.box_title)
+
+        
+        self.horizontalLayout.addWidget(self.main_widget)
+
+        self.close_button = QPushButton(self)
+        self.close_button.setText("Finish")
+        self.close_button.clicked.connect(self.close_window)
+        
+        self.horizontalLayout.addWidget(self.close_button)       
+
+    def close_window(self):
+        self.parent.frames_from_bar( self.get_info(), self.one_time )
+    def get_info(self):
+
+        values =  self.main_widget.get_info()
+        return values
+
+class frames_widget(QWidget, themed_window):
+    def __init__(self, parent, theme = "default"):
         super().__init__()
 
         #stuff that we want to return / have access to
@@ -20,12 +91,9 @@ class frames_window(QDialog):
         
         self.setup_ui()
         
-    
+        self.set_theme(theme)
     def setup_ui(self):
-        self.resize(800, 400)
-        self.resize_mw=QAction()
-        self.setWindowTitle("Add Frames (Advanced)")
-        
+       
         self.horizontalLayout = QVBoxLayout()
         self.centralwidget = self.horizontalLayout
         #self.setCentralWidget(self.horizontalLayout)

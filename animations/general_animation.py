@@ -569,7 +569,7 @@ def sort_file(filepath):
             return bva_file.bva.from_anim(f) 
         f.close()
             
-def sort_filepath(filepath, information):
+def sort_filepath(filepath, information, sound_data = None):
     print(filepath)
     if filepath.endswith(".btp"):
         return btp_file.btp.from_table(filepath, information)
@@ -578,7 +578,7 @@ def sort_filepath(filepath, information):
     elif filepath.endswith(".brk"):
          return brk_file.brk.from_table(filepath, information)  
     elif filepath.endswith(".bck"):
-         return bck_file.bck.from_table(filepath, information) 
+         return bck_file.bck.from_table(filepath, information, sound_data) 
     elif filepath.endswith(".bpk"):
          return bpk_file.bpk.from_table(filepath, information) 
     elif filepath.endswith(".bca"):

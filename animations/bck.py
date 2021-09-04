@@ -6,7 +6,7 @@ import sys, inspect
 from animations.general_animation import *
 from animations.general_animation import basic_animation
 import animations.general_animation as j3d
-
+from widgets.sound_editor import *
 
 
 BCKFILEMAGIC = b"J3D1bck1"
@@ -66,11 +66,11 @@ class bone_anim(object):
 
 class bck(j3d.basic_animation):
 
-    def __init__(self, loop_mode = 0, anglescale = 0, duration = 1, tantype = 1, sound = 0xFFFF):
+    def __init__(self, loop_mode = 0, anglescale = 0, duration = 1, tantype = 1):
         self.loop_mode = loop_mode
         self.anglescale = anglescale
         self.duration = duration
-        self.sound = sound
+        self.sound = None
         
         self.animations = []
     
@@ -98,7 +98,7 @@ class bck(j3d.basic_animation):
         angle_scale = j3d.read_sint8(f) 
         rotscale = (2.0**angle_scale) * (180.0 / 32768.0);
         duration = j3d.read_uint16(f)
-        bck = cls(loop_mode, angle_scale, duration, 1, sound)
+        bck = cls(loop_mode, angle_scale, duration, 1)
         
         bone_count = read_uint16(f)
         scale_count = read_uint16(f)
@@ -186,6 +186,33 @@ class bck(j3d.basic_animation):
                 inter_count += 1   
             bck.animations.append(bone_animation)
         bck.tan_type = tangent_type
+        
+        if sound != 0xffffffff:
+            f.seek(sound)
+            num_entries = j3d.read_uint16(f)
+            f.read(6)
+            
+            sound_entries = []
+            
+            for i in range(num_entries):
+            
+                sound_id = j3d.read_uint32(f)
+                start_time = j3d.read_float(f)
+                end_time = j3d.read_float(f)
+                coarse_pitch = j3d.read_float(f)
+                flags = j3d.read_uint32(f)
+                volume = j3d.read_uint8(f)
+                fine_pitch = j3d.read_uint8(f)
+                loop_count = j3d.read_uint8(f)
+                pan = j3d.read_uint8(f)
+                
+                f.read(0x8)
+                
+                entry = sound_entry(sound_id, start_time, end_time, coarse_pitch, flags, volume, fine_pitch, loop_count, pan)
+                sound_entries.append(entry)
+                
+            bck.sound = sound_entries
+            
         
         return bck
     
@@ -284,6 +311,12 @@ class bck(j3d.basic_animation):
         
         
         return bck
+    
+    
+    @classmethod 
+    def from_blender_bvh(cls, filepath):
+        lines = filepath.readlines()
+    
     
     def from_fbx_anim(self):
          
@@ -397,10 +430,12 @@ class bck(j3d.basic_animation):
         return info
     
     @classmethod
-    def from_table(cls, f, info):
+    def from_table(cls, f, info, sound_data):
         print("loop mode " + str( info[0][1] ) )
         bck = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
         
+        print(sound_data)
+        bck.sound = sound_data
         if len(info[0]) >= 7 and info[0][7] != "":
             bck.tan_type = int( info[0][7] )
         
@@ -483,10 +518,8 @@ class bck(j3d.basic_animation):
         filesize_offset = f.tell()
         f.write(b"ABCD") # Placeholder for file size
         j3d.write_uint32(f, 1) # Always a section count of 1
-        f.write(b"\xFF"*12)
-        print("sound " + str(self.sound) )
-        j3d.write_uint32(f, self.sound)
-        
+        f.write(b"\xFF"*16)
+
         ank1_start = f.tell()
         f.write(b"ANK1")
         
@@ -650,6 +683,35 @@ class bck(j3d.basic_animation):
         j3d.write_uint32(f, rotations_start     - ank1_start)
         j3d.write_uint32(f, translations_start  - ank1_start)
     
+        
+    
+        if self.sound is not None:
+            print("write sound")
+            print( len(self.sound) )
+            
+            f.seek(0x1c)
+            j3d.write_uint32(f, total_size)
+            
+            f.seek(total_size)
+            j3d.write_uint16( f, len(self.sound) )
+            j3d.write_uint8(f,  0xc)
+            f.write(b"\x00"*5)
+            
+            for entry in self.sound:
+                j3d.write_uint32(f, entry.sound_id)
+                j3d.write_float(f, entry.start_time)
+                j3d.write_float(f, entry.end_time)
+                j3d.write_float(f, entry.coarse_pitch)
+                j3d.write_uint32(f, entry.flags)
+                j3d.write_uint8(f, entry.volume)
+                j3d.write_uint8(f, entry.fine_pitch)
+                j3d.write_uint8(f, entry.loop_count)
+                j3d.write_uint8(f, entry.pan)
+                f.write(b"\x00"*0x8)
+            
+            f.write(b"\x00"*0x18)
+            
+    
     def write_anim(self, filepath, children, bones):
         with open(filepath, "w") as f:
             f.write("animVersion 1.1;\n")
@@ -743,7 +805,19 @@ class bck(j3d.basic_animation):
         #print( bck.get_children_names() )
         
         return bck.get_loading_information()
-        
+      
+class sound_entry:
+    def __init__(self, sound_id, start_time, end_time, coarse_pitch, flags, volume, fine_pitch, loop_count, pan):
+        self.sound_id = sound_id
+        self.start_time = start_time
+        self.end_time = end_time
+        self.coarse_pitch = coarse_pitch
+        self.flags = flags
+        self.volume = volume
+        self.fine_pitch = fine_pitch
+        self.loop_count = loop_count
+        self.pan = pan
+      
 def write_single_comp(f, comp, children, j, array, tan_inter, name):
     f.write("anim " + comp[0:-1] + "." + comp + " " + comp + " " + name + " 0 " + str(children) + " " + str(j) + ";\n" )
     output_type = "linear"

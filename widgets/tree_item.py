@@ -11,6 +11,7 @@ class tree_item(QTreeWidgetItem):
         self.filepath = ""
         self.compressed = 1
         self.bmd_file = None
+        self.sound_data = None
         
     def set_values(self, display_info, filepath, compressed ):
         self.display_info = display_info
@@ -38,7 +39,7 @@ class tree_item(QTreeWidgetItem):
             self.convert_to_a(info)
         else: 
             info = j3d.fix_array( self.display_info)
-            j3d.sort_filepath(working_filepath, info) 
+            j3d.sort_filepath(working_filepath, info, self.sound_data) 
         
         compress_status = self.compressed
         if compress_dis != 0:

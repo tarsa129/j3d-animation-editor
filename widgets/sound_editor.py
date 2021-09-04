@@ -14,21 +14,21 @@ from animations.general_animation import get_materials_from_bmd
 import animations.general_animation as j3d
 from widgets.theme_handler import *
 
-class maedit_window(QDialog, themed_window):
-    def __init__(self):
+class sounds_window(QDialog, themed_window):
+    def __init__(self, sound_data):
         super().__init__()
-        self.setup_ui(theme)
+        self.setup_ui(theme, sound_data)
         self.set_theme(theme)
         
         
       
         
-    def setup_ui(self):
+    def setup_ui(self, sound_data):
         self.resize(1600, 400)
         self.resize_mw=QAction()
-        self.setWindowTitle("edit all open animations")
+        self.setWindowTitle("edit sound entries")
         
-        self.main_widget = maedit_widget(self, theme)
+        self.main_widget = sounds_widget(self, theme, sound_data)
         self.horizontalLayout = QVBoxLayout()
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         
@@ -48,25 +48,25 @@ class maedit_window(QDialog, themed_window):
     
     def close_window(self):
         return self.main_widget.get_info()
-class maedit_box(QWidget):
-    def __init__(self, parent, one_time):
+class sounds_box(QWidget):
+    def __init__(self, parent, one_time, sound_data):
         super().__init__()
-        self.setup_ui(parent.theme)
+        self.setup_ui(parent.theme, sound_data)
         
         self.parent = parent
         self.one_time = one_time
         
-    def setup_ui(self, theme):
+    def setup_ui(self, theme, sound_data):
         self.resize(1600, 400)
         self.resize_mw=QAction()
-        self.main_widget = maedit_widget(self, theme)
+        self.main_widget = sounds_widget(self, theme, sound_data)
         
         self.horizontalLayout = QVBoxLayout()
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         
         
         self.box_title = QLabel(self)
-        self.box_title.setText("Mass Animation Editor")
+        self.box_title.setText("Sound Editor")
         self.horizontalLayout.addWidget(self.box_title)
         
         self.setLayout(self.horizontalLayout)
@@ -85,8 +85,8 @@ class maedit_box(QWidget):
 
         values =  self.main_widget.get_info()
         return values
-class maedit_widget(QWidget, themed_window):
-    def __init__(self, parent, theme = "default"):
+class sounds_widget(QWidget, themed_window):
+    def __init__(self, parent, theme, sound_data):
         super().__init__()
  
         self.parent = parent
@@ -101,7 +101,7 @@ class maedit_widget(QWidget, themed_window):
         
         self.setup_ui()
         self.set_theme(theme)
-    def setup_ui(self):
+    def setup_ui(self, sound_data):
 
         
         self.horizontalLayout = QHBoxLayout()
@@ -118,7 +118,7 @@ class maedit_widget(QWidget, themed_window):
         self.select_label.setText("Select Animation Type to Edit")
         self.file_types = QListWidget(self.type_layout)
         self.file_types.clear()
-        for type in self.file_types_names:
+        for type in sound_data.length:
             self.file_types.addItem(type)
         self.file_types.setCurrentRow(2)
         self.file_types.clicked.connect(self.edit_right_side)

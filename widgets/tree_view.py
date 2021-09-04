@@ -34,8 +34,15 @@ class animation_bar(QTreeWidget):
         #print("context menu triggered")
         
         context_menu = QMenu(self)
+        
+        if self.curr_item.filepath.endswith(".bck"):
+            edit_sound = QAction("Edit Sound Data", self)
+        
+        
         close_action = QAction("Close Current Animation", self)
         close_all_action = QAction("Close All Animations", self)
+        edit_sound_action
+        
         #copy_action = QAction("Copy Animation", self)
         
         

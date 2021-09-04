@@ -12,6 +12,9 @@ QWidget {
 QWidget#white_bg {
 	background-color: #ffb3e7;
 }
+QWidget#clear_bg {
+	background-color: white;
+}
 QMenu, QMenuBar {
 	background-color: white;
 }
@@ -31,11 +34,13 @@ QTableView {
 QTableView::item {
 	background-color: white;
 }
-QTableView::item:hover, QTreeView::item:hover  {
+QTableView::item:hover, QTreeView::item:hover, QListWidget::item:hover  {
 	background: #ffffe6;
+	color: black;
 }
-QTableView::item:selected, QTreeView::item:selected {
+QTableView::item:selected, QTreeView::item:selected, QListWidget::item:selected {
 	background: #fffeb1;
+	color: black;
 }
 QPushButton {
 	border: 1px outside solid white;
@@ -47,7 +52,13 @@ QPushButton:disabled {
 QPushButton:enabled {
 	background: #c73a5a;
 }	
-QTreeView {
-	background: #ffffff;
+QLineEdit::disabled, QComboBox::disabled, QLabel::disabled {
+	background: #F0F0F0
+}
+QTreeView, QListWidget, QLabel, QLineEdit, QComboBox::item {
+	background-color: #ffffff;
+}
+QComboBox, QListWidget::item {
+	background-color: #ffffff;
 }
 

@@ -20,12 +20,13 @@ import widgets.add_frames as frames_widget
 import widgets.mass_edit as maedit_widget
 import widgets.open_folder as folder_widget
 import widgets.select_model as select_widget
+from widgets.theme_handler import themed_window
 import glob
 
 
 from configparser import ConfigParser
 
-class GenEditor(QMainWindow):
+class GenEditor(QMainWindow, themed_window):
     def __init__(self):
     
         super().__init__()
@@ -41,6 +42,9 @@ class GenEditor(QMainWindow):
         self.folder_window = None
         
         self.compression = 0
+        
+        self.popout = True
+        self.theme = "default"
          
         self.setAcceptDrops(True)
         self.setup_ui()
@@ -53,49 +57,11 @@ class GenEditor(QMainWindow):
         
         self.setWindowTitle("j3d animation editor")
         self.setup_ui_menubar()
- 
-        #read ini settings
-        configur = ConfigParser()
-        configur.read('settings.ini')
-        theme = configur.get('menu options', 'theme')
-        theme = theme.lower()
-        self.toggle_dark_theme("./themes/"+theme+".qss")
+        self.setup_ui_main()
+        self.read_settings_ini()
         
-        comp_level = configur.get('menu options', 'compression')
-        comp_level = comp_level.lower()
         
-        if comp_level == "auto":
-            self.set_compression_level(0)
-            self.auto_compression.setChecked(True)
-        elif comp_level == "none": 
-            self.set_compression_level(1)
-            self.no_compression.setChecked(True)
-        elif comp_level in [ "low", "fast"]: 
-            self.set_compression_level(2)
-            self.low_compression.setChecked(True)
-        elif comp_level == "mid": 
-            self.set_compression_level(3)
-            self.mid_compression.setChecked(True)
-        elif comp_level in [ "high", "slow" ]: 
-            self.set_compression_level(4)
-            self.high_compression.setChecked(True)
         self.show()
-    
-    def toggle_dark_theme(self, file = "", window = None): # simple little function to swap stylesheets
-        if file == "":
-            if window is None:
-                self.setStyleSheet("")
-            else:
-                window.setShortcut("")
-        else:
-            with open (file) as f:
-                lines = f.read()
-                lines = lines.strip()
-                if window is None:
-                    self.setStyleSheet(lines)
-                else:
-                    window.setStyleSheet(lines)
-
     
     def setup_ui_menubar(self):
         
@@ -150,24 +116,6 @@ class GenEditor(QMainWindow):
         self.compression_group.addAction(self.mid_compression)
         self.compression_group.addAction(self.high_compression)
         
-        self.toggle_dark_theme_menu = QMenu("Choose Theme", self) # give different theme options
-        
-        self.theme_group = QActionGroup(self)
-        self.theme_group.setExclusive(True)
-        
-        self.normal_theme = QAction("Default Theme (Light)", self, checkable = True)
-        self.dark_theme = QAction("Dark Theme", self, checkable = True)
-        self.fall_theme = QAction("Fall Theme", self, checkable = True)
-        self.toadette_theme = QAction("Toadette Theme", self, checkable = True)
-        self.toggle_dark_theme_menu.addAction(self.normal_theme)
-        self.toggle_dark_theme_menu.addAction(self.dark_theme)
-        self.toggle_dark_theme_menu.addAction(self.fall_theme)
-        self.toggle_dark_theme_menu.addAction(self.toadette_theme)
-        
-        self.theme_group.addAction(self.normal_theme)
-        self.theme_group.addAction(self.dark_theme)
-        self.theme_group.addAction(self.fall_theme)
-        self.theme_group.addAction(self.toadette_theme)
 
         self.save_file_action.setShortcut("Ctrl+S")
         self.file_load_action.setShortcut("Ctrl+O")
@@ -181,7 +129,7 @@ class GenEditor(QMainWindow):
         self.save_file_action.triggered.connect(self.button_save_level)
         self.save_file_as_action.triggered.connect(self.button_save_as)
         self.save_file_all_action.triggered.connect(self.button_save_all)
-        self.create_animation.triggered.connect(self.create_new)
+        self.create_animation.triggered.connect(lambda: self.create_new(one_time = True))
         
         self.auto_compression.triggered.connect(lambda: self.set_compression_level(0))
         self.no_compression.triggered.connect(lambda: self.set_compression_level(1))
@@ -189,10 +137,6 @@ class GenEditor(QMainWindow):
         self.mid_compression.triggered.connect(lambda: self.set_compression_level(3))
         self.high_compression.triggered.connect(lambda: self.set_compression_level(4))
         
-        self.normal_theme.triggered.connect(lambda: self.toggle_dark_theme() )
-        self.dark_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/dark.qss") )
-        self.fall_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/fall.qss") )
-        self.toadette_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/toadette.qss") )
         
         
         
@@ -213,12 +157,70 @@ class GenEditor(QMainWindow):
         self.file_menu.addSeparator()
         self.file_menu.addMenu(self.disable_compression_menu)
         
-        self.file_menu.addSeparator()
-        self.file_menu.addMenu(self.toggle_dark_theme_menu) # add the button to the File menu
+        
         
         self.menubar.addAction(self.file_menu.menuAction())
         self.setMenuBar(self.menubar)
         
+        
+        #view menu
+        
+        self.view_menu = QMenu(self)
+        self.view_menu.setTitle("View")
+        
+        self.toggle_dark_theme_menu = QMenu("Choose Theme", self) # give different theme options
+        
+        self.theme_group = QActionGroup(self)
+        self.theme_group.setExclusive(True)
+        
+        self.normal_theme = QAction("Default Theme (Light)", self, checkable = True)
+        self.dark_theme = QAction("Dark Theme", self, checkable = True)
+        self.fall_theme = QAction("Fall Theme", self, checkable = True)
+        self.toadette_theme = QAction("Toadette Theme", self, checkable = True)
+        self.peaches_theme = QAction("Peaches and Plums", self, checkable = True)
+        self.toggle_dark_theme_menu.addAction(self.normal_theme)
+        self.toggle_dark_theme_menu.addAction(self.dark_theme)
+        self.toggle_dark_theme_menu.addAction(self.fall_theme)
+        self.toggle_dark_theme_menu.addAction(self.toadette_theme)
+        self.toggle_dark_theme_menu.addAction(self.peaches_theme)
+        
+        self.theme_group.addAction(self.normal_theme)
+        self.theme_group.addAction(self.dark_theme)
+        self.theme_group.addAction(self.fall_theme)
+        self.theme_group.addAction(self.toadette_theme)
+        self.theme_group.addAction(self.peaches_theme)
+ 
+        self.normal_theme.triggered.connect(lambda: self.toggle_dark_theme() )
+        self.dark_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/dark.qss") )
+        self.fall_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/fall.qss") )
+        self.toadette_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/toadette.qss") )
+        self.peaches_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/peaches and plums.qss") )
+        
+        self.sep_window = QAction("Pop Out Windows", self, checkable = True)
+        self.sep_window.setChecked(True)
+        self.sep_window.triggered.connect( self.set_popout)
+        
+        self.show_widget = QMenu("Show Feature")
+        self.show_widget.menuAction().setStatusTip("Requires Pop Out Windows to be turned off")
+        
+        self.show_create = QAction("Create Animation", self, checkable = True)
+        self.show_frames = QAction("Frames Editor", self, checkable = True)
+        self.show_maedit = QAction("Mass Animation Editor", self, checkable = True)
+
+        self.show_create.triggered.connect( self.toggle_show_create )
+        self.show_frames.triggered.connect( self.toggle_show_frames )
+        self.show_maedit.triggered.connect( self.toggle_show_maedit )
+        
+        self.show_widget.addAction( self.show_create )
+        self.show_widget.addAction( self.show_frames )
+        self.show_widget.addAction( self.show_maedit )
+       
+        self.view_menu.addMenu(self.toggle_dark_theme_menu) # add the button to the view menu
+        self.view_menu.addAction(self.sep_window)
+        self.view_menu.addMenu(self.show_widget)
+        
+        
+        self.menubar.addAction(self.view_menu.menuAction() )
         
         #edit menu
         
@@ -328,10 +330,11 @@ class GenEditor(QMainWindow):
         #mass edit
         self.mass_edit = QAction(self)
         self.mass_edit.setText("Mass Animation Editor")
-        self.mass_edit.triggered.connect(self.maedit_dialogue)
+        self.mass_edit.triggered.connect(lambda: self.maedit_dialogue(one_time = True))
         
         self.menubar.addAction(self.mass_edit)
         
+    def setup_ui_main(self):
         #main splitter
         
         self.horizontalLayout = QSplitter()
@@ -413,7 +416,7 @@ class GenEditor(QMainWindow):
         
         self.bt_add_frames_adv = QPushButton(self)
         self.bt_add_frames_adv.setText("Add Frames Dialogue")
-        self.bt_add_frames_adv.clicked.connect(self.frames_dialogue)
+        self.bt_add_frames_adv.clicked.connect(lambda: self.frames_dialogue(one_time = True) )
         
         self.bottom_actions.addWidget(self.bt_addc_here, 0, 0)       
         #self.bottom_actions.addWidget(self.bt_addr_here, 0, 1)
@@ -430,10 +433,47 @@ class GenEditor(QMainWindow):
         
         self.left_vbox.addWidget(self.workaround)
         
+        self.workaroundr = QWidget(self)
+        self.right_vbox = QVBoxLayout(self.workaroundr)
+        
+        
         #self.horizontalLayout.addWidget(self.anim_bar)
         self.horizontalLayout.addWidget(self.workaroundl)
         self.horizontalLayout.addWidget(self.table_display)  
-
+        self.horizontalLayout.addWidget(self.workaroundr)
+    
+    def read_settings_ini(self):
+        #read ini settings
+        self.set_ini_theme()
+        configur = ConfigParser()
+        configur.read('settings.ini')
+        comp_level = configur.get('menu options', 'compression')
+        comp_level = comp_level.lower()
+        
+        if comp_level == "auto":
+            self.set_compression_level(0)
+            self.auto_compression.setChecked(True)
+        elif comp_level == "none": 
+            self.set_compression_level(1)
+            self.no_compression.setChecked(True)
+        elif comp_level in [ "low", "fast"]: 
+            self.set_compression_level(2)
+            self.low_compression.setChecked(True)
+        elif comp_level == "mid": 
+            self.set_compression_level(3)
+            self.mid_compression.setChecked(True)
+        elif comp_level in [ "high", "slow" ]: 
+            self.set_compression_level(4)
+            self.high_compression.setChecked(True)
+            
+        popout_or_not = configur.get('menu options',  'popup_addtional_windows'  )
+        popout_or_not = popout_or_not.lower()
+        popout_or_not = (popout_or_not == "true")
+        
+        self.popout = (popout_or_not)
+        self.sep_window.setChecked( popout_or_not )
+        self.show_widget.setDisabled( not popout_or_not )
+    
     #file stuff
       
     def button_load_level(self):
@@ -515,14 +555,26 @@ class GenEditor(QMainWindow):
             item = self.anim_bar.topLevelItem(i);
             item.save_animation(compress_dis = self.compression);
         
-    def create_new(self):
+    def create_new(self, one_time = False):
         
         if self.create_window is None:
-            self.create_window = create_widget.create_window()
-            self.create_window.setWindowModality(QtCore.Qt.ApplicationModal)
-            self.create_window.exec_()
             
-        created_info = self.create_window.get_info() 
+            if self.popout:
+            
+            
+                self.create_window = create_widget.create_window(self.theme)
+                self.create_window.setWindowModality(QtCore.Qt.ApplicationModal)
+                self.create_window.exec_()
+                
+                created_info = self.create_window.get_info() 
+                self.create_new_from_bar(created_info, False)
+                self.create_window = None
+            else:
+                self.create_window = create_widget.create_box(self, one_time)
+                self.right_vbox.addWidget(self.create_window, one_time)
+                
+
+    def create_new_from_bar(self, created_info, one_time):
         if created_info is not None:
             table = j3d.create_empty( created_info )
 
@@ -530,8 +582,12 @@ class GenEditor(QMainWindow):
             
             self.new_animation_from_array(table, filepath, 1)
         
-        self.create_window = None
-               
+        if created_info is None and one_time:
+            self.right_vbox.removeWidget(self.create_window)
+            self.create_window = None
+        
+        
+          
     def combine_anims(self):
         import widgets.quick_change as quick_change
             
@@ -579,7 +635,34 @@ class GenEditor(QMainWindow):
         
     def set_compression_level(self, level):
         self.compression = level
-    #convert stuff
+   
+    #view menu functions
+    def set_popout(self):
+        self.popout = self.sep_window.isChecked()
+
+    def toggle_show_create(self):
+        if self.show_create.isChecked():
+            self.create_new()
+        else:
+            self.right_vbox.removeWidget(self.create_window)
+            self.create_window = None
+            
+    
+    def toggle_show_frames(self):
+        if self.show_frames.isChecked():
+            self.frames_dialogue()
+        else:
+            self.right_vbox.removeWidget(self.frames_window)
+            self.frames_window = None   
+
+    def toggle_show_maedit(self):
+        if self.show_maedit.isChecked():
+            self.maedit_dialogue()
+        else:
+            self.right_vbox.removeWidget(self.maedit_window)
+            self.maedit_window = None 
+
+   #convert stuff
     
     #okay this is just a general ui thing
     def edit_convert_actions(self, filename):
@@ -661,6 +744,10 @@ class GenEditor(QMainWindow):
         #tree view stuff
         display_info = actual_animation_object.get_loading_information()
       
+        sound_data = None
+        anim_type = str(type(actual_animation_object)) 
+        if anim_type.find('bck') != -1:
+            sound_data = actual_animation_object.sound
         
         #self.anim_bar.addTopLevelItem(loaded_animation)
              
@@ -671,14 +758,14 @@ class GenEditor(QMainWindow):
         print(self.anim_bar.indexOfTopLevelItem(loaded_animation) )
         """
         
-        loaded_animation = self.new_animation_from_array(display_info, filepath, compressed)
+        loaded_animation = self.new_animation_from_array(display_info, filepath, compressed, sound_data)
         
         loaded_animation.add_children( actual_animation_object.get_children_names() )
         
         print("end of new animation from object")
     
     #bmd stuff
-    def new_animation_from_array(self, array, filepath, compressed):
+    def new_animation_from_array(self, array, filepath, compressed, sound_data):
         if self.anim_bar.topLevelItemCount() > 0:
             #print( "this is not the first loaded animation " ) 
             #print( "the old index is " + str(self.anim_bar.curr_index) )
@@ -698,7 +785,7 @@ class GenEditor(QMainWindow):
             loaded_animation = tree_item.tree_item(self.anim_bar)  
         
         loaded_animation.set_values( array, filepath, compressed )
-        
+        loaded_animation.sound_data = sound_data
 
         # deal with the various ui stuff
         self.edit_convert_actions(filepath)
@@ -836,14 +923,21 @@ class GenEditor(QMainWindow):
             current_item.add_children( strings) 
 
     # mass editor
-    def maedit_dialogue(self): 
-        print("mass edit")
-        if self.maedit_window is None:
-            self.maedit_window = maedit_widget.maedit_window()
-            self.maedit_window.setWindowModality(QtCore.Qt.ApplicationModal)
-            self.maedit_window.exec_()
-        maedit_info = self.maedit_window.get_info() 
-        
+    def maedit_dialogue(self, one_time = False): 
+        if self.maedit_window is None: 
+            if self.popout:
+            
+                self.maedit_window = maedit_widget.maedit_window()
+                self.maedit_window.setWindowModality(QtCore.Qt.ApplicationModal)
+                self.maedit_window.exec_()
+                maedit_info = self.maedit_window.get_info() 
+                self.maedit_from_bar(maedit_info, False)
+                self.maedit_window = None
+            else:
+                self.maedit_window = maedit_widget.maedit_box(self, one_time)
+                self.right_vbox.addWidget(self.maedit_window)
+
+    def maedit_from_bar(self, maedit_info, one_time):
         if maedit_info is not None:
             anim_type = maedit_info[0]
             anim_name = maedit_info[2]
@@ -864,8 +958,10 @@ class GenEditor(QMainWindow):
 
 
             self.load_animation_to_middle(self.anim_bar.currentItem() )
-
-        self.maedit_window = None
+        if maedit_info is None and one_time:
+            self.right_vbox.removeWidget(self.maedit_window)
+            self.maedit_window = None
+    
     def find_and_edit(self, info, name, values, look_col, exten = None):
             def operations( array, operation ) :
                 print("operation " + str(operation ), array)
@@ -1495,15 +1591,23 @@ class GenEditor(QMainWindow):
             self.table_display.setVerticalHeaderLabels(first_vals)
             self.fix_table(information, col_count)
                
-    def frames_dialogue(self):
+    def frames_dialogue(self, one_time = False):
         if self.frames_window is None:
-            self.frames_window = frames_widget.frames_window()
-            self.frames_window.setWindowModality(QtCore.Qt.ApplicationModal)
-            self.frames_window.exec_()
-            
-        frames_to_add = self.frames_window.get_info()    
-
+            if self.popout:
+                self.frames_window = frames_widget.frames_window()
+                self.frames_window.setWindowModality(QtCore.Qt.ApplicationModal)
+                self.frames_window.exec_()
         
+                frames_to_add = self.frames_window.get_info() 
+                self.frames_from_bar( frames_to_add, False) 
+                self.frames_window = None
+            else:
+                print("load to right side")
+                self.frames_window = frames_widget.frames_box(self, one_time)
+                self.right_vbox.addWidget(self.frames_window)
+            
+        
+    def frames_from_bar(self, frames_info, one_time):
         if frames_to_add is not None:
         
             extension = self.anim_bar.currentItem().filepath
@@ -1590,8 +1694,10 @@ class GenEditor(QMainWindow):
                 
         
         self.table_display.setHorizontalHeaderLabels(self.get_on_screen()[1])
-        self.frames_window = None
         
+        if frames_info is None and one_time:
+            self.right_vbox.removeWidget(self.frames_window)
+            self.frames_window = None
 import sys
 def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)

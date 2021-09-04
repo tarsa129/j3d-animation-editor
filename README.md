@@ -34,3 +34,4 @@ More details about the FBX SDK installation can be found [here](https://gitlab.i
 * SuperHackio's Hack.io j3d scripts, which provided guidance on how to read certain file types (.bva)
 * LagoLunatic's GCFT, for a yaz0 compression script
 * BigSharkZ, for testing the script and suggesting new features
+* Meyuelle, for the Peaches and Plums theme

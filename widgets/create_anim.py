@@ -9,12 +9,85 @@ from PyQt5.QtWidgets import (QWidget, QDialog, QFileDialog, QSplitter, QListWidg
 
 from PyQt5.QtGui import QMouseEvent, QImage
 import PyQt5.QtGui as QtGui
+from widgets.theme_handler import *
 
-class create_window(QDialog):
-    def __init__(self):
+
+class create_window(QDialog, themed_window):
+    def __init__(self, theme):
+        super().__init__()
+        self.setup_ui(theme)
+        self.set_theme(theme)
+    
+    def setup_ui(self, theme):
+        self.resize(800, 400)
+        self.resize_mw=QAction()
+        self.setWindowTitle("create j3d animation")
+        
+        self.main_widget = create_anim_widget(self, theme)
+        
+        self.horizontalLayout = QVBoxLayout()
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        
+        
+        self.setLayout(self.horizontalLayout)
+        self.horizontalLayout.addWidget(self.main_widget)
+        
+        
+        self.close_button = QPushButton(self)
+        self.close_button.setText("Create")
+        self.close_button.clicked.connect(self.close_window)
+        
+        self.horizontalLayout.addWidget(self.close_button)
+        
+        
+        
+        
+    def close_window(self):
+        self.close()
+    def get_info(self):
+
+        return self.main_widget.get_info()
+    
+class create_box(QWidget):
+    def __init__(self, parent, one_time):
+        super().__init__()
+        self.setup_ui(parent.theme)
+        
+        self.parent = parent
+        self.one_time = one_time
+    def setup_ui(self, theme):
+        self.resize(800, 400)
+        self.resize_mw=QAction()
+        self.main_widget = create_anim_widget(self, theme)
+        
+        self.horizontalLayout = QVBoxLayout()
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.horizontalLayout)
+        
+        self.box_title = QLabel(self)
+        self.box_title.setText("Create Animation")
+        self.horizontalLayout.addWidget(self.box_title)
+        
+        self.horizontalLayout.addWidget(self.main_widget)
+        
+        
+        self.close_button = QPushButton(self)
+        self.close_button.setText("Create")
+        self.close_button.clicked.connect(self.close_window)
+        
+        self.horizontalLayout.addWidget(self.close_button)
+    def close_window(self):
+        self.parent.create_new_from_bar( self.get_info(), self.one_time )
+    def get_info(self):
+
+        values =  self.main_widget.get_info()
+        return values
+        
+class create_anim_widget(QWidget, themed_window):
+    def __init__(self, parent, theme = "default"):
         super().__init__()
  
-        
+        self.parent = parent
         
         self.file_types_names = {".btk", ".brk", ".bck" , ".btp", ".bca", ".bpk", ".bla", ".blk" };
         
@@ -22,18 +95,20 @@ class create_window(QDialog):
         self.selected = None
         self.filepath = None
         
+        
         self.setup_ui()
+    
+    
+        self.set_theme(theme)
         
     
     def setup_ui(self):
-        self.resize(800, 400)
-        self.resize_mw=QAction()
-        self.setWindowTitle("create j3d animation")
+        
         
         self.horizontalLayout = QHBoxLayout()
         self.centralwidget = self.horizontalLayout
         #self.setCentralWidget(self.horizontalLayout)
-        
+        self.centralwidget.setObjectName("clear_bg")
         self.setLayout(self.centralwidget)
         
         #choose the animation type
@@ -41,6 +116,7 @@ class create_window(QDialog):
         self.type_box = QVBoxLayout(self.type_layout)
         
         self.select_label = QLabel(self.type_layout)
+        self.select_label.setObjectName("clear_bg")
         self.select_label.setText("Select Animation Type")
         self.file_types = QListWidget(self.type_layout)
         self.setup_list_box()
@@ -75,9 +151,7 @@ class create_window(QDialog):
         self.duration_label.setText("Duration")
         self.duration_text = QLineEdit(self.other_info_layout)  
 
-        self.close_button = QPushButton(self.other_info_layout)
-        self.close_button.setText("Create")
-        self.close_button.clicked.connect(self.close_window)
+        
         
         self.other_info_box.addWidget(self.filename_label, 0, 0)
         self.other_info_box.addWidget(self.filename_text, 0, 1)
@@ -88,7 +162,7 @@ class create_window(QDialog):
         self.other_info_box.addWidget(self.const_text, 3, 1)
         self.other_info_box.addWidget(self.duration_label, 4, 0)
         self.other_info_box.addWidget(self.duration_text, 4, 1)
-        self.other_info_box.addWidget(self.close_button, 5, 0)
+
         
         
         self.horizontalLayout.addWidget(self.type_layout)
@@ -149,4 +223,6 @@ class create_window(QDialog):
             self.filename_text.setText(filepath)
             self.filepath = filepath
     def close_window(self):
-        self.close()
+            self.parent.close_window()
+            
+    
