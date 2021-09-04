@@ -205,10 +205,11 @@ class bck(j3d.basic_animation):
                 fine_pitch = j3d.read_uint8(f)
                 loop_count = j3d.read_uint8(f)
                 pan = j3d.read_uint8(f)
+                unk_byte = j3d.read_uint8(f)
                 
-                f.read(0x8)
+                f.read(0x7)
                 
-                entry = sound_entry(sound_id, start_time, end_time, coarse_pitch, flags, volume, fine_pitch, loop_count, pan)
+                entry = sound_entry(sound_id, start_time, end_time, coarse_pitch, flags, volume, fine_pitch, loop_count, pan, unk_byte)
                 sound_entries.append(entry)
                 
             bck.sound = sound_entries
@@ -707,9 +708,13 @@ class bck(j3d.basic_animation):
                 j3d.write_uint8(f, entry.fine_pitch)
                 j3d.write_uint8(f, entry.loop_count)
                 j3d.write_uint8(f, entry.pan)
-                f.write(b"\x00"*0x8)
+                j3d.write_uint8(f, entry.unk_byte)
+                f.write(b"\x00"*0x7)
             
             f.write(b"\x00"*0x18)
+            total_size = f.tell()
+            f.seek(0x8)
+            j3d.write_uint32(f, total_size)
             
     
     def write_anim(self, filepath, children, bones):
@@ -807,7 +812,7 @@ class bck(j3d.basic_animation):
         return bck.get_loading_information()
       
 class sound_entry:
-    def __init__(self, sound_id, start_time, end_time, coarse_pitch, flags, volume, fine_pitch, loop_count, pan):
+    def __init__(self, sound_id, start_time, end_time, coarse_pitch, flags, volume, fine_pitch, loop_count, pan, unk_byte):
         self.sound_id = sound_id
         self.start_time = start_time
         self.end_time = end_time
@@ -817,6 +822,7 @@ class sound_entry:
         self.fine_pitch = fine_pitch
         self.loop_count = loop_count
         self.pan = pan
+        self.unk_byte = unk_byte
       
 def write_single_comp(f, comp, children, j, array, tan_inter, name):
     f.write("anim " + comp[0:-1] + "." + comp + " " + comp + " " + name + " 0 " + str(children) + " " + str(j) + ";\n" )
