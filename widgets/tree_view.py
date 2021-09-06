@@ -17,6 +17,8 @@ class animation_bar(QTreeWidget):
         
         self.curr_item = None
         
+        self.parent = parent
+        
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.run_context_menu)
     def set_main_editor(self, main_window):
@@ -25,7 +27,7 @@ class animation_bar(QTreeWidget):
     
     def run_context_menu(self, pos):
         if self.topLevelItemCount() < 1:
-            return
+            return self.parent.sounds_dialogue(one_time = False)
         
         
         
@@ -35,16 +37,22 @@ class animation_bar(QTreeWidget):
         
         context_menu = QMenu(self)
         
+        def emit_sound_window():
+            self.main_editor.sounds_dialogue(one_time = True)
+        
         if self.curr_item.filepath.endswith(".bck"):
-            edit_sound = QAction("Edit Sound Data", self)
+            edit_sound_action = QAction("Edit Sound Data", self)
+            edit_sound_action.triggered.connect( emit_sound_window )
+            context_menu.addAction( edit_sound_action )
+            context_menu.addSeparator()
         
         
         close_action = QAction("Close Current Animation", self)
         close_all_action = QAction("Close All Animations", self)
-        edit_sound_action
+
         
         #copy_action = QAction("Copy Animation", self)
-        
+
         
         def emit_close():
             

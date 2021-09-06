@@ -6,7 +6,6 @@ import sys, inspect
 from animations.general_animation import *
 from animations.general_animation import basic_animation
 import animations.general_animation as j3d
-from widgets.sound_editor import *
 
 
 BCKFILEMAGIC = b"J3D1bck1"
@@ -217,6 +216,7 @@ class bck(j3d.basic_animation):
         
         return bck
     
+   
     @classmethod
     def from_maya_anim(cls, filepath):
         lines = filepath.readlines()
@@ -335,11 +335,8 @@ class bck(j3d.basic_animation):
             
     def get_loading_information(self):
         info = []
-        if self.sound == 66535:
-            
-            info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration, "Tan Type:", self.tan_type] )
-        else:
-            info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration, "Tan Type:", self.tan_type, "Sound:", self.sound] )
+        info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration, "Tan Type:", self.tan_type] )
+        
         info.append( ["Bone Name", "Tangent Interpolation", "Component"])
         keyframes_dictionary = {}
         keyframes_dictionary[0] = []
@@ -699,16 +696,16 @@ class bck(j3d.basic_animation):
             f.write(b"\x00"*5)
             
             for entry in self.sound:
-                j3d.write_uint32(f, entry.sound_id)
-                j3d.write_float(f, entry.start_time)
-                j3d.write_float(f, entry.end_time)
-                j3d.write_float(f, entry.coarse_pitch)
-                j3d.write_uint32(f, entry.flags)
-                j3d.write_uint8(f, entry.volume)
-                j3d.write_uint8(f, entry.fine_pitch)
-                j3d.write_uint8(f, entry.loop_count)
-                j3d.write_uint8(f, entry.pan)
-                j3d.write_uint8(f, entry.unk_byte)
+                j3d.write_uint32(f, int(entry.sound_id))
+                j3d.write_float(f, float(entry.start_time))
+                j3d.write_float(f, float(entry.end_time))
+                j3d.write_float(f, float(entry.coarse_pitch))
+                j3d.write_uint32(f, int(entry.flags))
+                j3d.write_uint8(f, int(entry.volume))
+                j3d.write_uint8(f, int(entry.fine_pitch))
+                j3d.write_uint8(f, int(entry.loop_count))
+                j3d.write_uint8(f, int(entry.pan))
+                j3d.write_uint8(f, int(entry.unk_byte))
                 f.write(b"\x00"*0x7)
             
             f.write(b"\x00"*0x18)
@@ -823,6 +820,43 @@ class sound_entry:
         self.loop_count = loop_count
         self.pan = pan
         self.unk_byte = unk_byte
+    
+    def __repr__(self):
+        return "sound_id: {0}, start_time: {1}, end_time: {2}".format(self.sound_id, self.start_time, self.end_time)
+    
+    @classmethod
+    def read_sound_data(cls, filepath):
+        with open(filepath, "rb") as f:
+            f.seek(0x1c)
+            f.seek( j3d.read_uint32(f) )
+            
+            num_entries = j3d.read_uint16(f)
+            f.read(6)
+            
+            sound_entries = []
+            
+            for i in range(num_entries):
+            
+                sound_id = j3d.read_uint32(f)
+                start_time = j3d.read_float(f)
+                end_time = j3d.read_float(f)
+                coarse_pitch = j3d.read_float(f)
+                flags = j3d.read_uint32(f)
+                volume = j3d.read_uint8(f)
+                fine_pitch = j3d.read_uint8(f)
+                loop_count = j3d.read_uint8(f)
+                pan = j3d.read_uint8(f)
+                unk_byte = j3d.read_uint8(f)
+                
+                f.read(0x7)
+                
+                entry = cls(sound_id, start_time, end_time, coarse_pitch, flags, volume, fine_pitch, loop_count, pan, unk_byte)
+                sound_entries.append(entry)
+            return sound_entries
+    @classmethod
+    def blank_entry(cls):
+        return cls(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            
       
 def write_single_comp(f, comp, children, j, array, tan_inter, name):
     f.write("anim " + comp[0:-1] + "." + comp + " " + comp + " " + name + " 0 " + str(children) + " " + str(j) + ";\n" )

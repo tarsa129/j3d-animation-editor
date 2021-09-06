@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QAction, QTreeWidget, QTreeWidgetItem, QFileDialog
+from PyQt5.QtGui import  QIcon
 from PyQt5.QtCore import Qt
 import animations.general_animation as j3d
 from widgets.yaz0 import compress, compress_slow, compress_fast
@@ -13,6 +14,8 @@ class tree_item(QTreeWidgetItem):
         self.bmd_file = None
         self.sound_data = None
         
+        
+        
     def set_values(self, display_info, filepath, compressed ):
         self.display_info = display_info
         self.filepath = filepath
@@ -24,7 +27,13 @@ class tree_item(QTreeWidgetItem):
         
         self.setText(0, filepath[max(forward_i, backwad_i):])
     
-
+    def set_sound(self, sound_data):
+        self.sound_data = sound_data
+        if sound_data is not None:
+            icon = QIcon("icons/sound.png")
+            self.setIcon(0, icon)
+        else:
+            self.setIcon(0, QIcon() )
     
     def save_animation(self, other_filepath = "", compress_dis = 1):
         

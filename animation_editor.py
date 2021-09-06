@@ -20,6 +20,7 @@ import widgets.add_frames as frames_widget
 import widgets.mass_edit as maedit_widget
 import widgets.open_folder as folder_widget
 import widgets.select_model as select_widget
+import widgets.sound_editor as sounds_widget
 from widgets.theme_handler import themed_window
 import glob
 
@@ -40,6 +41,7 @@ class GenEditor(QMainWindow, themed_window):
         self.frames_window = None
         self.maedit_window = None
         self.folder_window = None
+        self.sounds_window = None
         
         self.compression = 0
         
@@ -206,14 +208,17 @@ class GenEditor(QMainWindow, themed_window):
         self.show_create = QAction("Create Animation", self, checkable = True)
         self.show_frames = QAction("Frames Editor", self, checkable = True)
         self.show_maedit = QAction("Mass Animation Editor", self, checkable = True)
+        self.show_sounds = QAction("Sound Editor", self, checkable = True)
 
         self.show_create.triggered.connect( self.toggle_show_create )
         self.show_frames.triggered.connect( self.toggle_show_frames )
         self.show_maedit.triggered.connect( self.toggle_show_maedit )
+        self.show_maedit.triggered.connect( self.toggle_show_sounds )
         
         self.show_widget.addAction( self.show_create )
         self.show_widget.addAction( self.show_frames )
         self.show_widget.addAction( self.show_maedit )
+        self.show_widget.addAction( self.show_sounds )
        
         self.view_menu.addMenu(self.toggle_dark_theme_menu) # add the button to the view menu
         self.view_menu.addAction(self.sep_window)
@@ -661,6 +666,13 @@ class GenEditor(QMainWindow, themed_window):
         else:
             self.right_vbox.removeWidget(self.maedit_window)
             self.maedit_window = None 
+            
+    def toggle_show_sounds(self):
+        if self.show_sounds.isChecked():
+            self.sounds_dialogue()
+        else:
+            self.right_vbox.removeWidget(self.sounds_window)
+            self.sounds_window = None 
 
    #convert stuff
     
@@ -714,9 +726,7 @@ class GenEditor(QMainWindow, themed_window):
         current_item = self.anim_bar.currentItem()
         current_item.display_info = self.get_on_screen()
         current_item.export_anim()
-        
-        
-      
+           
     def import_fbx_file(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
         ".fbx files(*.fbx)" )
@@ -785,7 +795,7 @@ class GenEditor(QMainWindow, themed_window):
             loaded_animation = tree_item.tree_item(self.anim_bar)  
         
         loaded_animation.set_values( array, filepath, compressed )
-        loaded_animation.sound_data = sound_data
+        loaded_animation.set_sound(sound_data) 
 
         # deal with the various ui stuff
         self.edit_convert_actions(filepath)
@@ -806,6 +816,9 @@ class GenEditor(QMainWindow, themed_window):
         self.is_remove = False
         
         return loaded_animation
+
+    def edit_gui(self):
+        pass
 
     def load_bone_names(self, filename = None):
         filepath = None
@@ -1235,11 +1248,11 @@ class GenEditor(QMainWindow, themed_window):
     #ONLY loads what it is given, backup MUST be done before calling this
     def load_animation_to_middle(self, treeitem):      
         
-        print("beginning of load animation to middle")
+        #print("beginning of load animation to middle")
         
         self.table_display.clearContents()
         
-        print("new loaded animation")
+        #print("new loaded animation")
         print(treeitem)
         
         information = treeitem.display_info
@@ -1272,11 +1285,25 @@ class GenEditor(QMainWindow, themed_window):
         if self.anim_bar.topLevelItemCount()  > 0:
             #load in previous values
             #print("load in previous value")
-            print(self.anim_bar.curr_item.text(0))
+            #print(self.anim_bar.curr_item.text(0))
 
             self.anim_bar.curr_item.display_info = self.get_on_screen()          
+            if self.anim_bar.curr_item.filepath.endswith(".bck") and self.sounds_window is not None:
+                self.anim_bar.curr_item.sound_data = self.sounds_window.get_info()
+                #print("get on screen result")
+                #print( self.anim_bar.curr_item.sound_data)
+                #print( "new data" )
+                #print( self.anim_bar.currentItem().sound_data)
+                self.sounds_window.main_widget.sound_data = self.anim_bar.currentItem().sound_data
+                self.sounds_window.main_widget.setup_sound_data()
+            
+
 
             self.anim_bar.curr_item = self.anim_bar.currentItem()
+            
+            
+           
+            
             """
             print("updated curr item")
             print(self.anim_bar.curr_item.text(0))
@@ -1385,7 +1412,7 @@ class GenEditor(QMainWindow, themed_window):
     
     def rem_col_here(self):
         curcol = self.table_display.currentColumn() + 1
-        print(curcol)
+        #print(curcol)
         if len(self.anim_bar.topLevelItemCount()) > 0:          
             vals = self.anim_bar.currentItem().display_info[0]
             
@@ -1395,9 +1422,9 @@ class GenEditor(QMainWindow, themed_window):
                 if i != "":
                     minimum += 1
             
-            print(minimum)
+            #print(minimum)
             
-            print("removing column")
+            #print("removing column")
             for i in range( 1, self.table_display.rowCount() ):
                 for j in range( curcol, self.table_display.columnCount() ):
                     old = self.table_display.item(i, j)
@@ -1606,7 +1633,6 @@ class GenEditor(QMainWindow, themed_window):
                 self.frames_window = frames_widget.frames_box(self, one_time)
                 self.right_vbox.addWidget(self.frames_window)
             
-        
     def frames_from_bar(self, frames_info, one_time):
         if frames_to_add is not None:
         
@@ -1698,6 +1724,32 @@ class GenEditor(QMainWindow, themed_window):
         if frames_info is None and one_time:
             self.right_vbox.removeWidget(self.frames_window)
             self.frames_window = None
+
+    def sounds_dialogue(self, one_time = False):
+        if self.sounds_window is None:
+            if self.popout:
+                self.sounds_window = sounds_widget.sounds_window()
+                self.sounds_window.setWindowModality(QtCore.Qt.ApplicationModal)
+                self.sounds_window.exec_()
+                
+                new_sound_data = self.sound_window.get_info()
+                
+                self.sounds_from_bar(new_sound_data, False)
+                self.sounds_window = None
+                
+            else:
+                self.sounds_window = sounds_widget.sounds_box(self, one_time, self.anim_bar.currentItem().sound_data)
+                self.right_vbox.addWidget(self.sounds_window)
+                
+    def sounds_from_bar(self, new_sound_data, one_time):
+        self.anim_bar.currentItem().set_sound(new_sound_data)
+        print("sounds from bar")
+        print(new_sound_data)
+        if new_sound_data is None and one_time:
+            self.right_vbox.removeWidget(self.sounds_window)
+            self.sounds_window = None
+                
+                
 import sys
 def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)

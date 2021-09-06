@@ -9,9 +9,8 @@ from PyQt5.QtWidgets import (QWidget, QDialog, QFileDialog, QSplitter, QListWidg
 
 from PyQt5.QtGui import QMouseEvent, QImage
 import PyQt5.QtGui as QtGui
-from animations.general_animation import get_bones_from_bmd
-from animations.general_animation import get_materials_from_bmd
-import animations.general_animation as j3d
+from animations.bck import sound_entry
+
 from widgets.theme_handler import *
 
 class sounds_window(QDialog, themed_window):
@@ -19,9 +18,6 @@ class sounds_window(QDialog, themed_window):
         super().__init__()
         self.setup_ui(theme, sound_data)
         self.set_theme(theme)
-        
-        
-      
         
     def setup_ui(self, sound_data):
         self.resize(1600, 400)
@@ -48,6 +44,9 @@ class sounds_window(QDialog, themed_window):
     
     def close_window(self):
         return self.main_widget.get_info()
+        
+    def get_on_screen(aelf):
+        return self.main_widget.get_on_screen()
 class sounds_box(QWidget):
     def __init__(self, parent, one_time, sound_data):
         super().__init__()
@@ -78,31 +77,36 @@ class sounds_box(QWidget):
         self.close_button.clicked.connect(self.close_window)
         
         self.horizontalLayout.addWidget(self.close_button)       
-            
+        
     def close_window(self):
-        self.parent.maedit_from_bar( self.get_info(), self.one_time )
+        self.parent.sounds_from_bar( self.get_info(), self.one_time )
     def get_info(self):
 
         values =  self.main_widget.get_info()
         return values
+        
+    def get_on_screen(self):
+        return self.main_widget.get_on_screen()
 class sounds_widget(QWidget, themed_window):
     def __init__(self, parent, theme, sound_data):
         super().__init__()
  
         self.parent = parent
-        
-        self.file_types_names = [".btk", ".brk", ".bck" , ".btp", ".bca", ".bpk", ".bla", ".blk" ];
+        self.sound_data = sound_data
         
         #stuff that we want to return / have access to
         self.selected = None
         self.filepath = None
         
-        self.values = []
+        self.change_nothing = True
         
         self.setup_ui()
+        self.setup_sound_data()
+        self.sound_bar.itemSelectionChanged.connect(self.edit_right_side) 
+        self.change_nothing = False
         self.set_theme(theme)
-    def setup_ui(self, sound_data):
-
+    def setup_ui(self):
+        #will set up the basic layout with no information
         
         self.horizontalLayout = QHBoxLayout()
         self.centralwidget = self.horizontalLayout
@@ -115,163 +119,260 @@ class sounds_widget(QWidget, themed_window):
         self.type_box = QVBoxLayout(self.type_layout)
         
         self.select_label = QLabel(self.type_layout)
-        self.select_label.setText("Select Animation Type to Edit")
-        self.file_types = QListWidget(self.type_layout)
-        self.file_types.clear()
-        for type in sound_data.length:
-            self.file_types.addItem(type)
-        self.file_types.setCurrentRow(2)
-        self.file_types.clicked.connect(self.edit_right_side)
+        self.select_label.setText("Select Entry to Edit")
+        self.sound_bar = sound_entry_selector(self.type_layout)
+        self.sound_bar.clear()
+        
+        
+        self.add_entry = QPushButton(self.type_layout)
+        self.add_entry.setText("Add New Sound Entry")
+        self.add_entry.clicked.connect(self.add_blank_entry)
+        
+        self.delete_entry = QPushButton(self.type_layout)
+        self.delete_entry.setText("Remove Current Sound Entry")
+        self.delete_entry.clicked.connect(self.delete_curr_entry)
+        
         
         self.type_box.addWidget(self.select_label)
-        self.type_box.addWidget(self.file_types)
+        self.type_box.addWidget(self.sound_bar)
+        self.type_box.addWidget(self.add_entry)
+        self.type_box.addWidget(self.delete_entry)
         
         #other needed info
         self.other_info_layout = QWidget(self)
         self.other_info_layout.setGeometry(0, 0, 250, 250)
     
-        self.other_info_box = self.get_right_side()
+        self.other_info_box = self.create_right_side()
   
         #add stuff to horizontal layout
         self.horizontalLayout.addWidget(self.type_layout)
         self.horizontalLayout.addWidget(self.other_info_layout)
-    
-    def edit_right_side(self):
-        self.horizontalLayout.removeWidget(self.other_info_layout)
-        self.other_info_layout = QWidget(self)
-        self.other_info_box = self.get_right_side()
-        self.horizontalLayout.addWidget(self.other_info_layout)
         
-        if self.filepath:
-            for i in range( self.bmd_thing_select.count() ):
-                self.bmd_thing_select.remove(i)
-            if self.selected in [".bck", ".bca"]:
-                self.bmd_thing_select.addItems( j3d.get_bones_from_bmd(self.filepath) )
-            elif self.selected in [".btk", ".btp", ".bpk", ".brk"]:
-                self.bmd_thing_select.addItems( j3d.get_materials_from_bmd(self.filepath) )
-    
-    def create_combo_box(self, widget_parent):
-        combo_box = QComboBox(widget_parent)
-        combo_box.addItems( ["+", "-", "*", "/", "Average / Set To"] )
-        return combo_box
+    def setup_sound_data(self):
+        self.change_nothing = True
+        self.sound_bar.clear()
         
-    def get_right_side(self):
+        if self.sound_data is not None:
+            self.other_info_layout.setDisabled(False)
+            for i in range( len(self.sound_data) ):
+                current_sound_entry = single_sound_entry(self.sound_bar, self.sound_data[i])
+                current_sound_entry.setText("Sound Entry " + str(i) )
+                #self.sound_bar.addItem( current_sound_entry )
+                self.sound_bar.setCurrentItem(current_sound_entry)
+                self.sound_bar.curr_item = current_sound_entry
+            if len(self.sound_data) > 0:
+                self.set_right_side()
+        else:
+            self.sound_id_field.setText( "" )
+            self.start_time_field.setText( "" )
+            self.end_time_field.setText( "" )
+            self.flags_field.setText( "" )
+            self.loop_count_field.setText( "" )
+            self.volume_field.setText( str(sound_data_entry.volume) )
+            self.coarse_pitch_field.setText( "" )
+            self.fine_pitch_field.setText( "")
+            self.pan_field.setText("" )
+            self.unk_byte_field.setText( "" )
+            self.other_info_layout.setDisabled(True)
+        self.change_nothing = False
+    def create_right_side(self):
+        #will fill in the stuff on the right side - basically all the annoying fields and labels
         operations_box = QGridLayout(self.other_info_layout)
         widget_parent = self.other_info_layout
-        self.selected = self.file_types.currentItem().text()
         
         label = QLabel(widget_parent)
         label.setText("Select File")
         operations_box.addWidget(label, 0, 0)
         
-        button = QPushButton("Select .bmd / .bdl")
+        button = QPushButton("Import from .bck")
         button.clicked.connect(self.open_file_dialog)
         operations_box.addWidget(button , 0, 1)
         
-        self.bmd_thing_select = QComboBox(widget_parent)
-        operations_box.addWidget(self.bmd_thing_select, 0, 2)
+        #-------------------------------------------
         
-        if self.selected in [".bck", ".bca"]:
-            srt = ["Scale ", "Rotation ", "Translation "];
-            axis = ["X:", "Y:", "Z:"]
-            for i in range(len( srt )):
-                for j in range(len( axis)):
-                    label = QLabel(widget_parent)
-                    label.setText(srt[i] + axis[j])
-                    operations_box.addWidget( label ,3 * i + j + 1, 0 )
-                    operations_box.addWidget( self.create_combo_box(widget_parent),  3* i + j+ 1,  1)
-                    operations_box.addWidget( QLineEdit(widget_parent), 3 * i + j+ 1,  2)
+        label_soundid = QLabel(widget_parent)
+        label_soundid.setText("Sound ID:")
+        operations_box.addWidget(label_soundid, 1, 0)
+        
+        self.sound_id_field = QLineEdit(widget_parent)
+        operations_box.addWidget( self.sound_id_field, 1, 1)
+        
+        #-------------------------------------------
+        
+        label_start_time = QLabel(widget_parent)
+        label_start_time.setText("Start Frame:")
+        operations_box.addWidget(label_start_time, 2, 0) 
+        
+        self.start_time_field = QLineEdit(widget_parent)
+        operations_box.addWidget( self.start_time_field, 2, 1)
+        
+        label_end_time = QLabel(widget_parent)
+        label_end_time.setText("End Frame:")
+        operations_box.addWidget(label_end_time, 3, 0) 
+        
+        self.end_time_field = QLineEdit(widget_parent)
+        operations_box.addWidget( self.end_time_field, 3, 1)  
+        
+        label_flags = QLabel(widget_parent)
+        label_flags.setText("Loop Flags:")
+        operations_box.addWidget(label_flags, 4, 0) 
+        
+        self.flags_field = QLineEdit(widget_parent)
+        operations_box.addWidget( self.flags_field, 4, 1)
 
-        elif self.selected in [".brk", ".bpk"]:
-            #color animation
-            comp = ["Red:", "Green:", "Blue:", "Alpha:"];
-            for i in range(len( comp )):
-                label = QLabel(widget_parent)
-                label.setText(comp[i])
-                operations_box.addWidget( label ,i+ 1, 0 )
-                operations_box.addWidget( self.create_combo_box(widget_parent),  i + 1,  1)
-                operations_box.addWidget( QLineEdit(widget_parent), i+ 1,  2)
+        label_loop_count = QLabel(widget_parent)
+        label_loop_count.setText("Loop Count:")
+        operations_box.addWidget(label_loop_count, 5, 0) 
         
-        elif self.selected == ".btk":
-            #texture swapping animation
-            
-            srt = ["Scale ", "Rotation ", "Translation "];
-            axis = ["U:", "V:", "W:"]
-            for i in range(len( srt )):
-                for j in range(len( axis)):
-                    label = QLabel(widget_parent)
-                    label.setText(srt[i] + axis[j])
-                    operations_box.addWidget( label ,3 * i + j+ 1, 0 )
-                    operations_box.addWidget( self.create_combo_box(widget_parent),  3* i + j+ 1,  1)
-                    operations_box.addWidget( QLineEdit(widget_parent), 3 * i + j+ 1,  2)
+        self.loop_count_field = QLineEdit(widget_parent)
+        operations_box.addWidget( self.loop_count_field, 5, 1)
         
-        elif self.selected in [".blk", ".bla"]:
-            #cluster animation
-            label = QLabel(widget_parent)
-            label.setText("Weight")
-            operations_box.addWidget( label , 1, 0 )
-            operations_box.addWidget( self.create_combo_box(widget_parent),  1,  1)
-            operations_box.addWidget( QLineEdit(widget_parent), 1,  2)
-            #button.setDisabled(True)
+        #----------------------------------
+        
+        label_volume = QLabel(widget_parent)
+        label_volume.setText("Volume:")
+        operations_box.addWidget(label_volume, 6, 0) 
+        
+        self.volume_field = QLineEdit(widget_parent)
+        operations_box.addWidget( self.volume_field, 6, 1)
+        
+        label_coarse_pitch = QLabel(widget_parent)
+        label_coarse_pitch.setText("Coarse Pitch:")
+        operations_box.addWidget(label_coarse_pitch, 7, 0) 
+        
+        self.coarse_pitch_field = QLineEdit(widget_parent)
+        operations_box.addWidget( self.coarse_pitch_field, 7, 1)
+
+        label_fine_pitch = QLabel(widget_parent)
+        label_fine_pitch.setText("Fine Pitch:")
+        operations_box.addWidget(label_fine_pitch, 8, 0) 
+        
+        self.fine_pitch_field = QLineEdit(widget_parent)
+        operations_box.addWidget( self.fine_pitch_field, 8, 1)
        
-        elif self.selected == ".btp":
-            #texture swapping animation
-            label = QLabel(widget_parent)
-            label.setText("Texture Index")
-            operations_box.addWidget( label , 1, 0 )
-            operations_box.addWidget( self.create_combo_box(widget_parent),  1,  1)
-            operations_box.addWidget( QLineEdit(widget_parent), 1,  2)
-        elif self.selected == ".bva":
-            #visibility animation
-            label = QLabel(widget_parent)
-            label.setText("Visibility")
-            operations_box.addWidget( label , 1, 0 )
-            
-            combo_box = QComboBox(widget_parent)
-            combo_box.addItems( ["Swap", "Set To"] )
-            operations_box.addWidget( combo_box,  1,  1)
-            
-            operations_box.addWidget( QLineEdit(widget_parent), 1,  2)
-            button.setDisabled(True)
+        label_pan = QLabel(widget_parent)
+        label_pan.setText("Pan:")
+        operations_box.addWidget(label_pan, 9, 0) 
+        
+        self.pan_field = QLineEdit(widget_parent)
+        operations_box.addWidget( self.pan_field, 9, 1)
+        
+        #--------------------------------
+        
+        label_unk_byte = QLabel(widget_parent)
+        label_unk_byte.setText("Unknown Byte:")
+        operations_box.addWidget(label_unk_byte, 10, 0) 
+        
+        self.unk_byte_field = QLineEdit(widget_parent)
+        operations_box.addWidget( self.unk_byte_field, 10, 1) 
             
         return operations_box
-
+    
+    def edit_right_side(self):
+        #handles when the current selected sound entry is changed
+        if self.change_nothing == False:
+            if self.sound_bar.count() > 0:
+                new_sound_data_entry = self.get_on_screen()
+                print( new_sound_data_entry )
+                self.sound_bar.curr_item.sound_data_entry = new_sound_data_entry
+                self.sound_bar.curr_item = self.sound_bar.currentItem()
+                self.set_right_side()
+        self.change_nothing = False
     
 
+    def get_on_screen(self):
+        if self.change_nothing == False and self.sound_id_field.text() != "":
+            sound_id = float(self.sound_id_field.text())
+            start_time = float(self.start_time_field.text())
+            end_time = float( self.end_time_field.text() )
+            coarse_pitch = float(self.coarse_pitch_field.text() )
+            flags = int(self.flags_field.text())
+            volume = int(self.volume_field.text() )
+            fine_pitch = int(self.fine_pitch_field.text() )
+            loop_count = int(self.loop_count_field.text() )
+            pan = int(self.pan_field.text() )
+            unk_byte = int(self.unk_byte_field.text() )
+            new_sound_entry = sound_entry(sound_id, start_time, end_time, coarse_pitch, flags, volume, fine_pitch, loop_count, pan, unk_byte)
+            return new_sound_entry
+
+    def set_right_side(self):
+        #will set the values on the right side in all cases - will use the currentitem of the listwidget
+        sound_data_entry = self.sound_bar.currentItem().sound_data_entry
+        self.sound_id_field.setText( str(sound_data_entry.sound_id) )
+        self.start_time_field.setText( str(int(sound_data_entry.start_time)) )
+        self.end_time_field.setText( str(int(sound_data_entry.end_time)) )
+        self.flags_field.setText( str(sound_data_entry.flags) )
+        self.loop_count_field.setText( str(sound_data_entry.loop_count) )
+        self.volume_field.setText( str(sound_data_entry.volume) )
+        self.coarse_pitch_field.setText( str(sound_data_entry.coarse_pitch) )
+        self.fine_pitch_field.setText( str(sound_data_entry.fine_pitch) )
+        self.pan_field.setText( str(sound_data_entry.pan) )
+        self.unk_byte_field.setText( str(sound_data_entry.unk_byte) )
+        
+    def add_blank_entry(self):
+        self.change_nothing = True
+        self.other_info_layout.setDisabled(False)
+        new_entry = single_sound_entry(self.sound_bar)
+        
+        new_entry.setText("Sound Entry " + str(self.sound_bar.count() - 1) )
+        
+        self.sound_bar.curr_item = new_entry
+        self.sound_bar.setCurrentItem(new_entry)
+        self.change_nothing = False
+        self.set_right_side()
+        
+    def delete_curr_entry(self): 
+               
+        self.sound_bar.takeItem(self.sound_bar.currentRow())
+        
+        if self.sound_bar.count() > 0: 
+
+            self.sound_bar.curr_item = self.sound_bar.currentItem()
+            self.set_right_side()
+        else:
+            self.other_info_layout.setDisabled(True)
+
+    def get_soundids_combobox(self, widget_parent):
+        #will fill in the combo box with the sound ids - gotta get back to xayr
+        combo_box = QComboBox(widget_parent)
+        return combo_box
+        
+
     def get_info(self):
-        if self.selected is None:
+        if self.sound_bar.count() == 0:
             return None
-        if self.filepath is None:
-            return None
-        values = []
-        for i in range(1, self.other_info_box.rowCount() ):
-            comp = []
+        new_sound_data_entry = self.get_on_screen()
+        self.sound_bar.curr_item.sound_data_entry = new_sound_data_entry
+        
+        new_sound_data = []
+        for i in range(0, self.sound_bar.count() ):
+            new_sound_data.append( self.sound_bar.item(i).sound_data_entry )
             
-            combo_box = self.other_info_box.itemAtPosition(i, 0).widget()
-            comp.append( combo_box.text() )
             
-            combo_box = self.other_info_box.itemAtPosition(i, 1).widget()
-            comp.append( combo_box.currentIndex() )
-            
-            line_edit = self.other_info_box.itemAtPosition(i, 2).widget()
-            comp.append( line_edit.text() )
-            
-            values.append(comp)
-        print(values)
-        return (self.selected, self.bmd_thing_select.currentText(), values)
+        return new_sound_data
+
 
          
     def open_file_dialog(self):
-        filepath, choosentype = QFileDialog.getOpenFileName(self.other_info_layout, "Choose File Path", "", "j3d model files (*.bmd *.bdl)")
+        filepath, choosentype = QFileDialog.getOpenFileName(self.other_info_layout, "Choose File Path", "", "bck files (*.bck)")
         if filepath:
             #self.filename_text.setText(filepath)
             self.filepath = filepath
-            
-            for i in range( self.bmd_thing_select.count() ):
-                self.bmd_thing_select.remove(i)
-            if self.selected in [".bck", ".bca"]:
-                self.bmd_thing_select.addItems( j3d.get_bones_from_bmd(filepath) )
-            elif self.selected in [".btk", ".btp", ".bpk", ".brk"]:
-                self.bmd_thing_select.addItems( j3d.get_materials_from_bmd(filepath) )
-            elif self.selected in [".blk", ".bla"]:
-                self.bmd_thing_select.addItems( j3d.get_meshes_from_bmd(filepath) )
+            self.sound_data = sound_entry.read_sound_data(filepath)
+
+class sound_entry_selector( QListWidget):
+    def __init__(self, parent):
+        QListWidget.__init__(self, parent = parent)
+        self.curr_item = None
+    
+
+class single_sound_entry( QListWidgetItem ):
+    def __init__(self, parent, sound_data_entry = None):
+        QListWidgetItem.__init__(self, parent = parent)
+        if sound_data_entry is not None:
+            self.sound_data_entry = sound_data_entry
+        else:
+            self.sound_data_entry = sound_entry.blank_entry()
+        print(self.sound_data_entry)
+    def from_fields(self, sound_id, start_time, end_time, coarse_pitch, flags, volume, fine_pitch, loop_count, pan, unk_byte):
+        self.sound_data_entry = sound_entry(sound_id, start_time, end_time, coarse_pitch, flags, volume, fine_pitch, loop_count, pan, unk_byte)
