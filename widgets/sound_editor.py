@@ -168,7 +168,7 @@ class sounds_widget(QWidget, themed_window):
             self.end_time_field.setText( "" )
             self.flags_field.setText( "" )
             self.loop_count_field.setText( "" )
-            self.volume_field.setText( str(sound_data_entry.volume) )
+            self.volume_field.setText( "" )
             self.coarse_pitch_field.setText( "" )
             self.fine_pitch_field.setText( "")
             self.pan_field.setText("" )
