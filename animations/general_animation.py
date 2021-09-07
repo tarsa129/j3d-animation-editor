@@ -115,12 +115,19 @@ class AnimComponent(object):
     @classmethod
     def from_array(cls, offset, index, count, valarray, tanType):
         if count == 1:
-            return cls(0, valarray[offset+index], 0, 0)
-            
+            try:
+                return cls(0, valarray[offset+index], 0, 0)
+            except:
+                return cls(0, 1, 0, 0)
         
         else:
             if tanType == 0:
-                return cls(valarray[offset + index*3], valarray[offset + index*3 + 1], valarray[offset + index*3 + 2])
+                try:
+                
+                    return cls(valarray[offset + index*3], valarray[offset + index*3 + 1], valarray[offset + index*3 + 2])
+                except:
+                    return cls(valarray[offset + index*3], valarray[offset + index*3 + 1], 0)
+                    return cls(valarray[offset + index*3], valarray[offset + index*3 + 1], 0)
             elif tanType == 1:
                 return cls(valarray[offset + index*4], valarray[offset + index*4 + 1], valarray[offset + index*4 + 2], valarray[offset + index*4 + 3])
             else:

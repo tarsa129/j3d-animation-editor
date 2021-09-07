@@ -144,8 +144,10 @@ class bck(j3d.basic_animation):
             #default tangent interpolation is smooth
             for scale, axis in ((x_scale, "X"), (y_scale, "Y"), (z_scale, "Z")):
                 count, offset, tan_type = scale 
+   
                 tangent_type = max(tan_type, tangent_type)
                 for j in range(count):
+                    print( offset, j, count,tan_type, len(scales) )
                     comp = j3d.AnimComponent.from_array(offset, j, count, scales, tan_type)
                     if comp.tangentIn == 0:
                         bone_animation.tan_inter[inter_count] = 1
@@ -683,9 +685,9 @@ class bck(j3d.basic_animation):
     
         
     
-        if self.sound is not None:
+        if self.sound is not None and self.sound:
             print("write sound")
-            print( len(self.sound) )
+            #print( len(self.sound) )
             
             f.seek(0x1c)
             j3d.write_uint32(f, total_size)
@@ -827,8 +829,21 @@ class sound_entry:
     @classmethod
     def read_sound_data(cls, filepath):
         with open(filepath, "rb") as f:
+            header = f.read(4)
+                
+            if header == b"Yaz0":
+                decomp = BytesIO()
+                decompress(f, decomp)
+                #print(decomp)
+                f = decomp
+        
             f.seek(0x1c)
-            f.seek( j3d.read_uint32(f) )
+            
+            offset = j3d.read_uint32(f) 
+            if offset == 0xFFFFFFFF:
+                return None
+            
+            f.seek( offset )
             
             num_entries = j3d.read_uint16(f)
             f.read(6)

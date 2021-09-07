@@ -257,8 +257,8 @@ class maedit_widget(QWidget, themed_window):
             comp.append( line_edit.text() )
             
             values.append(comp)
-        print(values)
-        return (self.selected, self.bmd_thing_select.currentText(), values)
+        #print(values)
+        return ( [[self.selected, self.bmd_thing_select.currentText(), values]] )
 
          
     def open_file_dialog(self):

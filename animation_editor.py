@@ -332,11 +332,22 @@ class GenEditor(QMainWindow, themed_window):
         
         
         #mass edit
-        self.mass_edit = QAction(self)
-        self.mass_edit.setText("Mass Animation Editor")
-        self.mass_edit.triggered.connect(lambda: self.maedit_dialogue(one_time = True))
+        self.mass_edit = QMenu(self)
+        self.mass_edit.setTitle("Mass Editing")
+        #self.mass_edit.triggered.connect(lambda: self.maedit_dialogue(one_time = True))
         
-        self.menubar.addAction(self.mass_edit)
+        self.mass_edit_action = QAction(self)
+        self.mass_edit_action.setText("Mass Animation Editor")
+        self.mass_edit_action.triggered.connect(lambda: self.maedit_dialogue(one_time = True))
+        
+        self.mass_edit_file = QAction(self)
+        self.mass_edit_file.setText("Mass Edit from File")
+        self.mass_edit_file.triggered.connect( self.maedit_file )
+        
+        self.mass_edit.addAction(self.mass_edit_action)
+        self.mass_edit.addAction(self.mass_edit_file)
+        
+        self.menubar.addMenu(self.mass_edit)
         
     def setup_ui_main(self):
         #main splitter
@@ -481,7 +492,6 @@ class GenEditor(QMainWindow, themed_window):
         popout_or_not = (popout_or_not == "true")
         
         self.popout = (popout_or_not)
-        print(self.popout)
         self.sep_window.setChecked( popout_or_not )
         self.show_widget.setDisabled( popout_or_not )
         
@@ -579,6 +589,8 @@ class GenEditor(QMainWindow, themed_window):
         
         current_item = self.anim_bar.currentItem()
         current_item.display_info = self.get_on_screen()
+        if current_item.filepath.endswith(".bck") and self.sounds_box is not None:
+            current_item.sound_data = self.sounds_box.get_info()
         current_item.save_animation(filepath, compress_dis = self.compression)
         
     def button_save_level(self):
@@ -593,6 +605,8 @@ class GenEditor(QMainWindow, themed_window):
     def button_save_all(self):
         current_item = self.anim_bar.currentItem()
         current_item.display_info = self.get_on_screen()
+        if current_item.filepath.endswith(".bck") and self.sounds_box is not None:
+            current_item.sound_data = self.sounds_box.get_info()
         #current_item.save_animation()
         for i in range( self.anim_bar.topLevelItemCount() ):
             
@@ -1031,22 +1045,23 @@ class GenEditor(QMainWindow, themed_window):
 
     def maedit_from_bar(self, maedit_info, one_time):
         if maedit_info is not None:
-            anim_type = maedit_info[0]
-            anim_name = maedit_info[2]
-                     
-            
-            look_col = 2
-            if maedit_info[0] in[ ".bla" ,".blk", ".bva", ".btp"]:
-                look_col = 0
-            elif maedit_info[0] == ".bpk":
-                look_col = 1
-            self.anim_bar.currentItem().display_info = self.get_on_screen()
-            for j in range( self.anim_bar.topLevelItemCount() ):
-                item = self.anim_bar.topLevelItem(j)
-                if item.filepath.endswith(maedit_info[0]):
-                    info = item.display_info
-                    item.display_info = self.find_and_edit(info, maedit_info[1], maedit_info[2], look_col, maedit_info[0])
-    
+            for maedit_entry in maedit_info:
+                anim_type = maedit_entry[0]
+                anim_name = maedit_entry[2]
+                         
+                
+                look_col = 2
+                if maedit_entry[0] in[ ".bla" ,".blk", ".bva", ".btp"]:
+                    look_col = 0
+                elif maedit_entry[0] == ".bpk":
+                    look_col = 1
+                self.anim_bar.currentItem().display_info = self.get_on_screen()
+                for j in range( self.anim_bar.topLevelItemCount() ):
+                    item = self.anim_bar.topLevelItem(j)
+                    if item.filepath.endswith(maedit_entry[0]):
+                        info = item.display_info
+                        item.display_info = self.find_and_edit(info, maedit_entry[1], maedit_entry[2], look_col, maedit_entry[0])
+        
 
 
             self.load_animation_to_middle(self.anim_bar.currentItem() )
@@ -1054,6 +1069,9 @@ class GenEditor(QMainWindow, themed_window):
             self.maedit_box.setParent(None)
             self.right_vbox.removeWidget(self.maedit_box)
             self.maedit_box = None
+    
+    def maedit_file(self):
+        pass
     
     def find_and_edit(self, info, name, values, look_col, exten = None):
             def operations( array, operation ) :

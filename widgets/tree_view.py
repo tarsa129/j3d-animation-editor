@@ -19,6 +19,8 @@ class animation_bar(QTreeWidget):
         
         self.parent = parent
         
+        self.sound_data_clipboard = None
+        
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.run_context_menu)
     def set_main_editor(self, main_window):
@@ -39,13 +41,37 @@ class animation_bar(QTreeWidget):
         
         def emit_sound_window():
             self.main_editor.sounds_dialogue(one_time = True)
+            
+        def emit_copy_sound():
+            print("copy")
+            paste_sound_action.setDisabled(False)
+            self.sound_data_clipboard = self.currentItem().sound_data
+            
+            
+        def emit_paste_sound():
+            self.currentItem().set_sound( self.sound_data_clipboard )
+            
+            
+            if self.main_editor.sounds_box is not None:
+                self.main_editor.sounds_box.main_widget.sound_data = self.sound_data_clipboard
+                self.main_editor.sounds_box.main_widget.setup_sound_data()
+            
         
         if self.curr_item.filepath.endswith(".bck"):
             edit_sound_action = QAction("Edit Sound Data", self)
             edit_sound_action.triggered.connect( emit_sound_window )
             context_menu.addAction( edit_sound_action )
-            context_menu.addSeparator()
+                
+            copy_sound_action = QAction("Copy Sound Data", self)
+            copy_sound_action.triggered.connect( emit_copy_sound )
+            context_menu.addAction( copy_sound_action )
+            
+            paste_sound_action = QAction("Paste Sound Data", self)
+            paste_sound_action.triggered.connect( emit_paste_sound )
+            context_menu.addAction( paste_sound_action )
+            
         
+            context_menu.addSeparator()
         
         close_action = QAction("Close Current Animation", self)
         close_all_action = QAction("Close All Animations", self)

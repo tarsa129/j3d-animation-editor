@@ -260,7 +260,7 @@ class sounds_widget(QWidget, themed_window):
         #--------------------------------
         
         label_unk_byte = QLabel(widget_parent)
-        label_unk_byte.setText("Unknown Byte:")
+        label_unk_byte.setText("Speed / Interval Value:")
         operations_box.addWidget(label_unk_byte, 10, 0) 
         
         self.unk_byte_field = QLineEdit(widget_parent)
@@ -359,6 +359,7 @@ class sounds_widget(QWidget, themed_window):
             #self.filename_text.setText(filepath)
             self.filepath = filepath
             self.sound_data = sound_entry.read_sound_data(filepath)
+            self.setup_sound_data()
 
 class sound_entry_selector( QListWidget):
     def __init__(self, parent):
