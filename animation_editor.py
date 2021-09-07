@@ -869,8 +869,10 @@ class GenEditor(QMainWindow, themed_window):
             #print( self.anim_bar.curr_item.sound_data)
             #print( "new data" )
             #print( self.anim_bar.currentItem().sound_data)
-            self.sounds_box.main_widget.sound_data = sound_data
-            self.sounds_box.main_widget.setup_sound_data()
+            if self.sounds_box is not None:
+            
+                self.sounds_box.main_widget.sound_data = sound_data
+                self.sounds_box.main_widget.setup_sound_data()
 
         # deal with the various ui stuff
         self.edit_convert_actions(filepath)
