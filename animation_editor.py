@@ -212,7 +212,7 @@ class GenEditor(QMainWindow, themed_window):
         self.show_create.triggered.connect( self.toggle_show_create )
         self.show_frames.triggered.connect( self.toggle_show_frames )
         self.show_maedit.triggered.connect( self.toggle_show_maedit )
-        self.show_maedit.triggered.connect( self.toggle_show_sounds )
+        self.show_sounds.triggered.connect( self.toggle_show_sounds )
         
         self.show_widget.addAction( self.show_create )
         self.show_widget.addAction( self.show_frames )
@@ -732,9 +732,12 @@ class GenEditor(QMainWindow, themed_window):
             self.maedit_box = None 
             
     def toggle_show_sounds(self):
+        print("toggle show sounds")
         if self.show_sounds.isChecked():
+            print("add sounds box")
             self.sounds_dialogue()
         else:
+            print("remove sounds box")
             self.sounds_box.setParent(None)
             self.right_vbox.removeWidget(self.sounds_box)
             self.sounds_box = None 
