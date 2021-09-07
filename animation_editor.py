@@ -862,8 +862,8 @@ class GenEditor(QMainWindow, themed_window):
         loaded_animation.set_values( array, filepath, compressed )
         loaded_animation.set_sound(sound_data) 
 
-        if filepath.endswith(".bck") and sound_data is not None:
-            if self.anim_bar.curr_item is not None:
+        if filepath.endswith(".bck"):
+            if self.anim_bar.curr_item is not None and self.sounds_box is not None:
                 self.anim_bar.curr_item.sound_data = self.sounds_box.get_info()
             #print("get on screen result")
             #print( self.anim_bar.curr_item.sound_data)
