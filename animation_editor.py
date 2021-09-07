@@ -192,10 +192,10 @@ class GenEditor(QMainWindow, themed_window):
         self.theme_group.addAction(self.peaches_theme)
  
         self.normal_theme.triggered.connect(lambda: self.toggle_dark_theme() )
-        self.dark_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/dark.qss") )
-        self.fall_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/fall.qss") )
-        self.toadette_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/toadette.qss") )
-        self.peaches_theme.triggered.connect(lambda: self.toggle_dark_theme("./themes/peaches and plums.qss") )
+        self.dark_theme.triggered.connect(lambda: self.toggle_theme("./themes/dark.qss") )
+        self.fall_theme.triggered.connect(lambda: self.toggle_theme("./themes/fall.qss") )
+        self.toadette_theme.triggered.connect(lambda: self.toggle_theme("./themes/toadette.qss") )
+        self.peaches_theme.triggered.connect(lambda: self.toggle_theme("./themes/peaches and plums.qss") )
         
         self.sep_window = QAction("Pop Out Windows", self, checkable = True)
         self.sep_window.setChecked(True)
@@ -513,8 +513,8 @@ class GenEditor(QMainWindow, themed_window):
         show_sounds = configur.get('menu options',  'show_sound_editor'  )
         show_sounds = show_sounds.lower() == "true"
         if show_sounds:
-            self.show_sound.setChecked(True)
-            self.sound_dialogue()
+            self.show_sounds.setChecked(True)
+            self.sounds_dialogue()
             
         
     #file stuff
@@ -676,6 +676,28 @@ class GenEditor(QMainWindow, themed_window):
         self.compression = level
    
     #view menu functions
+    
+    def toggle_theme(self, filepath):
+        self.toggle_dark_theme(filepath)
+        if self.create_box is not None:
+            self.create_box.main_widget.toggle_dark_theme(filepath)
+        if self.frames_box is not None:
+            self.frames_box.main_widget.toggle_dark_theme(filepath)
+        if self.maedit_box is not None:
+            self.maedit_box.main_widget.toggle_dark_theme(filepath)
+        if self.sounds_box is not None:
+            self.sounds_box.main_widget.toggle_dark_theme(filepath)
+            
+        if self.create_window is not None:
+            self.create_window.toggle_dark_theme(filepath)
+        if self.frames_window is not None:
+            self.frames_window.toggle_dark_theme(filepath)
+        if self.maedit_window is not None:
+            self.maedit_window.toggle_dark_theme(filepath)
+        if self.sounds_window is not None:
+            self.sounds_window.toggle_dark_theme(filepath)
+        
+    
     def set_popout(self):
         self.popout = self.sep_window.isChecked()
         if self.sep_window.isChecked():
@@ -689,29 +711,33 @@ class GenEditor(QMainWindow, themed_window):
         if self.show_create.isChecked():
             self.create_new()
         else:
-            self.right_vbox.removeWidget(self.create_window)
-            self.create_window = None
+            self.create_box.setParent(None)
+            self.right_vbox.removeWidget(self.create_box)
+            self.create_box = None
                
     def toggle_show_frames(self):
         if self.show_frames.isChecked():
             self.frames_dialogue()
         else:
-            self.right_vbox.removeWidget(self.frames_window)
-            self.frames_window = None   
+            self.frames_box.setParent(None)
+            self.right_vbox.removeWidget(self.frames_box)
+            self.frames_box = None   
 
     def toggle_show_maedit(self):
         if self.show_maedit.isChecked():
             self.maedit_dialogue()
         else:
-            self.right_vbox.removeWidget(self.maedit_window)
-            self.maedit_window = None 
+            self.maedit_box.setParent(None)
+            self.right_vbox.removeWidget(self.maedit_box)
+            self.maedit_box = None 
             
     def toggle_show_sounds(self):
         if self.show_sounds.isChecked():
             self.sounds_dialogue()
         else:
-            self.right_vbox.removeWidget(self.sounds_window)
-            self.sounds_window = None 
+            self.sounds_box.setParent(None)
+            self.right_vbox.removeWidget(self.sounds_box)
+            self.sounds_box = None 
 
    #convert stuff
     
@@ -835,6 +861,16 @@ class GenEditor(QMainWindow, themed_window):
         
         loaded_animation.set_values( array, filepath, compressed )
         loaded_animation.set_sound(sound_data) 
+
+        if filepath.endswith(".bck") and sound_data is not None:
+            if self.anim_bar.curr_item is not None:
+                self.anim_bar.curr_item.sound_data = self.sounds_box.get_info()
+            #print("get on screen result")
+            #print( self.anim_bar.curr_item.sound_data)
+            #print( "new data" )
+            #print( self.anim_bar.currentItem().sound_data)
+            self.sounds_box.main_widget.sound_data = sound_data
+            self.sounds_box.main_widget.setup_sound_data()
 
         # deal with the various ui stuff
         self.edit_convert_actions(filepath)
@@ -1328,14 +1364,14 @@ class GenEditor(QMainWindow, themed_window):
             #print(self.anim_bar.curr_item.text(0))
 
             self.anim_bar.curr_item.display_info = self.get_on_screen()          
-            if self.anim_bar.curr_item.filepath.endswith(".bck") and self.sounds_window is not None:
-                self.anim_bar.curr_item.sound_data = self.sounds_window.get_info()
+            if self.anim_bar.curr_item.filepath.endswith(".bck") and self.sounds_box is not None:
+                self.anim_bar.curr_item.sound_data = self.sounds_box.get_info()
                 #print("get on screen result")
                 #print( self.anim_bar.curr_item.sound_data)
                 #print( "new data" )
                 #print( self.anim_bar.currentItem().sound_data)
-                self.sounds_window.main_widget.sound_data = self.anim_bar.currentItem().sound_data
-                self.sounds_window.main_widget.setup_sound_data()
+                self.sounds_box.main_widget.sound_data = self.anim_bar.currentItem().sound_data
+                self.sounds_box.main_widget.setup_sound_data()
             
 
 
