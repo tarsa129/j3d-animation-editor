@@ -43,6 +43,11 @@ class GenEditor(QMainWindow, themed_window):
         self.folder_window = None
         self.sounds_window = None
         
+        self.create_box = None
+        self.frames_box = None
+        self.maedit_box = None
+        self.sounds_box = None
+        
         self.compression = 0
         
         self.popout = True
@@ -138,10 +143,7 @@ class GenEditor(QMainWindow, themed_window):
         self.low_compression.triggered.connect(lambda: self.set_compression_level(2))
         self.mid_compression.triggered.connect(lambda: self.set_compression_level(3))
         self.high_compression.triggered.connect(lambda: self.set_compression_level(4))
-        
-        
-        
-        
+          
         self.save_file_action.setDisabled(True)
         self.save_file_as_action.setDisabled(True)
         self.save_file_all_action.setDisabled(True)
@@ -158,12 +160,9 @@ class GenEditor(QMainWindow, themed_window):
         #self.file_menu.addAction(self.combine_animations)
         self.file_menu.addSeparator()
         self.file_menu.addMenu(self.disable_compression_menu)
-        
-        
-        
+ 
         self.menubar.addAction(self.file_menu.menuAction())
-        self.setMenuBar(self.menubar)
-        
+        self.setMenuBar(self.menubar)    
         
         #view menu
         
@@ -449,12 +448,15 @@ class GenEditor(QMainWindow, themed_window):
     
     def read_settings_ini(self):
         #read ini settings
+        
+        #theme
         self.set_ini_theme()
         configur = ConfigParser()
         configur.read('settings.ini')
         comp_level = configur.get('menu options', 'compression')
         comp_level = comp_level.lower()
         
+        #compression level
         if comp_level == "auto":
             self.set_compression_level(0)
             self.auto_compression.setChecked(True)
@@ -471,14 +473,50 @@ class GenEditor(QMainWindow, themed_window):
             self.set_compression_level(4)
             self.high_compression.setChecked(True)
             
-        popout_or_not = configur.get('menu options',  'popup_addtional_windows'  )
+        #right sidebar stuff
+        
+        #whether or not to even show stuff on the side
+        popout_or_not = configur.get('menu options',  'popup_additional_windows'  )
         popout_or_not = popout_or_not.lower()
         popout_or_not = (popout_or_not == "true")
         
         self.popout = (popout_or_not)
+        print(self.popout)
         self.sep_window.setChecked( popout_or_not )
-        self.show_widget.setDisabled( not popout_or_not )
-    
+        self.show_widget.setDisabled( popout_or_not )
+        
+        if self.popout:
+            self.right_vbox.hide()
+
+        #specific editors
+        show_create = configur.get('menu options',  'show_create_animation_maker'  )
+        show_create = show_create.lower() == "true"
+        if show_create:
+            self.show_create.setChecked(True)
+            self.create_new()
+            
+            
+        show_maedit = configur.get('menu options',  'show_mass_animation_editor'  )
+        show_maedit = show_maedit.lower() == "true"
+        if show_maedit:
+            self.show_maedit.setChecked(True)
+            self.maedit_dialogue()
+            
+            
+        show_frames = configur.get('menu options',  'show_frames_adder'  )
+        show_frames = show_frames.lower() == "true"
+        if show_frames:
+            self.show_frames.setChecked(True)
+            self.frames_dialogue()
+            
+            
+        show_sounds = configur.get('menu options',  'show_sound_editor'  )
+        show_sounds = show_sounds.lower() == "true"
+        if show_sounds:
+            self.show_sound.setChecked(True)
+            self.sound_dialogue()
+            
+        
     #file stuff
       
     def button_load_level(self):
@@ -490,6 +528,7 @@ class GenEditor(QMainWindow, themed_window):
 
                 animation_object = j3d.sort_file(filepath)               
                 self.new_animation_from_object(animation_object, filepath)
+    
     def button_load_folder(self):
         if self.folder_window == None:
             self.folder_window = folder_widget.folder_dia()
@@ -561,24 +600,21 @@ class GenEditor(QMainWindow, themed_window):
             item.save_animation(compress_dis = self.compression);
         
     def create_new(self, one_time = False):
-        
-        if self.create_window is None:
+        if self.popout and self.create_window is None:
+            #if you want to pop stuff out and there is not current window, create it
+    
+            self.create_window = create_widget.create_window(self.theme)
+            self.create_window.setWindowModality(QtCore.Qt.ApplicationModal)
+            self.create_window.exec_()
             
-            if self.popout:
-            
-            
-                self.create_window = create_widget.create_window(self.theme)
-                self.create_window.setWindowModality(QtCore.Qt.ApplicationModal)
-                self.create_window.exec_()
-                
-                created_info = self.create_window.get_info() 
-                self.create_new_from_bar(created_info, False)
-                self.create_window = None
-            else:
-                self.create_window = create_widget.create_box(self, one_time)
-                self.right_vbox.addWidget(self.create_window, one_time)
-                
-
+            created_info = self.create_window.get_info() 
+            self.create_new_from_bar(created_info, False)
+            self.create_window = None
+        elif not self.popout and self.create_box is None:
+            #if you want it on the right bar and it is currently not there, create it. 
+            self.create_box = create_widget.create_box(self, one_time)
+            self.right_vbox.addWidget(self.create_box)
+    
     def create_new_from_bar(self, created_info, one_time):
         if created_info is not None:
             table = j3d.create_empty( created_info )
@@ -586,13 +622,11 @@ class GenEditor(QMainWindow, themed_window):
             filepath = created_info[0]
             
             self.new_animation_from_array(table, filepath, 1)
-        
-        if created_info is None and one_time:
-            self.right_vbox.removeWidget(self.create_window)
-            self.create_window = None
-        
-        
-          
+        if one_time:
+            self.create_box.setParent(None)
+            self.right_vbox.removeWidget(self.create_box)
+            self.create_box = None
+                 
     def combine_anims(self):
         import widgets.quick_change as quick_change
             
@@ -644,6 +678,12 @@ class GenEditor(QMainWindow, themed_window):
     #view menu functions
     def set_popout(self):
         self.popout = self.sep_window.isChecked()
+        if self.sep_window.isChecked():
+            self.workaroundr.hide()
+            self.show_widget.setDisabled(True)
+        else:
+            self.workaroundr.show()
+            self.show_widget.setDisabled(False)
 
     def toggle_show_create(self):
         if self.show_create.isChecked():
@@ -651,8 +691,7 @@ class GenEditor(QMainWindow, themed_window):
         else:
             self.right_vbox.removeWidget(self.create_window)
             self.create_window = None
-            
-    
+               
     def toggle_show_frames(self):
         if self.show_frames.isChecked():
             self.frames_dialogue()
@@ -775,7 +814,7 @@ class GenEditor(QMainWindow, themed_window):
         print("end of new animation from object")
     
     #bmd stuff
-    def new_animation_from_array(self, array, filepath, compressed, sound_data):
+    def new_animation_from_array(self, array, filepath, compressed, sound_data = None):
         if self.anim_bar.topLevelItemCount() > 0:
             #print( "this is not the first loaded animation " ) 
             #print( "the old index is " + str(self.anim_bar.curr_index) )
@@ -937,18 +976,17 @@ class GenEditor(QMainWindow, themed_window):
 
     # mass editor
     def maedit_dialogue(self, one_time = False): 
-        if self.maedit_window is None: 
-            if self.popout:
-            
-                self.maedit_window = maedit_widget.maedit_window()
-                self.maedit_window.setWindowModality(QtCore.Qt.ApplicationModal)
-                self.maedit_window.exec_()
-                maedit_info = self.maedit_window.get_info() 
-                self.maedit_from_bar(maedit_info, False)
-                self.maedit_window = None
-            else:
-                self.maedit_window = maedit_widget.maedit_box(self, one_time)
-                self.right_vbox.addWidget(self.maedit_window)
+        if self.popout and self.maedit_window is None:
+        
+            self.maedit_window = maedit_widget.maedit_window()
+            self.maedit_window.setWindowModality(QtCore.Qt.ApplicationModal)
+            self.maedit_window.exec_()
+            maedit_info = self.maedit_window.get_info() 
+            self.maedit_from_bar(maedit_info, False)
+            self.maedit_window = None
+        elif not self.popout and self.maedit_box is None:
+            self.maedit_box = maedit_widget.maedit_box(self, one_time)
+            self.right_vbox.addWidget(self.maedit_box)
 
     def maedit_from_bar(self, maedit_info, one_time):
         if maedit_info is not None:
@@ -971,9 +1009,10 @@ class GenEditor(QMainWindow, themed_window):
 
 
             self.load_animation_to_middle(self.anim_bar.currentItem() )
-        if maedit_info is None and one_time:
-            self.right_vbox.removeWidget(self.maedit_window)
-            self.maedit_window = None
+        if one_time:
+            self.maedit_box.setParent(None)
+            self.right_vbox.removeWidget(self.maedit_box)
+            self.maedit_box = None
     
     def find_and_edit(self, info, name, values, look_col, exten = None):
             def operations( array, operation ) :
@@ -1031,6 +1070,7 @@ class GenEditor(QMainWindow, themed_window):
                                 change_row(info, curr_row, look_col, values[j]) 
                     break
             return info
+    
     def find_row_2(self, table, look_col, row, value):
         found_row = row
         stop_row =  self.table_display.rowCount()
@@ -1047,8 +1087,7 @@ class GenEditor(QMainWindow, themed_window):
             return None
         else:
             return found_row
-    
-    
+     
     #table view stuff
     def contextMenuEvent(self, event):
         
@@ -1277,6 +1316,7 @@ class GenEditor(QMainWindow, themed_window):
 
 
         print("end of load animation to middle")
+    
     def selected_animation_changed(self):
 
         if self.is_remove:
@@ -1312,7 +1352,6 @@ class GenEditor(QMainWindow, themed_window):
             """
             self.load_animation_to_middle(self.anim_bar.currentItem() )
              
-
     def get_on_screen(self):
     
         collected_info = []
@@ -1619,19 +1658,17 @@ class GenEditor(QMainWindow, themed_window):
             self.fix_table(information, col_count)
                
     def frames_dialogue(self, one_time = False):
-        if self.frames_window is None:
-            if self.popout:
-                self.frames_window = frames_widget.frames_window()
-                self.frames_window.setWindowModality(QtCore.Qt.ApplicationModal)
-                self.frames_window.exec_()
-        
-                frames_to_add = self.frames_window.get_info() 
-                self.frames_from_bar( frames_to_add, False) 
-                self.frames_window = None
-            else:
-                print("load to right side")
-                self.frames_window = frames_widget.frames_box(self, one_time)
-                self.right_vbox.addWidget(self.frames_window)
+        if self.popout and self.frames_window is None:
+            self.frames_window = frames_widget.frames_window()
+            self.frames_window.setWindowModality(QtCore.Qt.ApplicationModal)
+            self.frames_window.exec_()
+    
+            frames_to_add = self.frames_window.get_info() 
+            self.frames_from_bar( frames_to_add, False) 
+            self.frames_window = None
+        elif not self.popout and self.frames_box is None:
+            self.frames_box = frames_widget.frames_box(self, one_time)
+            self.right_vbox.addWidget(self.frames_box)
             
     def frames_from_bar(self, frames_info, one_time):
         if frames_to_add is not None:
@@ -1721,33 +1758,37 @@ class GenEditor(QMainWindow, themed_window):
         
         self.table_display.setHorizontalHeaderLabels(self.get_on_screen()[1])
         
-        if frames_info is None and one_time:
-            self.right_vbox.removeWidget(self.frames_window)
-            self.frames_window = None
+        if one_time:
+            self.frames_box.setParent(None)
+            self.right_vbox.removeWidget(self.frames_box)
+            self.frames_box = None
 
     def sounds_dialogue(self, one_time = False):
-        if self.sounds_window is None:
-            if self.popout:
-                self.sounds_window = sounds_widget.sounds_window()
-                self.sounds_window.setWindowModality(QtCore.Qt.ApplicationModal)
-                self.sounds_window.exec_()
-                
-                new_sound_data = self.sound_window.get_info()
-                
-                self.sounds_from_bar(new_sound_data, False)
-                self.sounds_window = None
-                
+        if self.popout and self.sounds_window is None:
+            self.sounds_window = sounds_widget.sounds_window()
+            self.sounds_window.setWindowModality(QtCore.Qt.ApplicationModal)
+            self.sounds_window.exec_()
+            
+            new_sound_data = self.sound_window.get_info()
+            
+            self.sounds_from_bar(new_sound_data, False)
+            self.sounds_window = None
+            
+        elif not self.popout and self.sounds_box is None:
+            if self.anim_bar.topLevelItemCount() > 0:
+                self.sounds_box = sounds_widget.sounds_box(self, one_time, self.anim_bar.currentItem().sound_data)
             else:
-                self.sounds_window = sounds_widget.sounds_box(self, one_time, self.anim_bar.currentItem().sound_data)
-                self.right_vbox.addWidget(self.sounds_window)
+                self.sounds_box = sounds_widget.sounds_box(self, one_time, None)
+            self.right_vbox.addWidget(self.sounds_box)
                 
     def sounds_from_bar(self, new_sound_data, one_time):
         self.anim_bar.currentItem().set_sound(new_sound_data)
-        print("sounds from bar")
-        print(new_sound_data)
-        if new_sound_data is None and one_time:
-            self.right_vbox.removeWidget(self.sounds_window)
-            self.sounds_window = None
+        #print("sounds from bar")
+        #print(new_sound_data)
+        if one_time:
+            self.sounds_box.setParent( None)
+            self.right_vbox.removeWidget(self.sounds_box)
+            self.sounds_box = None
                 
                 
 import sys

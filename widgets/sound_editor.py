@@ -376,3 +376,14 @@ class single_sound_entry( QListWidgetItem ):
         print(self.sound_data_entry)
     def from_fields(self, sound_id, start_time, end_time, coarse_pitch, flags, volume, fine_pitch, loop_count, pan, unk_byte):
         self.sound_data_entry = sound_entry(sound_id, start_time, end_time, coarse_pitch, flags, volume, fine_pitch, loop_count, pan, unk_byte)
+        
+def read_sound_id_file (filepath): 
+    sound_labels = []
+    all_file_lines = []
+    with open(filepath, "r") as f:
+        all_files_lines = f.readlines()
+    for line in all_file_lines:
+        line = line.rstrip(",")
+        line = line.split(" = ")
+        
+       

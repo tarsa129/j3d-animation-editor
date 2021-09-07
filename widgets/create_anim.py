@@ -178,6 +178,7 @@ class create_anim_widget(QWidget, themed_window):
     def set_selected(self):
         self.selected = self.file_types.currentItem().text()
         self.number_label.setText(self.get_text())
+        self.filepath = None
     
     def get_text(self):
         if self.selected is not None:
@@ -203,6 +204,7 @@ class create_anim_widget(QWidget, themed_window):
             return "Choose an animation type"
 
     def get_info(self):
+        print(self.selected)
         if self.selected is None:
             return None
         if not self.number_text.text().isnumeric() or not self.duration_text.text().isnumeric():
@@ -215,6 +217,7 @@ class create_anim_widget(QWidget, themed_window):
             print("textbox has something")
             self.filepath = os.getcwd() + "/" + self.filename_text.text() + self.selected
         print(self.filepath)
+        
         return (self.filepath, self.number_text.text(), self.const_text.text(), self.duration_text.text() )
          
     def open_file_dialog(self):
