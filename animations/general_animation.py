@@ -362,13 +362,14 @@ def get_materials_from_bmd(bmd_file):
 
 def get_meshes_from_bmd( bmd_file):
     strings = []
+    print("get mesh")
     with open(bmd_file, "rb") as f:
         s = f.read()
         a = s.find(b'\x53\x48\x50\x31')
-        #print(a)
+        print(a)
         f.seek(a + 0x8);
         count = read_uint16(f)
-        strings = [ "Shape " + str(i) for i in range(count) ]
+        strings = [ "Mesh " + str(i) for i in range(count) ]
         print(strings)
         f.close()
         

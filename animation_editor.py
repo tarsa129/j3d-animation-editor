@@ -1045,11 +1045,13 @@ class GenEditor(QMainWindow, themed_window):
 
     def maedit_from_bar(self, maedit_info, one_time):
         if maedit_info is not None:
+            print(maedit_info)
             for maedit_entry in maedit_info:
+                #print(maedit_entry)
                 anim_type = maedit_entry[0]
-                anim_name = maedit_entry[2]
+                #anim_name = maedit_entry[2]
                          
-                
+
                 look_col = 2
                 if maedit_entry[0] in[ ".bla" ,".blk", ".bva", ".btp"]:
                     look_col = 0
@@ -1058,32 +1060,195 @@ class GenEditor(QMainWindow, themed_window):
                 self.anim_bar.currentItem().display_info = self.get_on_screen()
                 for j in range( self.anim_bar.topLevelItemCount() ):
                     item = self.anim_bar.topLevelItem(j)
+                    
                     if item.filepath.endswith(maedit_entry[0]):
                         info = item.display_info
                         item.display_info = self.find_and_edit(info, maedit_entry[1], maedit_entry[2], look_col, maedit_entry[0])
         
 
 
-            self.load_animation_to_middle(self.anim_bar.currentItem() )
+                self.load_animation_to_middle(self.anim_bar.currentItem() )
         if one_time:
             self.maedit_box.setParent(None)
             self.right_vbox.removeWidget(self.maedit_box)
             self.maedit_box = None
     
     def maedit_file(self):
-        pass
-    
+        
+        filter =  "Mass Editing Text File(*.txt)"
+        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , filter )
+            
+        if filepath: 
+            with open(filepath, "r") as f:
+                lines = f.read().splitlines()
+            
+            lines = [ line for line in lines if line != ""]
+            #print(lines)
+            
+            anim_type = lines[0].lower()
+            if not anim_type.startswith("."):
+                anim_type = "." + anim_type
+            
+            #print (anim_type)
+            if anim_type in [".btk", ".brk", ".bck" , ".btp", ".bca", ".bpk", ".bla", ".blk", ".bva" ]:
+                maedit_info = []
+                i = 1
+                while i + 1 < len(lines):
+                    bone_name = lines[i]
+                    #print("bone name" + bone_name)
+                    maedit_array = [ anim_type, bone_name]
+                    values = []
+                    i += 1
+                    #iterate until you get an ending line
+                    
+                    while i < len(lines) and lines[i] not in ["end", "]", "}", ")"] :
+                        #print("some transform - check if valid at line " + str(i) )
+                        #print ("next line " + lines [i] )
+                        new_transform =  self.handle_transform_regex(anim_type, lines[i])
+                        if new_transform is not None:
+                            values.append(new_transform)
+                        i = i + 1
+                    maedit_array.append(values)
+                    maedit_info.append(maedit_array)
+                    i = i + 1
+                #print(maedit_info)
+                self.maedit_from_bar(maedit_info, False)
+          
+                        
+    def handle_transform_regex( self, file_type, line):
+        import re
+        ending_part = "\s*:?\s*(\+|\-|\*|/|avg|set|)\s*(\d*)"
+        if file_type in [".bck", ".bca"]:
+            regex = "(scale|rot\w*|trans\w*)\s([xyz])" + ending_part
+            m = re.match( regex, line, re.IGNORECASE)
+            if m is not None:
+                #print("got a match")
+                this_transform = []
+                comp = ""
+                if m.group(0).lower().startswith("s"):
+                    comp += "Scale "
+                elif m.group(0).lower().startswith("r"):
+                    comp += "Rotation "
+                elif m.group(0).lower().startswith("t"):
+                    comp += "Translation "
+                comp += m.group(2).upper()
+                
+                comp += ":"
+                
+                ops = ["+", "-", "*", "/", "avg"]
+                try:
+                    op_code = ops.index( m.group(3) )
+                except:
+                    op_code = 4
+                
+                this_transform.append(comp)
+                this_transform.append(op_code )
+                this_transform.append(m.group(4) )
+                print(this_transform)
+                return this_transform
+            
+            
+            
+        elif file_type in [".bpk", ".brk"]:
+            regex = "([rbag])\w*" + ending_part
+            m = re.match(regex, line, re.IGNORECASE)    
+            if m is not None:
+                #print("got a match")
+                this_transform = []
+                comp = ""
+                if m.group(0).lower().startswith("r"):
+                    comp += "Red "
+                elif m.group(0).lower().startswith("b"):
+                    comp += "Blue "
+                elif m.group(0).lower().startswith("g"):
+                    comp += "Green "
+                elif m.group(0).lower().startswith("a"):
+                    comp += "Alpha "
+                comp += m.group(2).upper()
+                
+                comp += ":"
+                
+                ops = ["+", "-", "*", "/", "avg"]
+                try:
+                    op_code = ops.index( m.group(3) )
+                except:
+                    op_code = 4
+                
+                this_transform.append(comp)
+                this_transform.append(op_code )
+                this_transform.append(m.group(4) )
+                print(this_transform)
+                return this_transform
+            
+        elif file_type in [".blk", ".bla", ".btp", ".bva"]: #single - line stuff
+            regex = "(\+|\-|\*|/|avg|set|)\s*(\d*)"
+            m = re.match(regex, line, re.IGNORECASE)    
+            if m is not None:
+                #print("got a match")
+                this_transform = []
+                
+                
+                ops = ["+", "-", "*", "/", "avg"]
+                try:
+                    op_code = ops.index( m.group(3) )
+                except:
+                    op_code = 4
+                if file_type == ".btp":                   
+                    this_transform.append("Texture Index")
+                elif file_type in [".blk", ".bla"]:
+                    this_transform.append("Weight")
+                elif file_type == ".bva":
+                    this_transform.append("Visibility")
+                this_transform.append(op_code )
+                this_transform.append(m.group(4) )
+                print(this_transform)
+                return this_transform
+        elif file_type == ".btk":
+            regex =  "(scale|rot\w*|trans\w*)\s([uvw])" + ending_part
+            m = re.match( regex, line, re.IGNORECASE)
+            if m is not None:
+                #print("got a match")
+                this_transform = []
+                comp = ""
+                if m.group(0).lower().startswith("s"):
+                    comp += "Scale "
+                elif m.group(0).lower().startswith("r"):
+                    comp += "Rotation "
+                elif m.group(0).lower().startswith("t"):
+                    comp += "Translation "
+                comp += m.group(2).upper()
+                
+                comp += ":"
+                
+                ops = ["+", "-", "*", "/", "avg"]
+                try:
+                    op_code = ops.index( m.group(3) )
+                except:
+                    op_code = 4
+                
+                this_transform.append(comp)
+                this_transform.append(op_code )
+                this_transform.append(m.group(4) )
+                print(this_transform)
+                return this_transform
+
     def find_and_edit(self, info, name, values, look_col, exten = None):
             def operations( array, operation ) :
-                print("operation " + str(operation ), array)
+                #print("operation " + str(operation ), array)
+                
+                if array[1] == "":
+                    return array[0]
                 if operation == 0:
+                    
                     return array[0] + array[1]
                 elif operation == 1:
                     
                     return array[0] - array[1]
                 elif operation == 2:
+                    
                     return array[0] * array[1]
                 elif operation == 3:
+                    
                     return array[0] / array[1]
                 elif operation == 4:
                     #print( array[1] )
@@ -1100,25 +1265,39 @@ class GenEditor(QMainWindow, themed_window):
                             return sum / len(array)
                     else:
                         return array[1]
+            
+            def operations_bva (array, operation):
+                if array[1] == "": #assume switch has a 0 case 
+                    if array[0] == 1:
+                        return 0
+                    else: 
+                        return 1
+                return array[1]
+            
             def change_row(info, i, look_col, values):
                 for j in range( look_col + 1 , len( info[i ]) ):
                     item = info[i][j]
                     if item != "":
-                        new_val = operations( [float(item), float(values[2]) ], values[1] )
+                        if values[2] != "":
+                            values[2] = float(values[2])
+                        if exten == ".bva":
+                            new_val = operations_bva( [float(item), values[2] ], values[1] )
+                        else:
+                            new_val = operations( [float(item), values[2] ], values[1] )
                         if exten == ".btp" or exten == ".bva":
                             new_val = int(round(new_val))
                         info[i][j] = str(new_val) 
             #print(info, name, values, look_col, exten)
             for i in range(len(info)):
                 item = self.table_display.item(i, 0) 
-                print(item.text(), name)
+                #print(item.text(), name)
                 if item.text() == name:
                     #single line animation
                     if len(values) == 1:
                         look_col += 1
                         if exten == ".blk":
                             look_col -= 1
-                        print(look_col)
+                        #print(look_col)
                         change_row(info, i, look_col, values[0])
 
                     else:

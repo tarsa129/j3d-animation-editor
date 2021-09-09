@@ -91,7 +91,7 @@ class maedit_widget(QWidget, themed_window):
  
         self.parent = parent
         
-        self.file_types_names = [".btk", ".brk", ".bck" , ".btp", ".bca", ".bpk", ".bla", ".blk" ];
+        self.file_types_names = [".bck", ".bca", ".btk", ".brk", ".btp", ".bpk", ".bla", ".blk", ".bva" ];
         
         #stuff that we want to return / have access to
         self.selected = None
@@ -120,7 +120,7 @@ class maedit_widget(QWidget, themed_window):
         self.file_types.clear()
         for type in self.file_types_names:
             self.file_types.addItem(type)
-        self.file_types.setCurrentRow(2)
+        self.file_types.setCurrentRow(0)
         self.file_types.clicked.connect(self.edit_right_side)
         
         self.type_box.addWidget(self.select_label)
@@ -141,14 +141,16 @@ class maedit_widget(QWidget, themed_window):
         self.other_info_layout = QWidget(self)
         self.other_info_box = self.get_right_side()
         self.horizontalLayout.addWidget(self.other_info_layout)
-        
         if self.filepath:
             for i in range( self.bmd_thing_select.count() ):
                 self.bmd_thing_select.remove(i)
+            
             if self.selected in [".bck", ".bca"]:
                 self.bmd_thing_select.addItems( j3d.get_bones_from_bmd(self.filepath) )
             elif self.selected in [".btk", ".btp", ".bpk", ".brk"]:
                 self.bmd_thing_select.addItems( j3d.get_materials_from_bmd(self.filepath) )
+            elif self.selected in [".blk", ".bla", ".bva"]:
+                self.bmd_thing_select.addItems( j3d.get_meshes_from_bmd(self.filepath) )
     
     def create_combo_box(self, widget_parent):
         combo_box = QComboBox(widget_parent)
@@ -159,7 +161,7 @@ class maedit_widget(QWidget, themed_window):
         operations_box = QGridLayout(self.other_info_layout)
         widget_parent = self.other_info_layout
         self.selected = self.file_types.currentItem().text()
-        
+
         label = QLabel(widget_parent)
         label.setText("Select File")
         operations_box.addWidget(label, 0, 0)
@@ -232,7 +234,7 @@ class maedit_widget(QWidget, themed_window):
             operations_box.addWidget( combo_box,  1,  1)
             
             operations_box.addWidget( QLineEdit(widget_parent), 1,  2)
-            button.setDisabled(True)
+            #button.setDisabled(True)
             
         return operations_box
 
@@ -257,7 +259,13 @@ class maedit_widget(QWidget, themed_window):
             comp.append( line_edit.text() )
             
             values.append(comp)
-        #print(values)
+        if self.filepath.endswith(".bva"):
+            # we KNOW that values only has one entry
+            combo_box = self.other_info_box.itemAtPosition(i, 1).widget()
+            if self.combo_box.currentIndex() == 0: #if swap
+                values[0][2] = ""
+            
+        #print(self.selected, self.bmd_thing_select.currentText(), values)
         return ( [[self.selected, self.bmd_thing_select.currentText(), values]] )
 
          
@@ -273,5 +281,5 @@ class maedit_widget(QWidget, themed_window):
                 self.bmd_thing_select.addItems( j3d.get_bones_from_bmd(filepath) )
             elif self.selected in [".btk", ".btp", ".bpk", ".brk"]:
                 self.bmd_thing_select.addItems( j3d.get_materials_from_bmd(filepath) )
-            elif self.selected in [".blk", ".bla"]:
+            elif self.selected in [".blk", ".bla", ".bva"]:
                 self.bmd_thing_select.addItems( j3d.get_meshes_from_bmd(filepath) )
