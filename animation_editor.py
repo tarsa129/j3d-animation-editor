@@ -235,11 +235,14 @@ class GenEditor(QMainWindow, themed_window):
         self.paste_cells_action = QAction("Paste Selected Cells", self)  
         self.clear_cells_action = QAction("Clear Selected Cells", self)
         self.select_all_action = QAction("Select All Cells", self)
+        self.select_all_action = QAction("Select All Cells", self)
+        self.remove_dups_action = QAction("Remove Duplicate Frames", self)
         
         self.copy_cells_action.triggered.connect(self.emit_copy_cells)
         self.paste_cells_action.triggered.connect(self.emit_paste_cells)
         self.clear_cells_action.triggered.connect(self.emit_clear_cells)
         self.select_all_action.triggered.connect(self.emit_select_all)
+        self.remove_dups_action.triggered.connect(self.emit_remove_dups)
         
         self.copy_cells_action.setShortcut("Ctrl+C")
         self.paste_cells_action.setShortcut("Ctrl+V")
@@ -264,11 +267,14 @@ class GenEditor(QMainWindow, themed_window):
         self.edit_menu.addAction(self.paste_cells_action)
         self.edit_menu.addAction(self.clear_cells_action)
         self.edit_menu.addAction(self.select_all_action)
-        
+        self.edit_menu.addSeparator()
         self.edit_menu.addAction(self.add_row_end)
         self.edit_menu.addAction(self.add_row_next)
         self.edit_menu.addAction(self.remove_row_end)
         self.edit_menu.addAction(self.remove_row_here)
+        self.edit_menu.addSeparator()
+        self.edit_menu.addAction(self.remove_dups_action)
+        
         
         
         
@@ -1045,7 +1051,7 @@ class GenEditor(QMainWindow, themed_window):
 
     def maedit_from_bar(self, maedit_info, one_time):
         if maedit_info is not None:
-            print(maedit_info)
+            #print(maedit_info)
             for maedit_entry in maedit_info:
                 #print(maedit_entry)
                 anim_type = maedit_entry[0]
@@ -1146,9 +1152,7 @@ class GenEditor(QMainWindow, themed_window):
                 this_transform.append(m.group(4) )
                 print(this_transform)
                 return this_transform
-            
-            
-            
+                     
         elif file_type in [".bpk", ".brk"]:
             regex = "([rbag])\w*" + ending_part
             m = re.match(regex, line, re.IGNORECASE)    
@@ -1156,21 +1160,21 @@ class GenEditor(QMainWindow, themed_window):
                 #print("got a match")
                 this_transform = []
                 comp = ""
-                if m.group(0).lower().startswith("r"):
-                    comp += "Red "
-                elif m.group(0).lower().startswith("b"):
-                    comp += "Blue "
-                elif m.group(0).lower().startswith("g"):
-                    comp += "Green "
-                elif m.group(0).lower().startswith("a"):
-                    comp += "Alpha "
-                comp += m.group(2).upper()
+                if m.group(1).lower().startswith("r"):
+                    comp += "Red"
+                elif m.group(1).lower().startswith("b"):
+                    comp += "Blue"
+                elif m.group(1).lower().startswith("g"):
+                    comp += "Green"
+                elif m.group(1).lower().startswith("a"):
+                    comp += "Alpha"
+                #comp += m.group(2).upper()
                 
                 comp += ":"
                 
                 ops = ["+", "-", "*", "/", "avg"]
                 try:
-                    op_code = ops.index( m.group(3) )
+                    op_code = ops.index( m.group(3).lower() )
                 except:
                     op_code = 4
                 
@@ -1180,7 +1184,7 @@ class GenEditor(QMainWindow, themed_window):
                 print(this_transform)
                 return this_transform
             
-        elif file_type in [".blk", ".bla", ".btp", ".bva"]: #single - line stuff
+        elif file_type in [".blk", ".bla", ".btp"]: #single - line stuff
             regex = "(\+|\-|\*|/|avg|set|)\s*(\d*)"
             m = re.match(regex, line, re.IGNORECASE)    
             if m is not None:
@@ -1190,18 +1194,40 @@ class GenEditor(QMainWindow, themed_window):
                 
                 ops = ["+", "-", "*", "/", "avg"]
                 try:
-                    op_code = ops.index( m.group(3) )
+                    op_code = ops.index( m.group(0) )
                 except:
                     op_code = 4
                 if file_type == ".btp":                   
                     this_transform.append("Texture Index")
                 elif file_type in [".blk", ".bla"]:
                     this_transform.append("Weight")
-                elif file_type == ".bva":
-                    this_transform.append("Visibility")
                 this_transform.append(op_code )
-                this_transform.append(m.group(4) )
+                this_transform.append(m.group(1) )
                 print(this_transform)
+                return this_transform
+        elif file_type == ".bva":
+            regex = "(swap|set)\s*([01]*)"
+            m = re.match(regex, line, re.IGNORECASE)    
+            if m is not None:
+                #print("got a match")
+                this_transform = []
+                #print( m.group(0), m.group(1), m.group(2) )
+                
+                ops = ["swap", "set"]
+                try:
+                    op_code = ops.index( m.group(1).lower() )
+                except:
+                    op_code = 1
+
+                this_transform.append("Visibility")
+                this_transform.append(op_code )
+                
+                if op_code == 0:
+                    this_transform.append( "" )
+                else:
+                
+                    this_transform.append(m.group(2) )
+                #print(this_transform)
                 return this_transform
         elif file_type == ".btk":
             regex =  "(scale|rot\w*|trans\w*)\s([uvw])" + ending_part
@@ -1267,6 +1293,7 @@ class GenEditor(QMainWindow, themed_window):
                         return array[1]
             
             def operations_bva (array, operation):
+                #print( "operation "  + str(operation) + " " + str (array) )
                 if array[1] == "": #assume switch has a 0 case 
                     if array[0] == 1:
                         return 0
@@ -1291,7 +1318,7 @@ class GenEditor(QMainWindow, themed_window):
             for i in range(len(info)):
                 item = self.table_display.item(i, 0) 
                 #print(item.text(), name)
-                if item.text() == name:
+                if item.text().lower() == name.lower():
                     #single line animation
                     if len(values) == 1:
                         look_col += 1
@@ -1315,8 +1342,8 @@ class GenEditor(QMainWindow, themed_window):
         found = False
         while found == False and found_row > 1 and found_row < stop_row:
             item = self.table_display.item(found_row, look_col)
-            print(item.text(), value)
-            if item is not None and item.text() == value:
+            print("find row 2", item.text(), value)
+            if item is not None and item.text().lower() == value.lower():
                 found = True
             else:
                 found_row += 1
@@ -2001,6 +2028,47 @@ class GenEditor(QMainWindow, themed_window):
             self.right_vbox.removeWidget(self.frames_box)
             self.frames_box = None
 
+    def emit_remove_dups(self):
+        if self.anim_bar.currentItem() is None:
+            return
+            
+        filepath = self.anim_bar.currentItem().filepath[-4:]
+        stop_row =  self.table_display.columnCount()
+        look_col = 2
+        if filepath in [".bck", ".bca", ".brk"]:
+            look_col = 3
+        elif filepath == ".blk":
+            look_col = 1
+        
+        for i in range(2, self.table_display.rowCount() ) :
+            local_look = look_col
+            ini_item = self.table_display.item(i, local_look)
+            
+            while ini_item is None or ini_item.text().strip() == "":
+                local_look += 1
+                ini_item = self.table_display.item(i, local_look)
+            #print("initial col " + str(local_look))
+            curr_value = float(ini_item.text())
+            local_look += 1
+            
+            for j in range( local_look, stop_row):
+                item = self.table_display.item(i, j)
+                
+                #print (item.text() + " at " + str(i) + " " + str(j) )
+                if item is not None and item.text().strip() != "":
+                    CUTOFF = .001
+                    try:
+                        if abs( float(item.text()) - curr_value) < CUTOFF:
+                            item.setText("")
+                        else:
+                            curr_value = float(item.text())
+                    except:
+                        item.setText("")
+
+                
+        
+
+    # sound stuff - kill me
     def sounds_dialogue(self, one_time = False):
         if self.popout and self.sounds_window is None:
             self.sounds_window = sounds_widget.sounds_window()
