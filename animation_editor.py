@@ -23,7 +23,7 @@ import widgets.select_model as select_widget
 import widgets.sound_editor as sounds_widget
 from widgets.theme_handler import themed_window
 import glob
-
+from os import path
 
 from configparser import ConfigParser
 
@@ -48,10 +48,14 @@ class GenEditor(QMainWindow, themed_window):
         self.maedit_box = None
         self.sounds_box = None
         
+        self.sound_enabled = False
+        
         self.compression = 0
         
         self.popout = True
         self.theme = "default"
+        self.include_subdirs = False
+        self.load_model = False
          
         self.setAcceptDrops(True)
         self.setup_ui()
@@ -65,6 +69,7 @@ class GenEditor(QMainWindow, themed_window):
         self.setWindowTitle("j3d animation editor")
         self.setup_ui_menubar()
         self.setup_ui_main()
+        self.edit_gui()
         self.read_settings_ini()
         
         
@@ -144,9 +149,7 @@ class GenEditor(QMainWindow, themed_window):
         self.mid_compression.triggered.connect(lambda: self.set_compression_level(3))
         self.high_compression.triggered.connect(lambda: self.set_compression_level(4))
           
-        self.save_file_action.setDisabled(True)
-        self.save_file_as_action.setDisabled(True)
-        self.save_file_all_action.setDisabled(True)
+        
         
         #self.combine_animations.triggered.connct(self.combine_anims)
 
@@ -198,7 +201,7 @@ class GenEditor(QMainWindow, themed_window):
         self.peaches_theme.triggered.connect(lambda: self.toggle_theme("./themes/peaches and plums.qss") )
         
         self.sep_window = QAction("Pop Out Windows", self, checkable = True)
-        self.sep_window.setChecked(True)
+        #self.sep_window.setChecked(True)
         self.sep_window.triggered.connect( self.set_popout)
         
         self.show_widget = QMenu("Show Feature")
@@ -332,7 +335,7 @@ class GenEditor(QMainWindow, themed_window):
         self.model.addAction(self.load_bones_all)
         self.model.addAction(self.match_bones)
        
-        self.model.setDisabled(True)
+        
         
         self.menubar.addAction(self.model.menuAction())
         
@@ -345,10 +348,12 @@ class GenEditor(QMainWindow, themed_window):
         self.mass_edit_action = QAction(self)
         self.mass_edit_action.setText("Mass Animation Editor")
         self.mass_edit_action.triggered.connect(lambda: self.maedit_dialogue(one_time = True))
+        self.mass_edit_action.setShortcut("Ctrl + M")
         
         self.mass_edit_file = QAction(self)
         self.mass_edit_file.setText("Mass Edit from File")
         self.mass_edit_file.triggered.connect( self.maedit_file )
+        self.mass_edit_file.setShortcut("Shift + Ctrl + M")
         
         self.mass_edit.addAction(self.mass_edit_action)
         self.mass_edit.addAction(self.mass_edit_file)
@@ -502,7 +507,7 @@ class GenEditor(QMainWindow, themed_window):
         self.show_widget.setDisabled( popout_or_not )
         
         if self.popout:
-            self.right_vbox.hide()
+            self.workaroundr.hide()
 
         #specific editors
         show_create = configur.get('menu options',  'show_create_animation_maker'  )
@@ -531,7 +536,71 @@ class GenEditor(QMainWindow, themed_window):
         if show_sounds:
             self.show_sounds.setChecked(True)
             self.sounds_dialogue()
+           
+        include_subdirs = configur.get('folder load options', 'include_subdirectories')
+        self.include_subdirs = include_subdirs.lower() == "true"
+        load_model = configur.get('folder load options', 'load_model_file')
+        self.load_model = load_model.lower() == "true"
+        
+
+        main_game = configur.get('sound options', 'main_game')
+        if main_game.lower() in ["t", "tww", "wind waker", "the wind waker", "tp", "twilight princess"]:
+            self.sound_enabled = True
+        else:
+            self.show_widget.removeAction(self.show_sounds)
+            self.show_sounds.setParent(None)
+      
+    def write_settings_ini(self, setting):
+        configur = ConfigParser()
+        configur.read('settings.ini')
+        configur[setting[0]][setting[1]] = str(setting[2])
+        
+        with open('settings.ini', 'w') as f:
+            configur.write(f)
+        
+        
+    def edit_gui(self, filename = None):
+        are_no_anims = self.anim_bar.topLevelItemCount() == 0
+        self.save_file_parent.setDisabled(are_no_anims)
+        self.mass_edit.setDisabled(are_no_anims)
+        self.workaround.setDisabled(are_no_anims)
+        self.workaroundr.setDisabled(are_no_anims)
+        self.match_bones.setDisabled(are_no_anims)
+        self.model.setDisabled(are_no_anims)
+        self.edit_menu.setDisabled(are_no_anims)
+        
+        if self.anim_bar.topLevelItemCount() == 0:
+            #if there are no animations, disable everything
+            return
+        else:
+            if filename is None:
+                extension = self.anim_bar.currentItem().filepath[-4:]
+            else:
+                extension = filename[-4:]
+                
+            if extension == ".bck":
+                self.convert_to_all.setDisabled(False)
+                self.load_bones.setDisabled(False)
+                self.convert_to_key.setDisabled(True)
+            elif extension == ".bca":
+                self.convert_to_key.setDisabled(False)
+                self.load_bones.setDisabled(False)
+                self.convert_to_all.setDisabled(True)
+            elif extension == ".blk":
+                self.convert_to_all.setDisabled(False)
+                self.load_bones.setDisabled(True)
+                self.convert_to_key.setDisabled(True)
+            elif extension == ".bla":
+                self.convert_to_key.setDisabled(False)
+                self.load_bones.setDisabled(True)
+                self.convert_to_all.setDisabled(True)
+            else:
+                self.convert_to_key.setDisabled(True)
+                self.load_bones.setDisabled(True)
+                self.convert_to_all.setDisabled(True)
+
             
+
         
     #file stuff
       
@@ -541,56 +610,68 @@ class GenEditor(QMainWindow, themed_window):
             
         for filepath in filepaths:
             if filepath:        
-
-                animation_object = j3d.sort_file(filepath)               
-                self.new_animation_from_object(animation_object, filepath)
-    
+                self.open_file(filepath)
+                   
     def button_load_folder(self):
         if self.folder_window == None:
-            self.folder_window = folder_widget.folder_dia()
+            self.folder_window = folder_widget.folder_dia(self.include_subdirs, self.load_model)
             
             if self.folder_window.exec_() == QDialog.Accepted:
                 directory = self.folder_window.selectedUrls()[0].toLocalFile() 
                 print(directory)
                 
-                files = []
-                types = ("*.bca", "*.bck", "*.bla", "*.blk", "*.bpk", "*.brk", "*.btk", "*.btp", "*.bva")  
-                if self.folder_window.isChecked():
-                    for exten in types:
-                        files.extend(glob.glob(directory+"/**/"+exten, recursive = True ) )
-                else:
-                    for exten in types:
-                        files.extend(glob.glob(directory+"/"+exten ) )
+                if self.folder_window.isChecked() != self.include_subdirs:
+                    self.write_settings_ini(['folder load options', 'include_subdirectories', self.folder_window.isChecked()])
+                if self.folder_window.load_model() != self.load_model:
+                    self.write_settings_ini(['folder load options', 'load_model_file', self.folder_window.load_model()]) 
                 
-                #print (files)
+                self.include_subdirs = self.folder_window.isChecked()
+                self.load_model = self.folder_window.load_model()
+                self.open_folder(directory)
+            
                 
-                for file in files:
-                    animation_object = j3d.sort_file(file)               
-                    self.new_animation_from_object(animation_object, file)
-                    
-                if self.folder_window.load_model():
-                    model_files = []
-                    model_types = ("*.bmd", "*.bdl")
-                    
-                    if self.folder_window.isChecked():
-                        for exten in model_types:
-                            model_files.extend(glob.glob(directory+"/**/"+exten, recursive = True ) )
-                    else:
-                        for exten in model_types:
-                            model_files.extend(glob.glob(directory+"/"+exten ) )
-                    
-                    if len(model_files) == 1:
-                        self.load_bone_names_all_file(model_files[0])
-                    else:
-                        load_model = select_widget.model_select( model_files)
-                        load_model.setWindowModality(QtCore.Qt.ApplicationModal)
-                        load_model.exec_()
-                        model_filepath = load_model.selected
-                        if model_filepath is not None:
-                            self.load_bone_names_all_file(model_filepath)
-
-        self.folder_window = None
+            self.folder_window = None
+    
+    def open_folder(self, directory ):
+        subdirs = self.include_subdirs
+        models = self.load_model
+        files = []
+        types = ("*.bca", "*.bck", "*.bla", "*.blk", "*.bpk", "*.brk", "*.btk", "*.btp", "*.bva")  
+        if subdirs:
+            for exten in types:
+                files.extend(glob.glob(directory+"/**/"+exten, recursive = True ) )
+        else:
+            for exten in types:
+                files.extend(glob.glob(directory+"/"+exten ) )
         
+        #print (files)
+        
+        for file in files:
+            animation_object = j3d.sort_file(file)               
+            self.new_animation_from_object(animation_object, file)
+            
+        if models:
+            model_files = []
+            model_types = ("*.bmd", "*.bdl")
+            
+            if subdirs:
+                for exten in model_types:
+                    model_files.extend(glob.glob(directory+"/**/"+exten, recursive = True ) )
+            else:
+                for exten in model_types:
+                    model_files.extend(glob.glob(directory+"/"+exten ) )
+            
+           
+            if len(model_files) == 1:
+                self.load_bone_names_all_file(model_files[0])
+            elif len(model_files) > 0:
+                load_model = select_widget.model_select( model_files)
+                load_model.setWindowModality(QtCore.Qt.ApplicationModal)
+                load_model.exec_()
+                model_filepath = load_model.selected
+                if model_filepath is not None:
+                    self.load_bone_names_all_file(model_filepath)
+
     def universal_save(self, filepath = ""):
         
         current_item = self.anim_bar.currentItem()
@@ -660,7 +741,7 @@ class GenEditor(QMainWindow, themed_window):
             url = mime_data.urls()[0]
             filepath = url.toLocalFile()
             exten = filepath[filepath.rfind("."):].lower()
-            if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva", ".anim", ".fbx" ]:
+            if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva", ".anim", ".fbx", ".txt" ]:
                 event.acceptProposedAction()
             if exten in [".bmd", ".bdl"]:
                 anim_exten = self.anim_bar.currentItem().filepath
@@ -675,8 +756,7 @@ class GenEditor(QMainWindow, themed_window):
             filepath = url.toLocalFile()
             exten = filepath[filepath.rfind("."):].lower()
             if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva" ]:
-                animation_object = j3d.sort_file(filepath)            
-                self.new_animation_from_object(animation_object, filepath)
+                self.open_file(filepath)
             elif exten == ".anim": 
                 bck = j3d.import_anim_file(filepath)
                 filepath = filepath[0:-5] + ".bck"
@@ -691,13 +771,22 @@ class GenEditor(QMainWindow, themed_window):
                     self.new_animation_from_object(bck[1],filepath +  bck[0] + ".bck")
             elif exten in [".bmd", ".bdl"]:
                 self.load_bone_names(filepath)
+            elif exten == ".txt":
+                self.maedit_file(filepath)
+        
+    def open_file(self, filepath):
+        animation_object = j3d.sort_file(filepath)               
+        self.new_animation_from_object(animation_object, filepath)
         
     def set_compression_level(self, level):
         self.compression = level
+        levels = ["auto", "none", "low", "mid", "high"]
+        self.write_settings_ini(["menu options", "compression", levels[level] ])
    
     #view menu functions
     
     def toggle_theme(self, filepath):
+        #print("toggle theme")
         self.toggle_dark_theme(filepath)
         if self.create_box is not None:
             self.create_box.main_widget.toggle_dark_theme(filepath)
@@ -716,8 +805,10 @@ class GenEditor(QMainWindow, themed_window):
             self.maedit_window.toggle_dark_theme(filepath)
         if self.sounds_window is not None:
             self.sounds_window.toggle_dark_theme(filepath)
-        
-    
+            
+        #print( filepath[filepath.rfind("/") + 1:filepath.rfind(".qss")] )
+        self.write_settings_ini(["menu options", "theme", filepath[filepath.rfind("/") + 1:filepath.rfind(".qss")] ])
+          
     def set_popout(self):
         self.popout = self.sep_window.isChecked()
         if self.sep_window.isChecked():
@@ -726,6 +817,7 @@ class GenEditor(QMainWindow, themed_window):
         else:
             self.workaroundr.show()
             self.show_widget.setDisabled(False)
+        self.write_settings_ini(["menu options", "popup_additional_windows", self.sep_window.isChecked() ] )
 
     def toggle_show_create(self):
         if self.show_create.isChecked():
@@ -734,7 +826,8 @@ class GenEditor(QMainWindow, themed_window):
             self.create_box.setParent(None)
             self.right_vbox.removeWidget(self.create_box)
             self.create_box = None
-               
+        self.write_settings_ini(["menu options", "show_create_animation_maker", self.show_create.isChecked() ] )
+    
     def toggle_show_frames(self):
         if self.show_frames.isChecked():
             self.frames_dialogue()
@@ -742,7 +835,8 @@ class GenEditor(QMainWindow, themed_window):
             self.frames_box.setParent(None)
             self.right_vbox.removeWidget(self.frames_box)
             self.frames_box = None   
-
+        self.write_settings_ini(["menu options", "show_frames_adder", self.show_frames.isChecked() ] )
+        
     def toggle_show_maedit(self):
         if self.show_maedit.isChecked():
             self.maedit_dialogue()
@@ -750,49 +844,21 @@ class GenEditor(QMainWindow, themed_window):
             self.maedit_box.setParent(None)
             self.right_vbox.removeWidget(self.maedit_box)
             self.maedit_box = None 
+        self.write_settings_ini(["menu options", "show_mass_animation_editor", self.show_maedit.isChecked() ] )
             
     def toggle_show_sounds(self):
-        print("toggle show sounds")
+        #print("toggle show sounds")
         if self.show_sounds.isChecked():
-            print("add sounds box")
+            #print("add sounds box")
             self.sounds_dialogue()
         else:
-            print("remove sounds box")
+            #print("remove sounds box")
             self.sounds_box.setParent(None)
             self.right_vbox.removeWidget(self.sounds_box)
             self.sounds_box = None 
+        self.write_settings_ini(["menu options", "show_sound_editor", self.show_sounds.isChecked() ] )
 
    #convert stuff
-    
-    #okay this is just a general ui thing
-    def edit_convert_actions(self, filename):
-        extension = filename[-4:]
-        if extension in {".bck", ".blk"}:
-            self.convert_to_all.setDisabled(False)
-            self.convert_to_key.setDisabled(True)
-        elif extension in {".bca", ".bla"}:
-            self.convert_to_all.setDisabled(True)
-            self.convert_to_key.setDisabled(False)
-        else:
-            self.convert_to_all.setDisabled(True)
-            self.convert_to_key.setDisabled(True)
-        
-        if extension == ".bva":
-            self.match_bones.setDisabled(True)
-        else:
-            self.match_bones.setDisabled(False)
-        
-        self.model.setDisabled(False)
-        if extension in {".bck", ".bca"}:
-            self.load_bones.setDisabled(False)
-        else:
-            self.load_bones.setDisabled(True)
-            
-        are_no_anims = self.anim_bar.topLevelItemCount() == 0
-        self.workaround.setDisabled(are_no_anims)
-        self.save_file_action.setDisabled(are_no_anims)
-        self.save_file_as_action.setDisabled(are_no_anims)
-        self.save_file_all_action.setDisabled(are_no_anims)
     
     def convert_to_k(self):
         current_item = self.anim_bar.currentItem()
@@ -898,11 +964,9 @@ class GenEditor(QMainWindow, themed_window):
                 self.sounds_box.main_widget.setup_sound_data()
 
         # deal with the various ui stuff
-        self.edit_convert_actions(filepath)
+        self.edit_gui(filepath)
         self.setWindowTitle("j3d animation editor - " + filepath)
-        self.bt_add_frames_adv.setDisabled(False)       
-        self.save_file_action.setDisabled(False)
-        self.save_file_as_action.setDisabled(False)
+
             
         #do the adding
         self.is_remove = True  
@@ -916,9 +980,6 @@ class GenEditor(QMainWindow, themed_window):
         self.is_remove = False
         
         return loaded_animation
-
-    def edit_gui(self):
-        pass
 
     def load_bone_names(self, filename = None):
         filepath = None
@@ -1079,10 +1140,10 @@ class GenEditor(QMainWindow, themed_window):
             self.right_vbox.removeWidget(self.maedit_box)
             self.maedit_box = None
     
-    def maedit_file(self):
-        
-        filter =  "Mass Editing Text File(*.txt)"
-        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , filter )
+    def maedit_file(self, filepath = None):
+        if filepath is None:
+            filter =  "Mass Editing Text File(*.txt)"
+            filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , filter )
             
         if filepath: 
             with open(filepath, "r") as f:
@@ -1576,7 +1637,7 @@ class GenEditor(QMainWindow, themed_window):
         self.table_display.setVerticalHeaderLabels(first_vals)
         
         self.setWindowTitle("j3d animation editor - " + filepath)
-        self.edit_convert_actions(filepath)
+        self.edit_gui(filepath)
         
 
 
@@ -2065,9 +2126,6 @@ class GenEditor(QMainWindow, themed_window):
                     except:
                         item.setText("")
 
-                
-        
-
     # sound stuff - kill me
     def sounds_dialogue(self, one_time = False):
         if self.popout and self.sounds_window is None:
@@ -2112,15 +2170,27 @@ if __name__ == "__main__":
     sys.excepthook = except_hook
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("input", default = None,  nargs = '?')
 
     args = parser.parse_args()
 
     app = QApplication(sys.argv)
     
+    
 
     pikmin_gui = GenEditor()
     pikmin_gui.clipboard = app.clipboard() # we can put stuff on the clipboard with this
     pikmin_gui.show()
+    
+    if len(sys.argv) > 1 and path.exists(sys.argv[1]):
+        if path.isfile(sys.argv[1]):
+            #provided a file
+            filepath = sys.argv[1][-4:]
+            if filepath in [".bck", ".bca", ".btk", ".brk", ".btp", ".bpk", ".bla", ".blk", ".bva" ]:
+            
+                pikmin_gui.open_file(sys.argv[1])
+        elif path.isdir(sys.argv[1] ):
+            pikmin_gui.open_folder(sys.argv[1] )
     
     err_code = app.exec()
 

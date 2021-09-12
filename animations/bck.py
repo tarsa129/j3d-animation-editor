@@ -147,7 +147,7 @@ class bck(j3d.basic_animation):
    
                 tangent_type = max(tan_type, tangent_type)
                 for j in range(count):
-                    print( offset, j, count,tan_type, len(scales) )
+                    #print( offset, j, count,tan_type, len(scales) )
                     comp = j3d.AnimComponent.from_array(offset, j, count, scales, tan_type)
                     if comp.tangentIn == 0:
                         bone_animation.tan_inter[inter_count] = 1
@@ -430,7 +430,7 @@ class bck(j3d.basic_animation):
         return info
     
     @classmethod
-    def from_table(cls, f, info, sound_data):
+    def from_table(cls, f, info, sound_data = None):
         print("loop mode " + str( info[0][1] ) )
         bck = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
         
