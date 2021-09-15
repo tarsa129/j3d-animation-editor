@@ -349,7 +349,7 @@ class bck(j3d.basic_animation):
         #turn the array into a bunch of animcomponents
         for i in range( len(all_values) ):
             for j in range( len(all_values[i] ) ):
-                all_values[i][j] = j3d.AnimComponent(j, all_values[i][j])
+                all_values[i][j] = j3d.AnimComponent(j - 1, all_values[i][j])
         #print( all_values)
         
         #process the bones
