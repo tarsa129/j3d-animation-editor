@@ -14,18 +14,18 @@ class tree_item(QTreeWidgetItem):
         self.bmd_file = None
         self.sound_data = None
         
-        
+        self.changed = False
         
     def set_values(self, display_info, filepath, compressed ):
         self.display_info = display_info
-        self.filepath = filepath
+        self.filepath = filepath.replace("|", ".")
         self.compressed = compressed
         
         
         forward_i = filepath.rfind("/") + 1
         backwad_i = filepath.rfind("\\") + 1
         
-        self.setText(0, filepath[max(forward_i, backwad_i):])
+        self.setText(0, self.filepath[max(forward_i, backwad_i):])
     
     def set_sound(self, sound_data):
         self.sound_data = sound_data
@@ -35,9 +35,11 @@ class tree_item(QTreeWidgetItem):
         else:
             self.setIcon(0, QIcon() )
     
-    def save_animation(self, other_filepath = "", compress_dis = 1):
+    def save_animation(self, other_filepath = "", compress_dis = 1, save_all = False):
         
-        
+        if save_all and not self.changed:
+            print("skipping " + self.filepath + " because nothing has changed")
+            return
         if other_filepath != "":
             working_filepath = other_filepath
         else:
@@ -65,7 +67,7 @@ class tree_item(QTreeWidgetItem):
                     out = compress_slow(f)
             with open(working_filepath, "wb") as f:
                 f.write(out.getbuffer())
-    
+        self.changed = False
     def convert_to_k(self):
         filepath = self.filepath[:-1] + "k"
         info = j3d.fix_array(self.display_info)  

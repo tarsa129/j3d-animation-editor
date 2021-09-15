@@ -55,9 +55,10 @@ class animation_bar(QTreeWidget):
             if self.main_editor.sounds_box is not None:
                 self.main_editor.sounds_box.main_widget.sound_data = self.sound_data_clipboard
                 self.main_editor.sounds_box.main_widget.setup_sound_data()
-            
         
-        if self.curr_item.filepath.endswith(".bck"):
+        
+        
+        if self.main_editor.sound_enabled and self.curr_item.filepath.endswith(".bck"):
             edit_sound_action = QAction("Edit Sound Data", self)
             edit_sound_action.triggered.connect( emit_sound_window )
             context_menu.addAction( edit_sound_action )

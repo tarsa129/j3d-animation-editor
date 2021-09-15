@@ -531,6 +531,14 @@ def import_anim_file(filepath):
         info = bck_file.bck.from_maya_anim(f)
         f.close()
         return info
+        
+def import_bvh_file(filepath):
+    with open(filepath, "r") as f:
+        print("hello")
+        info = bck_file.bck.from_blender_bvh(f)
+        
+        f.close()
+        return info
 
 def import_fbx_file(filepath):
     from animations.fbx_scripts import import_fbx_file
@@ -578,7 +586,7 @@ def sort_file(filepath):
         f.close()
             
 def sort_filepath(filepath, information, sound_data = None):
-    print(filepath)
+    #print(filepath)
     if filepath.endswith(".btp"):
         return btp_file.btp.from_table(filepath, information)
     elif filepath.endswith(".btk"):
@@ -622,7 +630,7 @@ def create_empty(information):
     return table
 
 def match_bmd(filepath, information, strings, filepathh):
-    print(filepath)
+    #print(filepath)
 
     if filepath.endswith(".btp"):
         table = btp_file.btp.match_bmd(information, strings) 

@@ -218,7 +218,6 @@ class bck(j3d.basic_animation):
         
         return bck
     
-   
     @classmethod
     def from_maya_anim(cls, filepath):
         lines = filepath.readlines()
@@ -314,12 +313,100 @@ class bck(j3d.basic_animation):
         
         
         return bck
-    
-    
+  
     @classmethod 
     def from_blender_bvh(cls, filepath):
-        lines = filepath.readlines()
-    
+        import re
+        lines = filepath.read().splitlines()
+        lines = [ line for line in lines if line != ""]
+        
+        
+        #process motion
+        try:
+            motion_index = lines.index("MOTION")
+            motion_line = motion_index
+        except:
+            return
+        
+        motion_index += 1
+        #print( lines[motion_index] )
+        duration_regex = "^Frames: (\d+)$"
+        m = re.match(duration_regex, lines[motion_index])
+        if m is None:
+            return
+        bck = cls( duration = int(m.group(1)) )
+        motion_index += 2
+        
+        all_values = []
+        
+        while motion_index < len(lines):
+            curr_values = lines[motion_index].split()
+            #print( curr_values)
+            all_values.append(curr_values)
+            motion_index += 1
+        all_values =[[row[i] for row in all_values] for i in range(len(all_values[0]))]
+        
+        #turn the array into a bunch of animcomponents
+        for i in range( len(all_values) ):
+            for j in range( len(all_values[i] ) ):
+                all_values[i][j] = j3d.AnimComponent(j, all_values[i][j])
+        #print( all_values)
+        
+        #process the bones
+        assert( lines[0] == "HIERARCHY" )  
+
+        hierachy_index = 1
+        values_index = 0
+        max_rotation = 0
+        
+        
+        while hierachy_index < motion_line:
+            #print(hierachy_index)
+            bone_regex = "^\s*(ROOT|JOINT) (\w*)$"
+            m = re.match(bone_regex, lines[hierachy_index])
+            #print(lines[hierachy_index])
+            if m is None:
+                return
+            curr_bone = bone_anim()
+            curr_bone.name = m.group(2)
+            #print(curr_bone.name)
+            
+            curr_bone.add_scale( "X", j3d.AnimComponent(0, 1.0) )
+            curr_bone.add_scale( "Y", j3d.AnimComponent(0, 1.0) )
+            curr_bone.add_scale( "Z", j3d.AnimComponent(0, 1.0) )
+            
+            
+            hierachy_index += 3 #to get to channels
+            channels = lines[hierachy_index]
+            for axis in ["Xposition", "Yposition", "Zposition", "Xrotation", "Yrotation", "Zrotation"]:
+                if channels.find(axis) != -1:
+                    #the particular channel is in there
+                    if axis.find("position") != -1:
+                        #if the axis is a position
+                        for comp in all_values[values_index]:
+                            curr_bone.add_translation( axis[0], comp)
+                        values_index += 1
+                    else:
+                        #if the axis is a rotation
+                        for comp in all_values[values_index]:
+                            curr_bone.add_rotation( axis[0], comp)
+                            max_rotation = max(float(comp.value), max_rotation)    
+                        values_index += 1
+            
+            hierachy_index += 1
+            
+            if lines[hierachy_index].strip() == "End Site":
+                hierachy_index += 3
+            while lines[hierachy_index].strip() == "}":
+                hierachy_index += 1
+            
+            
+            bck.animations.append(curr_bone)
+        
+        
+        bck.anglescale = int( max_rotation / 180) ;
+        
+        return bck
     
     def from_fbx_anim(self):
          
@@ -431,10 +518,10 @@ class bck(j3d.basic_animation):
     
     @classmethod
     def from_table(cls, f, info, sound_data = None):
-        print("loop mode " + str( info[0][1] ) )
+        #print("loop mode " + str( info[0][1] ) )
         bck = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
         
-        print(sound_data)
+        #print(sound_data)
         bck.sound = sound_data
         if len(info[0]) >= 7 and info[0][7] != "":
             bck.tan_type = int( info[0][7] )
@@ -448,8 +535,8 @@ class bck(j3d.basic_animation):
                 text = int(text)
                 keyframes.append(text)
         
-        print("keyframes")
-        print (keyframes)
+        #print("keyframes")
+        #print (keyframes)
         
         for i in range( int( len(info) / 9 )   ): #for each bone
             line = 9 * i + 2
@@ -505,7 +592,7 @@ class bck(j3d.basic_animation):
             
             bck.animations.append(current_anim)
         if f == "":
-            print("no saving")
+            #print("no saving")
             return bck
         else:
             with open(f, "wb") as f:

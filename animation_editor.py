@@ -291,12 +291,16 @@ class GenEditor(QMainWindow, themed_window):
         self.convert_to_all = QAction("Save as .bca / .bla", self)
         self.import_anim = QAction("Import Maya .anim", self)
         self.export_anim = QAction("Export Maya .anim", self)
+        self.import_bvh = QAction("Import .bvh", self)
         self.import_fbx = QAction("Import .fbx", self)
         
         self.convert_to_key.triggered.connect(self.convert_to_k)
         self.convert_to_all.triggered.connect(self.convert_to_a)
         self.import_anim.triggered.connect(self.import_anim_file)
         self.export_anim.triggered.connect(self.export_anim_file)
+        
+        self.import_bvh.triggered.connect(self.import_bvh_file)
+        
         self.import_fbx.triggered.connect(self.import_fbx_file)
         
         self.convert_to_key.setShortcut("Ctrl+K")
@@ -305,6 +309,7 @@ class GenEditor(QMainWindow, themed_window):
         self.convert.addAction(self.convert_to_all)
         self.convert.addAction(self.import_anim)
         self.convert.addAction(self.export_anim)
+        self.convert.addAction(self.import_bvh)
         self.convert.addAction(self.import_fbx)
         
         self.convert_to_key.setDisabled(True)
@@ -557,8 +562,7 @@ class GenEditor(QMainWindow, themed_window):
         
         with open('settings.ini', 'w') as f:
             configur.write(f)
-        
-        
+            
     def edit_gui(self, filename = None):
         are_no_anims = self.anim_bar.topLevelItemCount() == 0
         self.save_file_parent.setDisabled(are_no_anims)
@@ -571,6 +575,7 @@ class GenEditor(QMainWindow, themed_window):
         
         if self.anim_bar.topLevelItemCount() == 0:
             #if there are no animations, disable everything
+            self.export_anim.setDisabled(True)
             return
         else:
             if filename is None:
@@ -582,26 +587,28 @@ class GenEditor(QMainWindow, themed_window):
                 self.convert_to_all.setDisabled(False)
                 self.load_bones.setDisabled(False)
                 self.convert_to_key.setDisabled(True)
+                self.export_anim.setDisabled(False)
             elif extension == ".bca":
                 self.convert_to_key.setDisabled(False)
                 self.load_bones.setDisabled(False)
                 self.convert_to_all.setDisabled(True)
+                self.export_anim.setDisabled(False)
             elif extension == ".blk":
                 self.convert_to_all.setDisabled(False)
                 self.load_bones.setDisabled(True)
                 self.convert_to_key.setDisabled(True)
+                elf.export_anim.setDisabled(True)
             elif extension == ".bla":
                 self.convert_to_key.setDisabled(False)
                 self.load_bones.setDisabled(True)
                 self.convert_to_all.setDisabled(True)
+                elf.export_anim.setDisabled(True)
             else:
                 self.convert_to_key.setDisabled(True)
                 self.load_bones.setDisabled(True)
                 self.convert_to_all.setDisabled(True)
-
-            
-
-        
+                elf.export_anim.setDisabled(True)
+    
     #file stuff
       
     def button_load_level(self):
@@ -679,6 +686,7 @@ class GenEditor(QMainWindow, themed_window):
         if current_item.filepath.endswith(".bck") and self.sounds_box is not None:
             current_item.sound_data = self.sounds_box.get_info()
         current_item.save_animation(filepath, compress_dis = self.compression)
+        print("done saving")
         
     def button_save_level(self):
         self.universal_save()
@@ -691,14 +699,19 @@ class GenEditor(QMainWindow, themed_window):
         
     def button_save_all(self):
         current_item = self.anim_bar.currentItem()
-        current_item.display_info = self.get_on_screen()
+        
+        curr_display_info = self.get_on_screen()
+        if current_item.display_info != curr_display_info:
+            current_item.changed = True
+        
+        current_item.display_info = curr_display_info
         if current_item.filepath.endswith(".bck") and self.sounds_box is not None:
             current_item.sound_data = self.sounds_box.get_info()
         #current_item.save_animation()
         for i in range( self.anim_bar.topLevelItemCount() ):
             
             item = self.anim_bar.topLevelItem(i);
-            item.save_animation(compress_dis = self.compression);
+            item.save_animation(compress_dis = self.compression, save_all = True);
         
     def create_new(self, one_time = False):
         if self.popout and self.create_window is None:
@@ -741,7 +754,7 @@ class GenEditor(QMainWindow, themed_window):
             url = mime_data.urls()[0]
             filepath = url.toLocalFile()
             exten = filepath[filepath.rfind("."):].lower()
-            if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva", ".anim", ".fbx", ".txt" ]:
+            if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva", ".anim", ".fbx", ".txt", ".bvh" ]:
                 event.acceptProposedAction()
             if exten in [".bmd", ".bdl"]:
                 anim_exten = self.anim_bar.currentItem().filepath
@@ -773,6 +786,8 @@ class GenEditor(QMainWindow, themed_window):
                 self.load_bone_names(filepath)
             elif exten == ".txt":
                 self.maedit_file(filepath)
+            elif exten == ".bvh":
+                self.import_bvh_file(filepath)
         
     def open_file(self, filepath):
         animation_object = j3d.sort_file(filepath)               
@@ -880,7 +895,16 @@ class GenEditor(QMainWindow, themed_window):
         current_item = self.anim_bar.currentItem()
         current_item.display_info = self.get_on_screen()
         current_item.export_anim()
-           
+       
+    def import_bvh_file(self, filepath = None):
+        if filepath is None:
+            filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
+        ".bvh files(*.bvh)" )
+        if filepath:
+            bck = j3d.import_bvh_file(filepath)
+            filepath = filepath[0:-4] + ".bck"
+            self.new_animation_from_object(bck, filepath)
+       
     def import_fbx_file(self):
         filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
         ".fbx files(*.fbx)" )
@@ -1180,8 +1204,7 @@ class GenEditor(QMainWindow, themed_window):
                     i = i + 1
                 #print(maedit_info)
                 self.maedit_from_bar(maedit_info, False)
-          
-                        
+                                 
     def handle_transform_regex( self, file_type, line):
         import re
         ending_part = "\s*:?\s*(\+|\-|\*|/|avg|set|)\s*(\d*)"
@@ -1618,7 +1641,7 @@ class GenEditor(QMainWindow, themed_window):
         self.table_display.clearContents()
         
         #print("new loaded animation")
-        print(treeitem)
+        #print(treeitem)
         
         information = treeitem.display_info
         filepath = treeitem.filepath
@@ -1653,9 +1676,22 @@ class GenEditor(QMainWindow, themed_window):
             #print("load in previous value")
             #print(self.anim_bar.curr_item.text(0))
 
-            self.anim_bar.curr_item.display_info = self.get_on_screen()          
+            curr_display_info = self.get_on_screen()  
+            
+            if self.anim_bar.curr_item.display_info != curr_display_info:
+                self.anim_bar.curr_item.changed = True
+                print( "display info changed ")
+            
+            self.anim_bar.curr_item.display_info = self.get_on_screen()        
             if self.anim_bar.curr_item.filepath.endswith(".bck") and self.sounds_box is not None:
-                self.anim_bar.curr_item.sound_data = self.sounds_box.get_info()
+            
+                curr_sound_data = self.sounds_box.get_info()
+                
+                if self.anim_bar.curr_item.sound_data != curr_sound_data:
+                    self.anim_bar.curr_item.chanaged = True
+                    print("sound data changed")
+            
+                self.anim_bar.curr_item.sound_data = curr_sound_data
                 #print("get on screen result")
                 #print( self.anim_bar.curr_item.sound_data)
                 #print( "new data" )
@@ -2117,7 +2153,7 @@ class GenEditor(QMainWindow, themed_window):
                 
                 #print (item.text() + " at " + str(i) + " " + str(j) )
                 if item is not None and item.text().strip() != "":
-                    CUTOFF = .001
+                    CUTOFF = .01
                     try:
                         if abs( float(item.text()) - curr_value) < CUTOFF:
                             item.setText("")
