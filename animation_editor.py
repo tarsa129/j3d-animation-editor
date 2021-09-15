@@ -777,17 +777,9 @@ class GenEditor(QMainWindow, themed_window):
             if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva" ]:
                 self.open_file(filepath)
             elif exten == ".anim": 
-                bck = j3d.import_anim_file(filepath)
-                filepath = filepath[0:-5] + ".bck"
-                self.new_animation_from_object(bck, filepath)
+                self.import_anim_file(filepath)
             elif exten == ".fbx":
-                bcks = j3d.import_fbx_file(filepath)
-                index_of_slash = filepath.rfind("/")
-                
-                filepath = filepath[0:index_of_slash + 1]
-                #print(filepath)
-                for bck in bcks:
-                    self.new_animation_from_object(bck[1],filepath +  bck[0] + ".bck")
+                self.import_fbx_file(filepath)
             elif exten in [".bmd", ".bdl"]:
                 self.load_bone_names(filepath)
             elif exten == ".txt":
@@ -889,8 +881,9 @@ class GenEditor(QMainWindow, themed_window):
     def convert_to_a(self):
         self.anim_bar.currentItem().convert_to_a()
     
-    def import_anim_file(self):
-        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
+    def import_anim_file(self, filepath = None):
+        if filepath is None or filepath == False:
+            filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
         ".anim files(*.anim)" )
         if filepath:
             bck = j3d.import_anim_file(filepath)
@@ -903,7 +896,7 @@ class GenEditor(QMainWindow, themed_window):
         current_item.export_anim()
        
     def import_bvh_file(self, filepath = None):
-        print(filepath)
+        #print(filepath)
         if filepath is None or filepath == False:
             filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
         ".bvh files(*.bvh)" )
@@ -915,8 +908,9 @@ class GenEditor(QMainWindow, themed_window):
                 filepath = filepath[0:-4] + ".bck"
             self.new_animation_from_object(bck, filepath)
        
-    def import_fbx_file(self):
-        filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
+    def import_fbx_file(self, filepath = None):
+        if filepath is None or filepath == False:
+            filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
         ".fbx files(*.fbx)" )
         if filepath:
             bcks = j3d.import_fbx_file(filepath)
@@ -2235,6 +2229,12 @@ if __name__ == "__main__":
             if filepath in [".bck", ".bca", ".btk", ".brk", ".btp", ".bpk", ".bla", ".blk", ".bva" ]:
             
                 pikmin_gui.open_file(sys.argv[1])
+            elif filepath == "anim":
+                pikmin_gui.import_anim_file(sys.argv[1])
+            elif filepath == ".fbx":
+                pikmin_gui.import_fbx_file(sys.argv[1])
+            elif filepath == ".bvh":
+                pikmin_gui.import_bvh_file( sys.argv[1])
         elif path.isdir(sys.argv[1] ):
             pikmin_gui.open_folder(sys.argv[1] )
     
