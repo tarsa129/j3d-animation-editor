@@ -56,6 +56,8 @@ class GenEditor(QMainWindow, themed_window):
         self.theme = "default"
         self.include_subdirs = False
         self.load_model = False
+        
+        self.bvh_as_bca = False
          
         self.setAcceptDrops(True)
         self.setup_ui()
@@ -554,6 +556,10 @@ class GenEditor(QMainWindow, themed_window):
         else:
             self.show_widget.removeAction(self.show_sounds)
             self.show_sounds.setParent(None)
+            if main_game.lower() in ["mkdd", "double dash", "mario kart double dash", "mario kart: double dash!!"]:
+                self.bvh_as_bca = True
+                #print('mkdd baybee')
+        
       
     def write_settings_ini(self, setting):
         configur = ConfigParser()
@@ -897,12 +903,16 @@ class GenEditor(QMainWindow, themed_window):
         current_item.export_anim()
        
     def import_bvh_file(self, filepath = None):
-        if filepath is None:
+        print(filepath)
+        if filepath is None or filepath == False:
             filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
         ".bvh files(*.bvh)" )
         if filepath:
-            bck = j3d.import_bvh_file(filepath)
-            filepath = filepath[0:-4] + ".bck"
+            bck = j3d.import_bvh_file(filepath, self.bvh_as_bca)
+            if self.bvh_as_bca:
+                filepath = filepath[0:-4] + ".bca"
+            else:
+                filepath = filepath[0:-4] + ".bck"
             self.new_animation_from_object(bck, filepath)
        
     def import_fbx_file(self):

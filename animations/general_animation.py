@@ -532,10 +532,12 @@ def import_anim_file(filepath):
         f.close()
         return info
         
-def import_bvh_file(filepath):
+def import_bvh_file(filepath, as_bca = False):
     with open(filepath, "r") as f:
-        print("hello")
         info = bck_file.bck.from_blender_bvh(f)
+        
+        if as_bca:
+            info = bca_file.bca.from_bck(info)
         
         f.close()
         return info
