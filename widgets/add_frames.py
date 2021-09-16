@@ -40,9 +40,6 @@ class frames_window(QDialog, themed_window):
             
     def close_window(self):
         self.close()
-    
-    def close_window(self):
-        return self.main_widget.get_info()
         
     def get_info(self):
         return self.main_widget.get_info()
@@ -164,14 +161,10 @@ class frames_widget(QWidget, themed_window):
         
         self.formula_layout.setDisabled(True)
         
-        self.close_button = QPushButton(self)
-        self.close_button.setText("Add Frames")
-        self.close_button.clicked.connect(self.close_window)
-        
         self.horizontalLayout.addWidget(self.mode_layout)
         self.horizontalLayout.addWidget(self.specific_layout)
         self.horizontalLayout.addWidget(self.formula_layout)
-        self.horizontalLayout.addWidget(self.close_button)
+        #self.horizontalLayout.addWidget(self.close_button)
         
         self.specific_enter.setChecked(True)
     

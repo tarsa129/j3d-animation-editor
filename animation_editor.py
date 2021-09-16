@@ -2075,8 +2075,11 @@ class GenEditor(QMainWindow, themed_window):
             
             keyframes = []
             
-                
+            frames_row = 1
             before_adding = [0, frames_column]
+
+            if len(frames_to_add) == 0:
+                return
 
             for i in range( frames_column, len(info[frames_row]) ):
                 cell_text = info[frames_row][i].strip()
@@ -2086,7 +2089,8 @@ class GenEditor(QMainWindow, themed_window):
                             
                     cell_text = int(cell_text)
                     if cell_text in frames_to_add:
-                        frames_to_add.remove(cell_text)                    
+                        frames_to_add.remove(cell_text)      
+                    
                     if cell_text <= frames_to_add[0] and cell_text > before_adding[0]:
                         before_adding = [cell_text, i]
                         
