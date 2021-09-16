@@ -1131,7 +1131,7 @@ class GenEditor(QMainWindow, themed_window):
     def maedit_dialogue(self, one_time = False): 
         if self.popout and self.maedit_window is None:
         
-            self.maedit_window = maedit_widget.maedit_window()
+            self.maedit_window = maedit_widget.maedit_window(self.theme)
             self.maedit_window.setWindowModality(QtCore.Qt.ApplicationModal)
             self.maedit_window.exec_()
             maedit_info = self.maedit_window.get_info() 
@@ -2028,7 +2028,7 @@ class GenEditor(QMainWindow, themed_window):
                
     def frames_dialogue(self, one_time = False):
         if self.popout and self.frames_window is None:
-            self.frames_window = frames_widget.frames_window()
+            self.frames_window = frames_widget.frames_window(self.theme)
             self.frames_window.setWindowModality(QtCore.Qt.ApplicationModal)
             self.frames_window.exec_()
     
@@ -2039,7 +2039,7 @@ class GenEditor(QMainWindow, themed_window):
             self.frames_box = frames_widget.frames_box(self, one_time)
             self.right_vbox.addWidget(self.frames_box)
             
-    def frames_from_bar(self, frames_info, one_time):
+    def frames_from_bar(self, frames_to_add, one_time):
         if frames_to_add is not None:
         
             extension = self.anim_bar.currentItem().filepath
@@ -2049,7 +2049,10 @@ class GenEditor(QMainWindow, themed_window):
             register_index = -1
             constant_index = -1
             
-            duration = int( info[0][3] )
+            try:
+                duration = int( info[0][3] )
+            except:
+                pass
             if extension in [".btk", ".bca", ".bck"]:
                 duration = int( info[0][5] )
             if len(frames_to_add) >= 3 and frames_to_add[2] == "duration":              
@@ -2172,7 +2175,7 @@ class GenEditor(QMainWindow, themed_window):
     # sound stuff - kill me
     def sounds_dialogue(self, one_time = False):
         if self.popout and self.sounds_window is None:
-            self.sounds_window = sounds_widget.sounds_window()
+            self.sounds_window = sounds_widget.sounds_window(self.theme, self.anim_bar.currentItem().sound_data)
             self.sounds_window.setWindowModality(QtCore.Qt.ApplicationModal)
             self.sounds_window.exec_()
             

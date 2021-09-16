@@ -15,7 +15,7 @@ import animations.general_animation as j3d
 from widgets.theme_handler import *
 
 class maedit_window(QDialog, themed_window):
-    def __init__(self):
+    def __init__(self, theme):
         super().__init__()
         self.setup_ui(theme)
         self.set_theme(theme)
@@ -23,7 +23,7 @@ class maedit_window(QDialog, themed_window):
         
       
         
-    def setup_ui(self):
+    def setup_ui(self, theme):
         self.resize(1600, 400)
         self.resize_mw=QAction()
         self.setWindowTitle("edit all open animations")

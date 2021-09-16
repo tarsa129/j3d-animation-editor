@@ -12,13 +12,13 @@ import PyQt5.QtGui as QtGui
 from widgets.theme_handler import *
 
 class frames_window(QDialog, themed_window):
-    def __init__(self):
+    def __init__(self, theme):
         super().__init__()
-        self.setup_ui(theme)
+        self.setup_ui(theme )
         self.set_theme(theme)
         
 
-    def setup_ui(self):
+    def setup_ui(self, theme):
         self.resize(1600, 400)
         self.resize_mw=QAction()
         self.setWindowTitle("edit all open animations")
@@ -42,6 +42,9 @@ class frames_window(QDialog, themed_window):
         self.close()
     
     def close_window(self):
+        return self.main_widget.get_info()
+        
+    def get_info(self):
         return self.main_widget.get_info()
 class frames_box(QWidget):
     def __init__(self, parent, one_time):

@@ -14,12 +14,12 @@ from animations.bck import sound_entry
 from widgets.theme_handler import *
 
 class sounds_window(QDialog, themed_window):
-    def __init__(self, sound_data):
+    def __init__(self, theme, sound_data):
         super().__init__()
         self.setup_ui(theme, sound_data)
         self.set_theme(theme)
         
-    def setup_ui(self, sound_data):
+    def setup_ui(self, theme, sound_data):
         self.resize(1600, 400)
         self.resize_mw=QAction()
         self.setWindowTitle("edit sound entries")
