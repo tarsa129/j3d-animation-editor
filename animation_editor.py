@@ -1821,7 +1821,7 @@ class GenEditor(QMainWindow, themed_window):
     def rem_col_here(self):
         curcol = self.table_display.currentColumn() + 1
         #print(curcol)
-        if len(self.anim_bar.topLevelItemCount()) > 0:          
+        if self.anim_bar.topLevelItemCount() > 0:          
             vals = self.anim_bar.currentItem().display_info[0]
             
             minimum = 0;
