@@ -613,16 +613,19 @@ class GenEditor(QMainWindow, themed_window):
                 self.convert_to_key.setDisabled(True)
                 self.load_bones.setDisabled(True)
                 self.convert_to_all.setDisabled(True)
-                elf.export_anim.setDisabled(True)
+                self.export_anim.setDisabled(True)
     
     #file stuff
       
     def button_load_level(self):
-        filter =  "All Supported Files(*.bca *.bck *.bla *.blk *.bpk *.brk *.btk *.btp *.bva)"
+        filter =  "All Supported Files(*.bca *.bck *.bla *.blk *.bpk *.brk *.btk *.btp *.bva *.arc)"
         filepaths, choosentype = QFileDialog.getOpenFileNames( self, "Open File","" , filter )
             
         for filepath in filepaths:
-            if filepath:        
+            if filepath.endswith(".arc"):
+                self.loaded_archive = Archive.from_file(f)
+                root_name = self.loaded_archive.root.name
+            elif filepath:        
                 self.open_file(filepath)
                    
     def button_load_folder(self):
