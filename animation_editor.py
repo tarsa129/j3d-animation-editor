@@ -603,12 +603,12 @@ class GenEditor(QMainWindow, themed_window):
                 self.convert_to_all.setDisabled(False)
                 self.load_bones.setDisabled(True)
                 self.convert_to_key.setDisabled(True)
-                elf.export_anim.setDisabled(True)
+                self.export_anim.setDisabled(True)
             elif extension == ".bla":
                 self.convert_to_key.setDisabled(False)
                 self.load_bones.setDisabled(True)
                 self.convert_to_all.setDisabled(True)
-                elf.export_anim.setDisabled(True)
+                self.export_anim.setDisabled(True)
             else:
                 self.convert_to_key.setDisabled(True)
                 self.load_bones.setDisabled(True)
@@ -1494,15 +1494,22 @@ class GenEditor(QMainWindow, themed_window):
                                     base_value =  float(item.text())
                                 new_value = operations( [ base_value , float(info[1])], info[0] )
                                 index = self.anim_bar.currentIndex().row()   
-                                if self.anim_bar.currentItem().filepath.endswith(".btp"):
+                                exten = self.anim_bar.currentItem().filepath[-4:]
+                                if exten in [".bva", ".btp", ".brk", ".bpk"] :
                                     new_value = int( new_value )
+                                    new_value = max( 0, new_value)
+                                    if exten in [".brk", ".bpk"]:
+                                        
+                                        new_value = min( new_value, 255)
+                                    elif exten == ".bva":
+                                        new_value = min(1, new_value)
                                 
                                 if frames_row:
                                     new_value = "Frame " + str(int(new_value)) 
                                     item.setText(new_value )
                                 else:
                                     item.setText(str( new_value) )
-                                print(new_value)
+                                #print(new_value)
                             except Exception as e:
                                 print(e)
                                 print( "error with " +  item.text())
