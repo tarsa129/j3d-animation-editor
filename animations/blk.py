@@ -98,7 +98,7 @@ class blk(j3d.basic_animation):
     def get_loading_information(self):
         info = []
         info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Duration:", self.duration, "Tangent Type:", j3d.tan_type[self.tan_type] ] )
-        info.append( ["Cluster Number"])
+        info.append( ["Weight Number"])
         
         keyframes_dictionary = {}
         keyframes_dictionary[0] = []
@@ -108,7 +108,7 @@ class blk(j3d.basic_animation):
         count = 0
         
         for anim in self.animations:
-            info.append( ["Cluster " + str(count)] )
+            info.append( ["Weight " + str(count)] )
             
             array = anim.seq
             
@@ -131,7 +131,7 @@ class blk(j3d.basic_animation):
             info[1].append("Frame " + str(i) )
             
         for i in range( int(created[1]) ):
-            info.append( ["Cluster " + str(i)] )
+            info.append( ["Weight " + str(i)] )
 
         return info
     

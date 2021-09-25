@@ -53,6 +53,13 @@ def write_padding(f, multiple):
         pos = i%len(PADDING)
         f.write(PADDING[pos:pos+1])
 
+def write_pad32(f):
+    next_aligned_pos = (f.tell() + 0x1F) & ~0x1F
+
+    f.write(b"\x00"*(next_aligned_pos - f.tell()))
+    #print(hex(f.tell()))
+    #print(hex(next_aligned_pos))
+
 loop_mode = ("Play once", "Play Once - Stop at 1st Frame", "Loop", "Mirror once", "Mirror Loop")
 tan_type = ("Tan out only", "Tan in and out") 
 
@@ -644,8 +651,8 @@ def match_bmd(filepath, information, strings, filepathh):
         table = bck_file.bck.match_bmd(information, strings, filepathh) 
     elif filepath.endswith(".bpk"):
         table = bpk_file.bpk.match_bmd(information, strings) 
-    elif filepath.endswith(".blk") or filepath.endswith(".bla"):
-        table = blk_file.blk.match_bmd(information, strings) 
+        #elif filepath.endswith(".blk") or filepath.endswith(".bla"):
+        #    table = blk_file.blk.match_bmd(information, strings) 
     elif filepath.endswith(".bva"):
         table = bva_file.bva.match_bmd(information, strings) 
     return table

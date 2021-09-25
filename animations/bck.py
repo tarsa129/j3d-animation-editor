@@ -362,11 +362,11 @@ class bck(j3d.basic_animation):
         
         while hierachy_index < motion_line:
             #print(hierachy_index)
-            bone_regex = "^\s*(ROOT|JOINT) (\w*)$"
+            bone_regex = "^\s*(ROOT|JOINT) (\S*)$"
             m = re.match(bone_regex, lines[hierachy_index])
-            #print(lines[hierachy_index])
+            
             if m is None:
-                return
+                return bck
             curr_bone = bone_anim()
             curr_bone.name = m.group(2)
             #print(curr_bone.name)
@@ -392,6 +392,12 @@ class bck(j3d.basic_animation):
                             curr_bone.add_rotation( axis[0], comp)
                             max_rotation = max(float(comp.value), max_rotation)    
                         values_index += 1
+                else:
+                    if axis.find("position") != -1:
+                        curr_bone.add_translation( axis[0], j3d.AnimComponent(0, 0.0) )
+                    else:
+                        curr_bone.add_rotation( axis[0], j3d.AnimComponent(0, 0.0) )   
+            
             
             hierachy_index += 1
             
@@ -400,13 +406,12 @@ class bck(j3d.basic_animation):
             while lines[hierachy_index].strip() == "}":
                 hierachy_index += 1
             
-            
             bck.animations.append(curr_bone)
-        
         
         bck.anglescale = int( max_rotation / 180) ;
         
         return bck
+        
     
     def from_fbx_anim(self):
          
