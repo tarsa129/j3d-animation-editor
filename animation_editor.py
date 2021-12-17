@@ -26,6 +26,7 @@ import glob
 from os import path
 
 from configparser import ConfigParser
+import json
 
 class GenEditor(QMainWindow, themed_window):
     def __init__(self):
@@ -242,6 +243,7 @@ class GenEditor(QMainWindow, themed_window):
         self.select_all_action = QAction("Select All Cells", self)
         self.select_all_action = QAction("Select All Cells", self)
         self.remove_dups_action = QAction("Remove Duplicate Frames", self)
+        self.flip_poster = QAction("Flip Poster-Like", self)
         
         self.copy_cells_action.triggered.connect(self.emit_copy_cells)
         self.paste_cells_action.triggered.connect(self.emit_paste_cells)
@@ -279,6 +281,7 @@ class GenEditor(QMainWindow, themed_window):
         self.edit_menu.addAction(self.remove_row_here)
         self.edit_menu.addSeparator()
         self.edit_menu.addAction(self.remove_dups_action)
+        
         
         
         
@@ -902,7 +905,7 @@ class GenEditor(QMainWindow, themed_window):
         #print(filepath)
         if filepath is None or filepath == False:
             filepath, choosentype = QFileDialog.getOpenFileName( self, "Open File","" ,
-        ".bvh files(*.bvh)" )
+        ".bvh files(*.gltf)" )
         if filepath:
             bck = j3d.import_bvh_file(filepath, self.bvh_as_bca)
             if self.bvh_as_bca:
@@ -1162,7 +1165,7 @@ class GenEditor(QMainWindow, themed_window):
                     if item.filepath.endswith(maedit_entry[0]):
                         info = item.display_info
                         item.display_info = self.find_and_edit(info, maedit_entry[1], maedit_entry[2], look_col, maedit_entry[0])
-        
+                        item.changed = True
 
 
                 self.load_animation_to_middle(self.anim_bar.currentItem() )
@@ -2157,31 +2160,39 @@ class GenEditor(QMainWindow, themed_window):
             look_col = 3
         elif filepath == ".blk":
             look_col = 1
-        
+        CUTOFF = .01
         for i in range(2, self.table_display.rowCount() ) :
+            
             local_look = look_col
             ini_item = self.table_display.item(i, local_look)
             
-            while ini_item is None or ini_item.text().strip() == "":
+            while local_look < stop_row and (ini_item is None or ini_item.text().strip()) == "":
                 local_look += 1
                 ini_item = self.table_display.item(i, local_look)
-            #print("initial col " + str(local_look))
-            curr_value = float(ini_item.text())
-            local_look += 1
             
-            for j in range( local_look, stop_row):
-                item = self.table_display.item(i, j)
+            if abs( float(ini_item.text() )) < CUTOFF:
+                ini_item.setText("0.0")
+            
+            #print("initial col " + str(local_look))
+            if local_look < stop_row:
+                curr_value = float(ini_item.text())
+                local_look += 1
                 
-                #print (item.text() + " at " + str(i) + " " + str(j) )
-                if item is not None and item.text().strip() != "":
-                    CUTOFF = .01
-                    try:
-                        if abs( float(item.text()) - curr_value) < CUTOFF:
+                for j in range( local_look, stop_row):
+                    item = self.table_display.item(i, j)
+                    
+                    #print (item.text() + " at " + str(i) + " " + str(j) )
+                    if item is not None and item.text().strip() != "":
+                        
+                        try:
+                            if abs( float(item.text() )) < CUTOFF:
+                                item.setText("0.0")
+                            if abs( float(item.text()) - curr_value) < CUTOFF:
+                                item.setText("")
+                            else:
+                                curr_value = float(item.text())
+                        except:
                             item.setText("")
-                        else:
-                            curr_value = float(item.text())
-                    except:
-                        item.setText("")
 
     # sound stuff - kill me
     def sounds_dialogue(self, one_time = False):
@@ -2250,7 +2261,7 @@ if __name__ == "__main__":
                 pikmin_gui.import_anim_file(sys.argv[1])
             elif filepath == ".fbx":
                 pikmin_gui.import_fbx_file(sys.argv[1])
-            elif filepath == ".bvh":
+            elif filepath == ".gItf":
                 pikmin_gui.import_bvh_file( sys.argv[1])
         elif path.isdir(sys.argv[1] ):
             pikmin_gui.open_folder(sys.argv[1] )
