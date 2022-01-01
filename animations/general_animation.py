@@ -167,13 +167,13 @@ def write_values(info, keyframes_dictionary, row):
     keys = []
 
     for i in keyframes_dictionary.keys():
-        keys.append( int(i) )
+        keys.append( i )
    
     keys.sort()
     
     for i in keys: #i is the frame, so for each keyframe
        
-        info[row].append("Frame " + str( (int(i)) ) ) #add the header
+        info[row].append("Frame " + str( int(round(i)) ) ) #add the header
         
         k = row + 1 #k in the row index in the table
         for j in keyframes_dictionary[i]: #j is the value
@@ -546,7 +546,7 @@ def import_bvh_file(filepath, as_bca = False):
         if as_bca:
             info = bca_file.bca.from_bck(info)
         
-        f.close()
+        #f.close()
         return info
 
 def import_fbx_file(filepath):
