@@ -97,7 +97,8 @@ class blk(j3d.basic_animation):
             
     def get_loading_information(self):
         info = []
-        info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Duration:", self.duration, "Tangent Type:", j3d.tan_type[self.tan_type] ] )
+        info.append([ self.loop_mode, self.duration, self.tan_type])
+        #info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Duration:", self.duration, "Tangent Type:", j3d.tan_type[self.tan_type] ] )
         info.append( ["Weight Number"])
         
         keyframes_dictionary = {}
@@ -124,7 +125,8 @@ class blk(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( [ "Loop Mode:", "", "Duration:", created[3], "Tangent Type:", j3d.tan_type[1] ] )
+        info.append([0, created[3], 1]) 
+        #info.append( [ "Loop Mode:", "", "Duration:", created[3], "Tangent Type:", j3d.tan_type[1] ] )
         info.append( ["Cluster Number"])
         
         for i in range( int(created[3])):
@@ -137,7 +139,7 @@ class blk(j3d.basic_animation):
     
     @classmethod
     def from_table(cls, f, info):
-        blk = cls(int(info[0][1]), int(info[0][3]))
+        blk = cls(int(info[0][0]), int(info[0][1]))
         
         keyframes = []
         
@@ -148,7 +150,7 @@ class blk(j3d.basic_animation):
             frame_offset = 2
             blk.tan_type = 1
         else:
-            blk.tan_type = int(info[0][5])
+            blk.tan_type = int(info[0][2])
         
         for i in range(frame_offset, len( info[1] ) ):
             if info[1][i] != "":
@@ -157,8 +159,8 @@ class blk(j3d.basic_animation):
                 keyframes.append(text)
 
         
-        print("keyframes")
-        print (keyframes)
+        #print("keyframes")
+        #print (keyframes)
         
         for i in range( 2, len(info)   ): #for each cluster
             current_anim = cluster_anim()           

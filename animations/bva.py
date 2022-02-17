@@ -89,7 +89,8 @@ class bva(j3d.basic_animation):
     def get_loading_information(self):
 
         info = []
-        info.append( ["Loop Mode:", j3d.loop_mode[self.loop_mode] , "Duration:", self.duration, "Tan Type:", j3d.tan_type[1] ] )
+        info.append([self.loop_mode, self.duration, self.tan_type])
+        #info.append( ["Loop Mode:", j3d.loop_mode[self.loop_mode] , "Duration:", self.duration, "Tan Type:", j3d.tan_type[1] ] )
     
         
         keyframes_dictionary = {}
@@ -171,8 +172,8 @@ class bva(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         information = []
-        
-        information.append(["Flag: ", 0, "Anglescale", 0, "Unknown:", 0])
+        information.append([0, 0, -1])
+        #information.append(["Flag: ", 0, "Anglescale", 0, "Unknown:", 0])
         
         information.append( [ "Mesh Name", "Duration"] )
         

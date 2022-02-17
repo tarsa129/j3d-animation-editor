@@ -215,7 +215,8 @@ class bca(j3d.basic_animation):
     
     def get_loading_information(self):
         info = []
-        info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration] )
+        #info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration] )
+        info.append(  [self.loop_mode, self.duration, -1] )
         info.append( ["Joint Number", "Tangent Interpolation (Unused)","Component"])
         
         for i in range(self.duration):
@@ -269,7 +270,8 @@ class bca(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Tan Type:", j3d.tan_type[1] ] )
+        #info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Tan Type:", j3d.tan_type[1] ] )
+        info.append(  [0, created[3], 1] )
         info.append( ["Bone Name", "Tangent Interpolation", "Component"] )
 
         for i in range( int(created[3])):
@@ -287,9 +289,11 @@ class bca(j3d.basic_animation):
         return info          
      
     @classmethod
+    #unused?
     def from_table(cls, f, info):
-        bca = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
+        bca = cls(int(info[0][0]), 0, int(info[0][1]))
        
+        max_angle = 0
         
         for i in range( int( len(info) / 9 )   ): #for each bone
             line = 9 * i + 2
@@ -313,6 +317,7 @@ class bca(j3d.basic_animation):
                             elif comp.value > 180:
                                 comp = comp - 360
                             """
+                            max_angle = max(max_angle, comp.value)
                             current_anim.add_rotation(xyz, comp)
                             #print("rot " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
                         else:
@@ -320,6 +325,7 @@ class bca(j3d.basic_animation):
                             #print("trans " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
            
             bca.animations.append(current_anim)
+        bck.anglescale = math.ceil( max_angle / 180 )
         if f == "":
             return bca
         else:

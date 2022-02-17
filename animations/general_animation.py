@@ -444,8 +444,10 @@ def read_hierachy( bmd_file):
     return children
  
  
-def fix_array(info):
+def fix_array(header, info):
     # the arrays should be pure text
+    info.insert(0, header)
+    
     for i in range( len( info )):
         while len( info[i]) > 0 and info[i][-1] == "":
                 info[i].pop( len( info[i]) - 1 )

@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QRect, QModelIndex
 
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter, QCheckBox, QDialog,
                              QSpacerItem, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QHBoxLayout,
-                             QScrollArea, QGridLayout, QMenuBar, QMenu, QAction, QApplication, QStatusBar, QLineEdit,
+                             QScrollArea, QGridLayout, QMenuBar, QMenu, QAction, QApplication, QStatusBar, QLineEdit, QComboBox,
                              QTreeWidget, QTreeWidgetItem, QTableWidget, QTableWidgetItem, QActionGroup)
 
 from PyQt5.QtGui import QMouseEvent, QImage, QIcon
@@ -26,7 +26,7 @@ import glob
 from os import path
 
 from configparser import ConfigParser
-import json
+import json, csv
 
 class GenEditor(QMainWindow, themed_window):
     def __init__(self):
@@ -299,6 +299,10 @@ class GenEditor(QMainWindow, themed_window):
         self.import_bvh = QAction("Import .bvh", self)
         self.import_fbx = QAction("Import .fbx", self)
         
+        self.import_csv = QAction("Import .csv", self)
+        self.export_csv = QAction("Export .csv", self)
+        
+        
         self.convert_to_key.triggered.connect(self.convert_to_k)
         self.convert_to_all.triggered.connect(self.convert_to_a)
         self.import_anim.triggered.connect(self.import_anim_file)
@@ -307,6 +311,10 @@ class GenEditor(QMainWindow, themed_window):
         self.import_bvh.triggered.connect(self.import_bvh_file)
         
         self.import_fbx.triggered.connect(self.import_fbx_file)
+        
+        self.import_csv.triggered.connect(self.import_csv_file)
+        self.export_csv.triggered.connect(self.export_csv_file)
+        
         
         self.convert_to_key.setShortcut("Ctrl+K")
         
@@ -391,17 +399,7 @@ class GenEditor(QMainWindow, themed_window):
         
         #middle table
         
-        
-        self.table_display = QTableWidget(self)
-        self.table_display.resize(1600, self.height())
-        self.table_display.setColumnCount(4)
-        self.table_display.setRowCount(4)
-        for i in range(self.table_display.rowCount()): # iterate through our initial rows
-            self.table_display.setRowHeight(i, 20) # make them thinner       
-        self.table_display.setGeometry(400, 50, self.width(), self.height())
-        self.table_display.cellClicked.connect(self.cell_clicked)
-        
-        #self.table_display.currentItemChanged.connect(self.display_info_changes)
+      
         
         #bottom bar
         
@@ -469,13 +467,63 @@ class GenEditor(QMainWindow, themed_window):
         
         self.left_vbox.addWidget(self.workaround)
         
+        
+        self.workaroundm = QWidget(self)
+        self.workaroundm.resize(1600, self.height())
+        self.middle_vbox = QVBoxLayout(self.workaroundm)
+        
+        self.workaroundmt = QWidget(self)
+        self.workaroundmt_layout = QHBoxLayout(self.workaroundmt)
+        
+        self.loop_label = QLabel(self.workaroundmt)
+        self.loop_label.setText("Loop Mode:")
+        
+        self.loop_box = QComboBox(self.workaroundmt)
+        self.loop_box.addItems(j3d.loop_mode)
+        
+        self.duration_label = QLabel(self.workaroundmt)
+        self.duration_label.setText("Duration:")
+        
+        self.duration_box = QLineEdit(self.workaroundmt)
+        
+        self.tantype_label = QLabel(self.workaroundmt)
+        self.tantype_label.setText("Tangent Type:")
+        
+        self.tantype_box = QComboBox(self.workaroundmt)
+        self.tantype_box.addItems(j3d.tan_type)
+        
+        self.workaroundmt_layout.addWidget(self.loop_label)
+        self.workaroundmt_layout.addWidget(self.loop_box)
+        self.workaroundmt_layout.addWidget(self.duration_label)
+        self.workaroundmt_layout.addWidget(self.duration_box)
+        self.workaroundmt_layout.addWidget(self.tantype_label)
+        self.workaroundmt_layout.addWidget(self.tantype_box)
+        
+        
+        self.table_display = QTableWidget(self)
+        self.table_display.resize(1600, self.height())
+        self.table_display.setColumnCount(4)
+        self.table_display.setRowCount(4)
+        for i in range(self.table_display.rowCount()): # iterate through our initial rows
+            self.table_display.setRowHeight(i, 20) # make them thinner       
+        self.table_display.setGeometry(400, 50, self.width(), self.height())
+        self.table_display.cellClicked.connect(self.cell_clicked)
+        
+        self.middle_vbox.addWidget(self.workaroundmt)
+        self.middle_vbox.addWidget(self.table_display)
+
+        
+        
+        #self.table_display.currentItemChanged.connect(self.display_info_changes)
+        
+        
         self.workaroundr = QWidget(self)
         self.right_vbox = QVBoxLayout(self.workaroundr)
         
         
         #self.horizontalLayout.addWidget(self.anim_bar)
         self.horizontalLayout.addWidget(self.workaroundl)
-        self.horizontalLayout.addWidget(self.table_display)  
+        self.horizontalLayout.addWidget(self.workaroundm)  
         self.horizontalLayout.addWidget(self.workaroundr)
     
     def read_settings_ini(self):
@@ -554,7 +602,7 @@ class GenEditor(QMainWindow, themed_window):
         
 
         main_game = configur.get('sound options', 'main_game')
-        if main_game.lower() in ["t", "tww", "wind waker", "the wind waker", "tp", "twilight princess"]:
+        if main_game.lower() in ["tww", "wind waker", "the wind waker", "tp", "twilight princess"]:
             self.sound_enabled = True
         else:
             self.show_widget.removeAction(self.show_sounds)
@@ -563,7 +611,12 @@ class GenEditor(QMainWindow, themed_window):
                 self.bvh_as_bca = True
                 #print('mkdd baybee')
         
-      
+        debug_csv = configur.get('menu options', 'debug_csv')
+        if debug_csv.lower() == "true":
+            self.convert.addAction(self.import_csv)
+            self.convert.addAction(self.export_csv)
+        
+        
     def write_settings_ini(self, setting):
         configur = ConfigParser()
         configur.read('settings.ini')
@@ -694,6 +747,7 @@ class GenEditor(QMainWindow, themed_window):
     def universal_save(self, filepath = ""):
         
         current_item = self.anim_bar.currentItem()
+        current_item.header_info = self.get_header()
         current_item.display_info = self.get_on_screen()
         if current_item.filepath.endswith(".bck") and self.sounds_box is not None:
             current_item.sound_data = self.sounds_box.get_info()
@@ -766,7 +820,7 @@ class GenEditor(QMainWindow, themed_window):
             url = mime_data.urls()[0]
             filepath = url.toLocalFile()
             exten = filepath[filepath.rfind("."):].lower()
-            if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva", ".anim", ".fbx", ".txt", ".bvh" ]:
+            if exten in [ ".bca", ".bck", ".bla", ".blk", ".bpk", ".brk", ".btk", ".btp", ".bva", ".anim", ".fbx", ".txt", ".bvh", ".csv" ]:
                 event.acceptProposedAction()
             if exten in [".bmd", ".bdl"]:
                 anim_exten = self.anim_bar.currentItem().filepath
@@ -792,6 +846,8 @@ class GenEditor(QMainWindow, themed_window):
                 self.maedit_file(filepath)
             elif exten == ".bvh":
                 self.import_bvh_file(filepath)
+            elif exten == ".csv":
+                self.import_csv_file(filepath)
         
     def open_file(self, filepath):
         animation_object = j3d.sort_file(filepath)               
@@ -926,7 +982,32 @@ class GenEditor(QMainWindow, themed_window):
             #print(filepath)
             for bck in bcks:
                 self.new_animation_from_object(bck[1],filepath +  bck[0] + ".bck")
-                    
+       
+    def import_csv_file(self, filepath = None):
+        if filepath is None or filepath == False:
+            filepath, choosentype = QFileDialog.getOpenFileName( self, "Open .csv file","" ,".csv files(*.csv)" )
+        if filepath:
+            with open(filepath, "r", newline='') as f:
+                csv_reader = csv.reader(f)
+                info = list(csv_reader)
+                info[0][0] = int(info[0][0])
+                info[0][2] = int(info[0][2])
+                filepath = filepath[ : len(filepath) - 4] + "." + info[0][3]
+                self.new_animation_from_array(info, filepath, False, None)
+        
+    def export_csv_file(self):
+        filepath, choosentype = QFileDialog.getSaveFileName(self, "Save as .csv File", self.anim_bar.currentItem().filepath + ".csv", ".csv files(*.csv)")
+        if filepath:
+            header = self.get_header()
+            header.append(self.anim_bar.currentItem().get_animtype() )
+            info = j3d.fix_array(self.get_header(), self.get_on_screen() )
+            with open(filepath, 'w+', newline='') as f:
+                writer = csv.writer(f)
+                for row in info:
+                    writer.writerow(row) 
+        
+        
+       
     def new_animation_from_object(self, actual_animation_object, filepath):
         #deal with compression and keep track of whether or not to compress it
         compressed = 1
@@ -964,17 +1045,20 @@ class GenEditor(QMainWindow, themed_window):
     
     #bmd stuff
     def new_animation_from_array(self, array, filepath, compressed, sound_data = None):
+        #store back old values
         if self.anim_bar.topLevelItemCount() > 0:
             #print( "this is not the first loaded animation " ) 
             #print( "the old index is " + str(self.anim_bar.curr_index) )
             #print("load in the current table to index " + str(self.anim_bar.curr_index) )
             #self.anim_bar.itemAt(self.anim_bar.curr_index,0).display_info = self.get_on_screen()
            
-           
+            
+            #add something for the header
+            self.anim_bar.currentItem().header_info = self.get_header()
             self.anim_bar.currentItem().display_info = self.get_on_screen()
             #print(self.anim_bar.currentItem().text(0) )
             #print( self.anim_bar.currentItem().display_info[0])
-        print(self.anim_bar.topLevelItemCount())
+        #print(self.anim_bar.topLevelItemCount())
         if self.anim_bar.topLevelItemCount() == 0:
             loaded_animation = tree_item.tree_item(self.anim_bar)    
             self.anim_bar.curr_item = loaded_animation
@@ -982,18 +1066,15 @@ class GenEditor(QMainWindow, themed_window):
         else:
             loaded_animation = tree_item.tree_item(self.anim_bar)  
         
+        #loaded animation is a tree item
         loaded_animation.set_values( array, filepath, compressed )
         loaded_animation.set_sound(sound_data) 
 
+        #process sound
         if filepath.endswith(".bck"):
             if self.anim_bar.curr_item is not None and self.sounds_box is not None:
                 self.anim_bar.curr_item.sound_data = self.sounds_box.get_info()
-            #print("get on screen result")
-            #print( self.anim_bar.curr_item.sound_data)
-            #print( "new data" )
-            #print( self.anim_bar.currentItem().sound_data)
-            if self.sounds_box is not None:
-            
+            if self.sounds_box is not None:         
                 self.sounds_box.main_widget.sound_data = sound_data
                 self.sounds_box.main_widget.setup_sound_data()
 
@@ -1007,9 +1088,8 @@ class GenEditor(QMainWindow, themed_window):
         self.anim_bar.curr_item = loaded_animation
         self.anim_bar.setCurrentItem(loaded_animation)
         
+        #load to the table
         self.load_animation_to_middle(loaded_animation)
-          
-        
      
         self.is_remove = False
         
@@ -1129,6 +1209,25 @@ class GenEditor(QMainWindow, themed_window):
             current_item.display_info = array
             self.load_animation_to_middle( current_item )                
             current_item.add_children( strings) 
+
+    def set_header(self, header_info):
+        self.loop_box.setCurrentIndex( header_info[0] ) 
+        self.duration_box.setText( str(header_info[1]) )
+        
+        if header_info[2] == -1:
+            self.tantype_box.setDisabled(True)
+        else:
+            self.tantype_box.setDisabled(False)
+            self.tantype_box.setCurrentIndex( header_info[2] )
+    
+    def get_header(self):
+        header_info = []
+        header_info.append( self.loop_box.currentIndex() )
+        header_info.append( self.duration_box.text() )
+        
+        header_info.append( self.tantype_box.currentIndex() )
+        
+        return header_info
 
     # mass editor
     def maedit_dialogue(self, one_time = False): 
@@ -1661,6 +1760,7 @@ class GenEditor(QMainWindow, themed_window):
         #print(treeitem)
         
         information = treeitem.display_info
+        header_info = treeitem.header_info
         filepath = treeitem.filepath
         
         first_vals, col_count = self.get_vertical_headers(information)
@@ -1673,13 +1773,16 @@ class GenEditor(QMainWindow, themed_window):
                 
         self.fix_table(information, col_count)
                       
-        self.table_display.setHorizontalHeaderLabels(information[1])
+        self.table_display.setHorizontalHeaderLabels(information[0])
         self.table_display.setVerticalHeaderLabels(first_vals)
+        
+        
+        self.set_header(header_info)
         
         self.setWindowTitle("j3d animation editor - " + filepath)
         self.edit_gui(filepath)
         
-
+        
 
         print("end of load animation to middle")
     
@@ -1692,14 +1795,18 @@ class GenEditor(QMainWindow, themed_window):
             #load in previous values
             #print("load in previous value")
             #print(self.anim_bar.curr_item.text(0))
-
+            curr_header_info = self.get_header()
             curr_display_info = self.get_on_screen()  
             
             if self.anim_bar.curr_item.display_info != curr_display_info:
                 self.anim_bar.curr_item.changed = True
                 print( "display info changed ")
+            elif self.anim_bar.curr_item.header_info != curr_header_info:
+                self.anim_bar.curr_item.changed = True
             
-            self.anim_bar.curr_item.display_info = self.get_on_screen()        
+            
+            self.anim_bar.curr_item.display_info = curr_display_info
+            self.anim_bar.curr_item.header_info = curr_header_info
             if self.anim_bar.curr_item.filepath.endswith(".bck") and self.sounds_box is not None:
             
                 curr_sound_data = self.sounds_box.get_info()
@@ -1817,7 +1924,7 @@ class GenEditor(QMainWindow, themed_window):
         self.add_column()
         if curcol > 2:
             #print("at least 2")
-            for i in range( 1, self.table_display.rowCount() ):
+            for i in range( 0, self.table_display.rowCount() ):
                 for j in reversed( range( curcol, self.table_display.columnCount() ) ):
                     old = self.table_display.item(i, j-1)
                     try:
@@ -1843,7 +1950,7 @@ class GenEditor(QMainWindow, themed_window):
             #print(minimum)
             
             #print("removing column")
-            for i in range( 1, self.table_display.rowCount() ):
+            for i in range( 0, self.table_display.rowCount() ):
                 for j in range( curcol, self.table_display.columnCount() ):
                     old = self.table_display.item(i, j)
                     try:
@@ -2058,13 +2165,8 @@ class GenEditor(QMainWindow, themed_window):
             
             register_index = -1
             constant_index = -1
-            
-            try:
-                duration = int( info[0][3] )
-            except:
-                pass
-            if extension in [".btk", ".bca", ".bck"]:
-                duration = int( info[0][5] )
+            duration = int( self.duration_box.text() )
+           
             if len(frames_to_add) >= 3 and frames_to_add[2] == "duration":              
                 frames_to_add = [ *range(frames_to_add[1], duration + 1, frames_to_add[0]) ]
            
@@ -2078,6 +2180,7 @@ class GenEditor(QMainWindow, themed_window):
             if frames_to_add[-1] > duration:
                 new = QTableWidgetItem(str(frames_to_add[-1]))
                 duration = frames_to_add[-1]
+                self.duration_box.setText( str(duration) )
                 if extension in [".btk", ".bca", ".bck"]:
                     self.table_display.setItem(0, 5, new)
                 else:
@@ -2085,7 +2188,7 @@ class GenEditor(QMainWindow, themed_window):
             
             keyframes = []
             
-            frames_row = 1
+            frames_row = 0
             before_adding = [0, frames_column]
 
             if len(frames_to_add) == 0:
@@ -2161,7 +2264,7 @@ class GenEditor(QMainWindow, themed_window):
         elif filepath == ".blk":
             look_col = 1
         CUTOFF = .01
-        for i in range(2, self.table_display.rowCount() ) :
+        for i in range(1, self.table_display.rowCount() ) :
             
             local_look = look_col
             ini_item = self.table_display.item(i, local_look)

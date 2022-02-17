@@ -81,7 +81,8 @@ class bla(j3d.basic_animation):
             
     def get_loading_information(self):
         info = []
-        info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Duration:", self.duration ] ) 
+        info.append( [ self.loop_mode, self.duration, -1]) 
+        #info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Duration:", self.duration ] ) 
         info.append( ["Cluster Number", "Duration"])
         
         for i in range(self.duration):
@@ -106,7 +107,8 @@ class bla(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( [ "Loop Mode:", "", "Duration:", created[3]] )
+        info.append( [0, created[3], -1] ) 
+        #info.append( [ "Loop Mode:", "", "Duration:", created[3]] )
         info.append( ["Cluster Number", "Duration"])
         
         for i in range( int(created[3])):

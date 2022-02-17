@@ -1,12 +1,25 @@
 from struct import pack, unpack
 from io import BytesIO
 from itertools import chain
-from animations.general_animation import read_uint32, read_uint16, write_uint32, write_uint16, write_pad32
-import animations.general_animation as j3d
+from .yaz0 import decompress, compress_fast, read_uint32, read_uint16
 
 import time
 
 
+def write_uint32(f, val):
+    f.write(pack(">I", val))
+
+
+def write_uint16(f, val):
+    f.write(pack(">H", val))
+
+
+def write_pad32(f):
+    next_aligned_pos = (f.tell() + 0x1F) & ~0x1F
+
+    f.write(b"\x00"*(next_aligned_pos - f.tell()))
+    #print(hex(f.tell()))
+    #print(hex(next_aligned_pos))
 
 DATA = [0]
 

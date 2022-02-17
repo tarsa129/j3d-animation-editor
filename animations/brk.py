@@ -175,7 +175,8 @@ class brk(j3d.basic_animation):
     def get_loading_information(self):
 
         info = []
-        info.append( ["Loop Mode:", j3d.loop_mode[self.loop_mode] , "Duration:", self.duration, "Tan Type:", j3d.tan_type[1] ] )
+        info.append([self.loop_mode, self.duration, self.tan_type])
+        #info.append( ["Loop Mode:", j3d.loop_mode[self.loop_mode] , "Duration:", self.duration, "Tan Type:", j3d.tan_type[1] ] )
         
         keyframes_dictionary = {}
         keyframes_dictionary[0] = []
@@ -268,7 +269,8 @@ class brk(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "", "Duration:", created[3], "Tangent Type:", j3d.tan_type[1] ] )
+        info.append( [0, created[3], 1])
+        #info.append( ["Loop_mode", "", "Duration:", created[3], "Tangent Type:", j3d.tan_type[1] ] )
         info.append( ["Material Name", "Color Index", "Channel", "Frame 0", "Frame " + str(created[3] ) ] )
 
         for i in range( int(created[1]) ):
@@ -299,7 +301,7 @@ class brk(j3d.basic_animation):
     
     @classmethod
     def from_table(cls, f, info):
-        brk = cls(int(info[0][1]), int(info[0][3]), int(info[0][5])  )
+        brk = cls(int(info[0][0]), 0, int(info[0][1]), int(info[0][2]))
              
         keyframes = []
         for i in range(3, len( info[1] ) ):

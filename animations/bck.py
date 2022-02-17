@@ -1,7 +1,8 @@
 import struct 
+import math
 from collections import OrderedDict
 
-import sys, inspect
+import sys, inspect, json, base64, io
 
 from animations.general_animation import *
 from animations.general_animation import basic_animation
@@ -316,6 +317,19 @@ class bck(j3d.basic_animation):
   
     @classmethod 
     def from_blender_bvh(cls, filepath):
+        gitf = json.load(filepath)
+        
+        data_string = gitf["buffers"][0]["uri"]
+        data = data_string[ data_string.find("base64") + 7: ].encode("ascii")
+        data = io.BytesIO( base64.decodebytes(data) )
+        
+        #read skeleton
+        joint_order = gitf["skins"][0]["joints"]
+        for joint in joint_order:
+            bone = gitf["nodes"][joint]
+            
+    @classmethod
+    def from_blender_bvh_old(cls, filepath):
         import re
         lines = filepath.read().splitlines()
         lines = [ line for line in lines if line != ""]
@@ -376,7 +390,9 @@ class bck(j3d.basic_animation):
             curr_bone.add_scale( "Z", j3d.AnimComponent(0, 1.0) )
             
             
-            hierachy_index += 3 #to get to channels
+            hierachy_index += 2 #to get to offset
+            offsets = lines[hierachy_index].split()
+            hierachy_index += 1
             channels = lines[hierachy_index]
             for axis in ["Xposition", "Yposition", "Zposition", "Xrotation", "Yrotation", "Zrotation"]:
                 if channels.find(axis) != -1:
@@ -393,10 +409,11 @@ class bck(j3d.basic_animation):
                             max_rotation = max(float(comp.value), max_rotation)    
                         values_index += 1
                 else:
+                    axises = "XYZ"
                     if axis.find("position") != -1:
-                        curr_bone.add_translation( axis[0], j3d.AnimComponent(0, 0.0) )
+                        curr_bone.add_translation( axis[0], j3d.AnimComponent(0, offsets[axises.find(axis[0]) + 1] ) )
                     else:
-                        curr_bone.add_rotation( axis[0], j3d.AnimComponent(0, 0.0) )   
+                        curr_bone.add_rotation( axis[0], j3d.AnimComponent(0, offsets[axises.find(axis[0]) + 1] ) )   
             
             
             hierachy_index += 1
@@ -429,7 +446,8 @@ class bck(j3d.basic_animation):
             
     def get_loading_information(self):
         info = []
-        info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration, "Tan Type:", self.tan_type] )
+        info.append( [self.loop_mode, self.duration, self.tan_type] ) 
+        #info.append( [ "Loop Mode:", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale, "Duration:", self.duration, "Tan Type:", self.tan_type] )
         
         info.append( ["Bone Name", "Tangent Interpolation", "Component"])
         keyframes_dictionary = {}
@@ -486,14 +504,16 @@ class bck(j3d.basic_animation):
             i = len(info)
             
             count += 1
-            
+        
+        #print(keyframes_dictionary)
         write_values(info, keyframes_dictionary, 1)
         return info  
     
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Tan Type:", j3d.tan_type[1] ] )
+        info.append( [0, created[3], 1])
+        #info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Tan Type:", j3d.tan_type[1] ] )
         info.append( ["Bone Name", "Tangent Interpolation", "Component"] )
 
         for i in range( int(created[3])):
@@ -524,7 +544,11 @@ class bck(j3d.basic_animation):
     @classmethod
     def from_table(cls, f, info, sound_data = None):
         #print("loop mode " + str( info[0][1] ) )
-        bck = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]))
+        #loop mode, anglescale, duration, tantype
+        bck = cls(int(info[0][0]), 0, int(info[0][1]), int(info[0][2]))
+        
+        max_angle = 0
+        
         
         #print(sound_data)
         bck.sound = sound_data
@@ -577,7 +601,9 @@ class bck(j3d.basic_animation):
                                 comp.value = comp.value + 360 * bck.anglescale
                             elif comp.value > 180 * bck.anglescale:
                                 comp.value = comp.value - 360 * bck.anglescale"""
+                            max_angle = max(max_angle, comp.value)
                             current_anim.add_rotation(xyz, comp)
+                            
                             #print("rot " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
                         else:
                             current_anim.add_translation(xyz, comp)
@@ -585,6 +611,8 @@ class bck(j3d.basic_animation):
             
              #calculate tangents
            
+            bck.anglescale = math.ceil( max_angle / 180 )
+            print("anglescale: ", bck.anglescale)
             for j in range(9):
                 xyz = "XYZ"
                 xyz = xyz[j%3: j%3 + 1]

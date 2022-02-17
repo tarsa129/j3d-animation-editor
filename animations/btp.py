@@ -94,8 +94,8 @@ class btp(j3d.basic_animation):
     def get_loading_information(self):
         
         information = []
-        
-        information.append(["Loop Mode: ", self.flag, "Maximum Duration:", self.unknown_address])
+        information.append([self.flag, self.unknown_address])
+        #information.append(["Loop Mode: ", self.flag, "Maximum Duration:", self.unknown_address])
         
         information.append( [ "Material Name", "Duration"] )
         
@@ -170,8 +170,8 @@ class btp(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         information = []
-        
-        information.append(["Flag / Loop Mode: ", 0, "Maximum Duration:",int(created[3] )  ])
+        information.append([0, created[3], -1] )
+        #information.append(["Flag / Loop Mode: ", 0, "Maximum Duration:",int(created[3] )  ])
         
         information.append( [ "Material Name", "Duration"] )
         
@@ -188,7 +188,7 @@ class btp(j3d.basic_animation):
     def from_table(cls, f, info):
         
         
-        btp = cls(int(info[0][1]) , int(info[0][3]))
+        btp = cls(int(info[0][0]) , int(info[0][1]))
         
         largest_duration = 0;
         

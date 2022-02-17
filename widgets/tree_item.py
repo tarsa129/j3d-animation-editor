@@ -9,6 +9,7 @@ class tree_item(QTreeWidgetItem):
     def __init__(self, parent):
         QTreeWidgetItem.__init__(self, parent,1000)
         self.display_info = []
+        self.header_info = []
         self.filepath = ""
         self.compressed = 1
         self.bmd_file = None
@@ -17,7 +18,8 @@ class tree_item(QTreeWidgetItem):
         self.changed = False
         
     def set_values(self, display_info, filepath, compressed ):
-        self.display_info = display_info
+        self.header_info = display_info[0]
+        self.display_info = display_info[1:]
         self.filepath = filepath.replace("|", ".")
         self.compressed = compressed
         
@@ -45,11 +47,10 @@ class tree_item(QTreeWidgetItem):
         else:
             working_filepath = self.filepath
             
+        info = j3d.fix_array( self.header_info, self.display_info)
         if (working_filepath.endswith("a") and not working_filepath.endswith(".bva")  ):
-            info = j3d.fix_array( self.display_info)
             self.convert_to_a(info)
         else: 
-            info = j3d.fix_array( self.display_info)
             j3d.sort_filepath(working_filepath, info, self.sound_data) 
         
         compress_status = self.compressed
@@ -114,3 +115,6 @@ class tree_item(QTreeWidgetItem):
             child = QTreeWidgetItem(self)
             child.setText(0, name)
             child.setDisabled(True)
+            
+    def get_animtype(self):
+         return self.filepath[self.filepath.rfind("."):].lower()

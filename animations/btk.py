@@ -240,8 +240,8 @@ class btk(j3d.basic_animation):
              
     def get_loading_information(self):
         info = []
-        info.append( ["Loop_mode", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale,
-            "Duration:", self.duration, "Unknown:", self.unknown_address, "Tan Type:", j3d.tan_type[self.tan_type] ] )
+        info.append( [self.loop_mode, self.duration, self.tan_type]) 
+        #info.append( ["Loop_mode", j3d.loop_mode[self.loop_mode], "Angle Scale:", self.anglescale,            "Duration:", self.duration, "Unknown:", self.unknown_address, "Tan Type:", j3d.tan_type[self.tan_type] ] )
         info.append( ["Material name", "Tangent Interpolation", "Component"] ) 
         
         keyframes_dictionary = {}
@@ -304,7 +304,8 @@ class btk(j3d.basic_animation):
     @classmethod
     def empty_table(cls, created):
         info = []
-        info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Unknown:", 0, "Tan Type:", j3d.tan_type[1] ] )
+        info.append([0, created[3], 1] )
+        #info.append( ["Loop_mode", "", "Angle Scale:", "", "Duration:", created[3], "Unknown:", 0, "Tan Type:", j3d.tan_type[1] ] )
         info.append( ["Material name", "Tangent Interpolation", "Component", "Frame 0", "Frame " + str(created[3]) ] ) 
         
         for i in range( int(created[1]) ):
@@ -335,7 +336,7 @@ class btk(j3d.basic_animation):
     
     @classmethod
     def from_table(cls, f, info):
-        btk = cls(int(info[0][1]), int(info[0][3]), int(info[0][5]), int(info[0][7]), int(info[0][9]))
+        btk = cls(int(info[0][0]), 0, int(info[0][1]), 0, int(info[0][2]))
         
         keyframes = []
         
