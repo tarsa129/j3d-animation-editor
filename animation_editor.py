@@ -1192,9 +1192,10 @@ class GenEditor(QMainWindow, themed_window):
         
         bmd_file, choosentype = QFileDialog.getOpenFileName( self, "Open File","" , "Model files (*.bmd *.bdl)" )
         if bmd_file:
+            current_item.header_info = self.get_header()
             current_item.display_info = self.get_on_screen()
             current_item.bmd_file = bmd_file
-            info = j3d.fix_array(current_item.display_info)
+            info = j3d.fix_array(current_item.header_info, current_item.display_info)
             strings = []
 
             if filepath.endswith(".bck") or filepath.endswith(".bca"):
@@ -1205,8 +1206,8 @@ class GenEditor(QMainWindow, themed_window):
             else:
                 strings = j3d.get_materials_from_bmd(bmd_file)
             
-            array = j3d.match_bmd(filepath, info, strings, bmd_file)     
-            current_item.display_info = array
+            array = j3d.match_bmd(filepath, info, strings, bmd_file)   
+            current_item.set_arrays(array)
             self.load_animation_to_middle( current_item )                
             current_item.add_children( strings) 
 

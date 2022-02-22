@@ -235,6 +235,11 @@ class bck(j3d.basic_animation):
         #iterate through all the lines
         while ( i < len(lines) ):
         
+            if not lines[i + 1].startswith("animData"):
+                print(lines[i], lines[i + 1])
+                i = i + 1
+                continue
+        
             # make a new bone
             new_bone_name = lines[i].split()[3]
             current_bone = new_bone_name
@@ -269,7 +274,6 @@ class bck(j3d.basic_animation):
                 #read the keyframes
                 while( not "}" in lines[i]):
                     values = lines[i].split()
-                    
                     new_entry = j3d.AnimComponent(int(values[0]), float(values[1]))
                     
                     
@@ -909,7 +913,7 @@ class bck(j3d.basic_animation):
         bck.animations = z
         
         jnt_vals = j3d.get_bone_transforms(filepath)
-        rotscale = (2.0**bck.anglescale) * (180.0 / 32768.0);
+        rotscale = (180.0 / 32768.0);
         for i in range(len(jnt_vals)):
             jnt_vals[i][3] = jnt_vals[i][3] * rotscale    
             jnt_vals[i][4] *= rotscale
@@ -922,8 +926,12 @@ class bck(j3d.basic_animation):
             anim = bck.animations[i]
             print(strings[i], anim.name)
             if anim.name != strings[i]:
-                print(strings[i])
+                print("anim name not in strings ", strings[i])
                 bck.animations.insert(i, bone_anim.get_empty_bone_anim(strings[i], jnt_vals[i]) )
+            i += 1
+            
+        while i < len(strings):
+            bck.animations.insert(i, bone_anim.get_empty_bone_anim(strings[i], jnt_vals[i]) )
             i += 1
         #print("sorted bone names")
         #print( bck.get_children_names() )

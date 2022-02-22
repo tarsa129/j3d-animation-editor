@@ -346,7 +346,7 @@ def get_bones_from_bmd(bmd_file):
         #print(address)
         f.seek(address + a)
         strings = StringTable.from_file(f).strings;
-        print(strings)
+        print("bones in bmd ", strings)
         f.close()
         
     return strings
