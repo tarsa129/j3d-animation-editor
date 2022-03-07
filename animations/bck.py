@@ -222,7 +222,9 @@ class bck(j3d.basic_animation):
     @classmethod
     def from_maya_anim(cls, filepath):
         lines = filepath.readlines()
-        duration = int( lines[6][lines[6].find(" "): lines[6].find(";")] )
+        duration =  lines[6][lines[6].find(" "): lines[6].find(";")].strip()
+        print(duration)
+        duration = int( float(duration))
         #duration -= int( lines[5][lines[5].find(" "): lines[5].find(";")] )
         max_angle = 0
         
@@ -274,7 +276,7 @@ class bck(j3d.basic_animation):
                 #read the keyframes
                 while( not "}" in lines[i]):
                     values = lines[i].split()
-                    new_entry = j3d.AnimComponent(int(values[0]), float(values[1]))
+                    new_entry = j3d.AnimComponent(int(float(values[0])), float(values[1]))
                     
                     
                     
