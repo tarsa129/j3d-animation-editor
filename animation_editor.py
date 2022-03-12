@@ -954,6 +954,7 @@ class GenEditor(QMainWindow, themed_window):
     
     def export_anim_file(self):
         current_item = self.anim_bar.currentItem()
+        current_item.header_info = self.get_header()
         current_item.display_info = self.get_on_screen()
         current_item.export_anim()
        
@@ -1110,7 +1111,7 @@ class GenEditor(QMainWindow, themed_window):
             #information = self.get_on_screen()
             #information = self.list_of_animations[index].display_info
             for i in range( len(strings) ):
-                row = 9 * i + 2
+                row = 9 * i + 1
                 item = self.table_display.item(row, 0)
                 if isinstance(item, QTableWidgetItem):
                     item.setText(strings[i])

@@ -316,7 +316,9 @@ class bck(j3d.basic_animation):
                 if len( anim.translation[axis] ) == 0:
                     new_entry = j3d.AnimComponent(0, 0)
                     anim.add_translation(axis, new_entry)
-
+            line_pos = anim.name.rfind("|")
+            if line_pos > -1:
+                anim.name = anim.name[line_pos + 1 :]
         
         
         return bck

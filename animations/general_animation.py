@@ -423,14 +423,14 @@ def read_hierachy( bmd_file):
                 read_uint16(f)
                 address += 2
             elif node == 0x01:
-                print("new bone")
+                #print("new bone")
                 read_uint16(f)
                 address += 2
                 curr_bone = last_bone
                 stack.append(curr_bone)
                 #print("child mode for bone " + bones[curr_bone])
             elif node == 0x02:
-                print("return to parent")
+               # print("return to parent")
                 #print("return to parent " + bones[curr_bone])
                 read_uint16(f)
                 address += 2
@@ -440,7 +440,7 @@ def read_hierachy( bmd_file):
                 
                 #curr_bone = prev_bone
             elif node == 0x10:
-                print("add children")
+                #print("add children")
                 children[curr_bone] += 1
                 #prev_bone = curr_bone
                 last_bone = read_uint16(f)

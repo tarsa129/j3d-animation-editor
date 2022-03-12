@@ -17,6 +17,10 @@ class tree_item(QTreeWidgetItem):
         
         self.changed = False
         
+    def set_arrays(self, display_info):
+        self.header_info = display_info[0]
+        self.display_info = display_info[1:]
+        
     def set_values(self, display_info, filepath, compressed ):
         self.header_info = display_info[0]
         self.display_info = display_info[1:]
@@ -99,7 +103,7 @@ class tree_item(QTreeWidgetItem):
                 f.close()
     
     def export_anim(self):
-        info = j3d.fix_array(self.display_info)  
+        info = j3d.fix_array(self.header_info, self.display_info)  
         filepath = self.filepath[0:-4] + ".anim"
         if self.bmd_file is None:
             bmd_file, choosentype = QFileDialog.getOpenFileName( None, "Open File","" , "Model files (*.bmd *.bdl)")
