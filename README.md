@@ -48,6 +48,19 @@ the editor requires many libraries, the most important of which is PyQt5. this c
 
 if you want .fbx support, the Autodesk Python FBX SDK (and Visual Studio Build Tools) need to be installed. More details about the FBX SDK installation can be found [here](https://gitlab.inria.fr/radili/fbxsdk_python).
 
+# instructions for maya users (from Skilar)
+videos:
+https://www.youtube.com/watch?v=sq3MA4Mtv9I
+https://www.youtube.com/watch?v=0gEPX2dobKg
+1: Make your animation using ripped model/skeleton
+2: After your animation is done, select the most top bone that is know to be part of the characters armature. In this case, the bone name is center. Click it, and then go to select>Hierarchy. It is important you DO NOT select anything above that. For Link, there will be al_character or point000 (if you ripped using maxbmd), don not select!
+3: Edit>keys>Bake simulation
+4: Select the very top of the skeleton now, this time its okay since its for export. So select al_character, file>exportselection
+5: select animExport (if you dont have this option, enable it in maya. Windows>settings/preferences/plug in manager)
+6: In export settings under filetype specific options, make sure hierarchy is set to below. Name and export.
+7: Open j3d-animation editor
+8: Convert> Maya anim import. You can just click save after this and it will spit out your BCK
+
 # special thanks:
 * Yoshi2, from whom a lot of the animation reading / writing code, gui code, and yaz0 decompression is adapted
 * NoClip.Website, which provided guidance on how to read/write certain file types (.brk, .bpk, .bva)
@@ -56,3 +69,4 @@ if you want .fbx support, the Autodesk Python FBX SDK (and Visual Studio Build T
 * LagoLunatic's GCFT, for a yaz0 compression script
 * BigSharkZ, for testing the script and suggesting new features
 * Meyuelle, for the Peaches and Plums theme
+* Skilar, for figuring out the process for maya users and being a test user
