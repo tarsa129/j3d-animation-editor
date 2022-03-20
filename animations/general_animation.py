@@ -563,10 +563,11 @@ def import_bvh_file(filepath, as_bca = False):
 def import_fbx_file(filepath):
     from animations.fbx_scripts import import_fbx_file
     import animations.fbx_scripts as fs
+    
     animations = fs.import_fbx_file(filepath)
-
+    print(animations, "hello")
     return animations
-            
+    
     #return bck_file.bck.from_fbx_anim(filepath); 
 
 

@@ -1318,7 +1318,7 @@ class GenEditor(QMainWindow, themed_window):
                                  
     def handle_transform_regex( self, file_type, line):
         import re
-        ending_part = "\s*:?\s*(\+|\-|\*|/|avg|set|)\s*(\d*)"
+        ending_part = "\s*:?\s*(\+|\-|\*|/|avg|set|)\s*(\d*.\d*)"
         if file_type in [".bck", ".bca"]:
             regex = "(scale|rot\w*|trans\w*)\s([xyz])" + ending_part
             m = re.match( regex, line, re.IGNORECASE)
@@ -1336,9 +1336,11 @@ class GenEditor(QMainWindow, themed_window):
                 
                 comp += ":"
                 
-                ops = ["+", "-", "*", "/", "avg"]
+                ops = ["+", "-", "*", "/", "avg", "set"]
                 try:
                     op_code = ops.index( m.group(3) )
+                    if op_code == 5:
+                        op_code = 4
                 except:
                     op_code = 4
                 
@@ -1535,7 +1537,7 @@ class GenEditor(QMainWindow, themed_window):
         found_row = row
         stop_row =  self.table_display.rowCount()
         found = False
-        while found == False and found_row > 1 and found_row < stop_row:
+        while found == False and found_row > 0 and found_row < stop_row:
             item = self.table_display.item(found_row, look_col)
             print("find row 2", item.text(), value)
             if item is not None and item.text().lower() == value.lower():

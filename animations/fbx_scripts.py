@@ -215,7 +215,7 @@ def InterpolationFlagToIndex(flags):
 
 #lcl translation is the thing we want to capture as defaults 66 to 68 type: model
 def DisplayNodeHierarchy(pNode, base_pose):
-    print(pNode.GetName() )
+    #print(pNode.GetName() )
     this_bone = []
 
     #process pnode properties
@@ -241,7 +241,7 @@ def DisplayNodeHierarchy(pNode, base_pose):
         DisplayNodeHierarchy(pNode.GetChild(i),base_pose)
 
 def DisplayRootNode(pNode, base_pose):
-    print(pNode.GetName() )
+    #print(pNode.GetName() )
     this_bone = []
 
     #process pnode properties
