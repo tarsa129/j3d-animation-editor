@@ -453,12 +453,15 @@ def read_hierachy( bmd_file):
     return children
  
  
-def fix_array(header, info):
+def fix_array(header, info_old):
     # the arrays should be pure text
+    info = [x for x in info_old]
     info.insert(0, header)
+
     
     for i in range( len( info )):
-        while len( info[i]) > 0 and info[i][-1] == "":
+        print(i, info[i] )
+        while len( info[i] ) > 0 and info[i][-1] == "":
                 info[i].pop( len( info[i]) - 1 )
     i = 0
     while i < len(info) :
@@ -574,7 +577,8 @@ def import_fbx_file(filepath):
 def sort_file(filepath):
     with open(filepath, "rb") as f:
         magic = f.read(8)
-        print(magic)
+        
+        #print(magic)
         
         if magic.startswith(b"Yaz0"):
             decomp = BytesIO()

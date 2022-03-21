@@ -767,10 +767,15 @@ class GenEditor(QMainWindow, themed_window):
         current_item = self.anim_bar.currentItem()
         
         curr_display_info = self.get_on_screen()
+        curr_header_info = self.get_header()
+        
         if current_item.display_info != curr_display_info:
             current_item.changed = True
+            current_item.display_info = curr_display_info
+        elif current_item.display_info != curr_header_info:
+            current_item.changed = True
+            current_item.header_info = curr_header_info
         
-        current_item.display_info = curr_display_info
         if current_item.filepath.endswith(".bck") and self.sounds_box is not None:
             current_item.sound_data = self.sounds_box.get_info()
         #current_item.save_animation()
@@ -1042,7 +1047,7 @@ class GenEditor(QMainWindow, themed_window):
         
         loaded_animation.add_children( actual_animation_object.get_children_names() )
         
-        print("end of new animation from object")
+        #print("end of new animation from object")
     
     #bmd stuff
     def new_animation_from_array(self, array, filepath, compressed, sound_data = None):
@@ -1155,7 +1160,7 @@ class GenEditor(QMainWindow, themed_window):
             if item.filepath.endswith(".bca") or item.filepath.endswith(".bck"):
                 info = item.display_info
                 for i in range( len(strings) ):
-                    row = 9 * i + 2
+                    row = 9 * i + 1
                     if row < len( info ) :
                         info[row][0] = strings[i]
 
@@ -1260,12 +1265,15 @@ class GenEditor(QMainWindow, themed_window):
                 elif maedit_entry[0] == ".bpk":
                     look_col = 1
                 self.anim_bar.currentItem().display_info = self.get_on_screen()
+                
                 for j in range( self.anim_bar.topLevelItemCount() ):
                     item = self.anim_bar.topLevelItem(j)
                     
                     if item.filepath.endswith(maedit_entry[0]):
                         info = item.display_info
+                        
                         item.display_info = self.find_and_edit(info, maedit_entry[1], maedit_entry[2], look_col, maedit_entry[0])
+                        #print(item.display_info[0])
                         item.changed = True
 
 
@@ -1514,8 +1522,9 @@ class GenEditor(QMainWindow, themed_window):
             #print(info, name, values, look_col, exten)
             for i in range(len(info)):
                 item = self.table_display.item(i, 0) 
+                
                 #print(item.text(), name)
-                if item.text().lower() == name.lower():
+                if item is not None and item.text().lower() == name.lower():
                     #single line animation
                     if len(values) == 1:
                         look_col += 1
@@ -1539,7 +1548,7 @@ class GenEditor(QMainWindow, themed_window):
         found = False
         while found == False and found_row > 0 and found_row < stop_row:
             item = self.table_display.item(found_row, look_col)
-            print("find row 2", item.text(), value)
+            #print("find row 2", item.text(), value)
             if item is not None and item.text().lower() == value.lower():
                 found = True
             else:
@@ -1764,6 +1773,9 @@ class GenEditor(QMainWindow, themed_window):
         #print(treeitem)
         
         information = treeitem.display_info
+        
+        #print(information[0] )
+        
         header_info = treeitem.header_info
         filepath = treeitem.filepath
         
@@ -1788,7 +1800,7 @@ class GenEditor(QMainWindow, themed_window):
         
         
 
-        print("end of load animation to middle")
+        #print("end of load animation to middle")
     
     def selected_animation_changed(self):
 
@@ -1804,7 +1816,7 @@ class GenEditor(QMainWindow, themed_window):
             
             if self.anim_bar.curr_item.display_info != curr_display_info:
                 self.anim_bar.curr_item.changed = True
-                print( "display info changed ")
+                #print( "display info changed ")
             elif self.anim_bar.curr_item.header_info != curr_header_info:
                 self.anim_bar.curr_item.changed = True
             
@@ -1817,7 +1829,7 @@ class GenEditor(QMainWindow, themed_window):
                 
                 if self.anim_bar.curr_item.sound_data != curr_sound_data:
                     self.anim_bar.curr_item.chanaged = True
-                    print("sound data changed")
+                    #print("sound data changed")
             
                 self.anim_bar.curr_item.sound_data = curr_sound_data
                 #print("get on screen result")
@@ -1984,7 +1996,7 @@ class GenEditor(QMainWindow, themed_window):
                 self.table_display.setItem(self.table_display.rowCount() - 1, i, new_item)
 
     def rem_empty_rows(self):
-        print("column count " + str( self.table_display.columnCount() ) )
+        #print("column count " + str( self.table_display.columnCount() ) )
         if self.anim_bar.topLevelItemCount() > 0:
             for i in reversed(range( 2, self.table_display.rowCount() )):
                 is_empty = True
@@ -1995,7 +2007,7 @@ class GenEditor(QMainWindow, themed_window):
                         is_empty = False
                     j += 1
                 if is_empty:
-                    print( "removing row " + str(i) )
+                    #print( "removing row " + str(i) )
                     self.rem_row_here(i)
                     i -= 1
                      
@@ -2068,7 +2080,7 @@ class GenEditor(QMainWindow, themed_window):
                     if bot_row is None:
                         return
 
-                    print(top_row, bot_row)
+                    #print(top_row, bot_row)
                 
                     
                 elif extension == ".btk":
@@ -2079,7 +2091,7 @@ class GenEditor(QMainWindow, themed_window):
                     if bot_row is None:
                         return
 
-                    print(top_row, bot_row)
+                    #print(top_row, bot_row)
                 elif extension in [".brk", ".bpk"]:
                     if extension == ".bpk":
                         look_col = 1

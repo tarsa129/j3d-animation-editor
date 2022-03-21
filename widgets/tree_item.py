@@ -50,17 +50,22 @@ class tree_item(QTreeWidgetItem):
             working_filepath = other_filepath
         else:
             working_filepath = self.filepath
+        
+        
             
-        info = j3d.fix_array( self.header_info, self.display_info)
+        info = j3d.fix_array( self.header_info.copy(), self.display_info )
+        
         if (working_filepath.endswith("a") and not working_filepath.endswith(".bva")  ):
             self.convert_to_a(info)
         else: 
             j3d.sort_filepath(working_filepath, info, self.sound_data) 
         
+        
+        
         compress_status = self.compressed
         if compress_dis != 0:
             compress_status = compress_dis
-        print(compress_status)
+        #print(compress_status)
         if compress_status > 1:
             out = BytesIO()
             with open(working_filepath, "rb") as f:

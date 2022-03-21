@@ -620,7 +620,7 @@ class bck(j3d.basic_animation):
              #calculate tangents
            
             bck.anglescale = math.ceil( max_angle / 180 )
-            print("anglescale: ", bck.anglescale)
+            #print("anglescale: ", bck.anglescale)
             for j in range(9):
                 xyz = "XYZ"
                 xyz = xyz[j%3: j%3 + 1]
