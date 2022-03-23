@@ -1303,8 +1303,9 @@ class GenEditor(QMainWindow, themed_window):
             if anim_type in [".btk", ".brk", ".bck" , ".btp", ".bca", ".bpk", ".bla", ".blk", ".bva" ]:
                 maedit_info = []
                 i = 1
-                while i + 1 < len(lines):
+                while i + 1 < len(lines):            
                     bone_name = lines[i]
+                   
                     #print("bone name" + bone_name)
                     maedit_array = [ anim_type, bone_name]
                     values = []
@@ -1314,6 +1315,12 @@ class GenEditor(QMainWindow, themed_window):
                     while i < len(lines) and lines[i] not in ["end", "]", "}", ")"] :
                         #print("some transform - check if valid at line " + str(i) )
                         #print ("next line " + lines [i] )
+                        if lines[i].startswith("//"):
+                            i = i + 1
+                            continue
+                        
+                        
+                        
                         new_transform =  self.handle_transform_regex(anim_type, lines[i])
                         if new_transform is not None:
                             values.append(new_transform)
