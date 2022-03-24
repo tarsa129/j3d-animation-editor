@@ -557,6 +557,11 @@ class btk(j3d.basic_animation):
 
         rotations_start = f.tell()
         for val in all_rotations:
+            val = int(val)
+            if val <= -32767:
+                val = -32767
+            elif val > 32767:
+                val = 32767
             """angle = ((val+180) % 360) - 180  # Force the angle between -180 and 180 degrees
             print(val, "becomes", angle)
             if angle >= 0:
@@ -571,6 +576,7 @@ class btk(j3d.basic_animation):
         for val in all_translations:
             #print(val)
             write_float(f, val)
+            
 
         j3d.write_padding(f, 32)
 

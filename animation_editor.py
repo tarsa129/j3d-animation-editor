@@ -1005,8 +1005,9 @@ class GenEditor(QMainWindow, themed_window):
         filepath, choosentype = QFileDialog.getSaveFileName(self, "Save as .csv File", self.anim_bar.currentItem().filepath + ".csv", ".csv files(*.csv)")
         if filepath:
             header = self.get_header()
-            header.append(self.anim_bar.currentItem().get_animtype() )
-            info = j3d.fix_array(self.get_header(), self.get_on_screen() )
+            header.append( self.anim_bar.currentItem().get_animtype() )
+            info = j3d.fix_array(header, self.get_on_screen() )
+            print(info)
             with open(filepath, 'w+', newline='') as f:
                 writer = csv.writer(f)
                 for row in info:

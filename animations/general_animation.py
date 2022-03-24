@@ -460,16 +460,16 @@ def fix_array(header, info_old):
 
     
     for i in range( len( info )):
-        print(i, info[i] )
+        #print(i, info[i] )
         while len( info[i] ) > 0 and info[i][-1] == "":
-                info[i].pop( len( info[i]) - 1 )
+            info[i].pop( len( info[i]) - 1 )
     i = 0
     while i < len(info) :
         if len( info[i] ) == 0:
             info.pop(i)
         else:
             i += 1
-    
+    print(info)
     # fix the header stuff
     for i in range( len( info[0]) ):
         if info[0][i] in loop_mode:
