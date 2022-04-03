@@ -88,7 +88,7 @@ class tree_item(QTreeWidgetItem):
         
     def convert_to_a(self, info):
     
-        info = j3d.fix_array( info )
+
   
         if self.filepath.endswith(".bck") or self.filepath.endswith(".bca"):
 
