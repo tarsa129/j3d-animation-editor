@@ -942,11 +942,15 @@ class GenEditor(QMainWindow, themed_window):
     
     def convert_to_k(self):
         current_item = self.anim_bar.currentItem()
+        current_item.header_info = self.get_header()
         current_item.display_info = self.get_on_screen()
         current_item.convert_to_k()
         
     def convert_to_a(self):
-        self.anim_bar.currentItem().convert_to_a()
+        current_item = self.anim_bar.currentItem()
+        current_item.header_info = self.get_header()
+        current_item.display_info = self.get_on_screen()
+        current_item.convert_to_a()
     
     def import_anim_file(self, filepath = None):
         if filepath is None or filepath == False:
@@ -1160,10 +1164,11 @@ class GenEditor(QMainWindow, themed_window):
             item.bmd_file = filepath
             if item.filepath.endswith(".bca") or item.filepath.endswith(".bck"):
                 info = item.display_info
-                for i in range( len(strings) ):
-                    row = 9 * i + 1
-                    if row < len( info ) :
-                        info[row][0] = strings[i]
+                if len(strings) * 9 + 1 == len(info):
+                    for i in range( len(strings) ):
+                        row = 9 * i + 1
+                        if row < len( info ) :
+                            info[row][0] = strings[i]
 
         """
         for i in range( len(strings) ):
@@ -1251,9 +1256,8 @@ class GenEditor(QMainWindow, themed_window):
             self.maedit_box = maedit_widget.maedit_box(self, one_time)
             self.right_vbox.addWidget(self.maedit_box)
 
-    def maedit_from_bar(self, maedit_info, one_time):
+    def maedit_from_bar(self, maedit_info, one_time, model = None):
         if maedit_info is not None:
-            #print(maedit_info)
             for maedit_entry in maedit_info:
                 #print(maedit_entry)
                 anim_type = maedit_entry[0]
@@ -1270,7 +1274,10 @@ class GenEditor(QMainWindow, themed_window):
                 for j in range( self.anim_bar.topLevelItemCount() ):
                     item = self.anim_bar.topLevelItem(j)
                     
-                    if item.filepath.endswith(maedit_entry[0]):
+                    model_test = (model is None) or ( (item.bmd_file is not None) and item.bmd_file.endswith(model) )
+                    if model_test and (item.filepath.endswith(maedit_entry[0])) :
+                        print("passed", maedit_entry)
+                        
                         info = item.display_info
                         
                         item.display_info = self.find_and_edit(info, maedit_entry[1], maedit_entry[2], look_col, maedit_entry[0])
@@ -1299,11 +1306,18 @@ class GenEditor(QMainWindow, themed_window):
             anim_type = lines[0].lower()
             if not anim_type.startswith("."):
                 anim_type = "." + anim_type
-            
+            model_name = None
             #print (anim_type)
             if anim_type in [".btk", ".brk", ".bck" , ".btp", ".bca", ".bpk", ".bla", ".blk", ".bva" ]:
+                if lines[1].startswith("file:"):
+                    model_name = lines[1][5:].strip()
+                   
+                
                 maedit_info = []
+                
                 i = 1
+                if model_name is not None:
+                    i = 2
                 while i + 1 < len(lines):            
                     bone_name = lines[i]
                    
@@ -1326,11 +1340,13 @@ class GenEditor(QMainWindow, themed_window):
                         if new_transform is not None:
                             values.append(new_transform)
                         i = i + 1
-                    maedit_array.append(values)
-                    maedit_info.append(maedit_array)
+                    if len(values) > 0:
+                        
+                        maedit_array.append(values)
+                        maedit_info.append(maedit_array)
                     i = i + 1
                 #print(maedit_info)
-                self.maedit_from_bar(maedit_info, False)
+                self.maedit_from_bar(maedit_info, False, model_name)
                                  
     def handle_transform_regex( self, file_type, line):
         import re

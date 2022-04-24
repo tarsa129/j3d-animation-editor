@@ -86,9 +86,10 @@ class tree_item(QTreeWidgetItem):
         elif filepath.endswith(".bla"):             
             blk = j3d.sort_filepath(filepath, info)
         
-    def convert_to_a(self, info):
+    def convert_to_a(self, info = None):
     
-
+        if info is None:
+             info = j3d.fix_array( self.header_info.copy(), self.display_info )
   
         if self.filepath.endswith(".bck") or self.filepath.endswith(".bca"):
 
