@@ -1267,7 +1267,7 @@ class GenEditor(QMainWindow, themed_window):
         print("going to maedit")
         if maedit_info is not None:
             for maedit_entry in maedit_info:
-                #print(maedit_entry)
+                print(maedit_entry)
                 anim_type = maedit_entry[0]
                 #anim_name = maedit_entry[2]
                          
@@ -1316,6 +1316,7 @@ class GenEditor(QMainWindow, themed_window):
                 lines = f.read().splitlines()
             
             lines = [ line for line in lines if line != ""]
+            lines = [ line.strip() for line in lines]
             #print(lines)
             
             anim_type = lines[0].lower()
@@ -1333,10 +1334,9 @@ class GenEditor(QMainWindow, themed_window):
                 i = 1
                 if model_name is not None:
                     i = 2
-                while i + 1 < len(lines):            
+                while i < len(lines):            
                     bone_name = lines[i]
                    
-                    #print("bone name" + bone_name)
                     maedit_array = [ anim_type, bone_name]
                     values = []
                     i += 1
@@ -1348,18 +1348,21 @@ class GenEditor(QMainWindow, themed_window):
                         if lines[i].startswith("//"):
                             i = i + 1
                             continue
-                        
-                        
-                        
+
                         new_transform =  self.handle_transform_regex(anim_type, lines[i])
                         if new_transform is not None:
                             values.append(new_transform)
                         i = i + 1
+                        
+                    # optimize values
+                    
+                        
                     if len(values) > 0:
                         
                         maedit_array.append(values)
                         maedit_info.append(maedit_array)
                     i = i + 1
+                    del maedit_array
                 #print(maedit_info)
                 
                 self.maedit_from_bar(maedit_info, False, model_name)
@@ -1565,8 +1568,9 @@ class GenEditor(QMainWindow, themed_window):
                 
                 #print(item, name)
                 if item is not None and item.lower() == name.lower():
+                    print(values)
                     #single line animation
-                    if len(values) == 1:
+                    if exten == [ ".bla" ,".blk", ".bva", ".btp"]:
                         look_col += 1
                         if exten == ".blk":
                             look_col -= 1
