@@ -70,3 +70,4 @@ https://www.youtube.com/watch?v=0gEPX2dobKg
 * BigSharkZ, for testing the script and suggesting new features
 * Meyuelle, for the Peaches and Plums theme
 * Skilar, for figuring out the process for maya users and being a test user
+* Jasperr, for help in reading .bls files
