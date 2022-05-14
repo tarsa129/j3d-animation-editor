@@ -48,6 +48,9 @@ the editor requires many libraries, the most important of which is PyQt5. this c
 
 if you want .fbx support, the Autodesk Python FBX SDK (and Visual Studio Build Tools) need to be installed. More details about the FBX SDK installation can be found [here](https://gitlab.inria.fr/radili/fbxsdk_python).
 
+# mass editing
+the bones/materials/meshes in a mass editing .txt file should be in the same order that they appear in in the .bmd/.bdl
+
 # instructions for maya users (from Skilar)
 videos:
 https://www.youtube.com/watch?v=sq3MA4Mtv9I
