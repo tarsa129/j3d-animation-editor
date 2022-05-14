@@ -938,7 +938,8 @@ class GenEditor(QMainWindow, themed_window):
             self.sounds_box = None 
         self.write_settings_ini(["menu options", "show_sound_editor", self.show_sounds.isChecked() ] )
 
-   #convert stuff
+   #convert print
+
     
     def convert_to_k(self):
         current_item = self.anim_bar.currentItem()
@@ -1161,6 +1162,12 @@ class GenEditor(QMainWindow, themed_window):
         #information = self.list_of_animations[index].display_info
         for j in range( self.anim_bar.topLevelItemCount() ):
             item = self.anim_bar.topLevelItem(j)
+            
+            num_bones = ( len(item.display_info) - 1) / 9
+            
+            if (num_bones != len(strings) ):
+                continue
+            
             item.bmd_file = filepath
             if item.filepath.endswith(".bca") or item.filepath.endswith(".bck"):
                 info = item.display_info
@@ -1257,6 +1264,7 @@ class GenEditor(QMainWindow, themed_window):
             self.right_vbox.addWidget(self.maedit_box)
 
     def maedit_from_bar(self, maedit_info, one_time, model = None):
+        print("going to maedit")
         if maedit_info is not None:
             for maedit_entry in maedit_info:
                 #print(maedit_entry)
@@ -1273,17 +1281,24 @@ class GenEditor(QMainWindow, themed_window):
                 
                 for j in range( self.anim_bar.topLevelItemCount() ):
                     item = self.anim_bar.topLevelItem(j)
-                    
+
+    
                     model_test = (model is None) or ( (item.bmd_file is not None) and item.bmd_file.endswith(model) )
                     if model_test and (item.filepath.endswith(maedit_entry[0])) :
-                        print("passed", maedit_entry)
+                        #print("passed", maedit_entry)
                         
                         info = item.display_info
+                        #print(info[1])
                         
-                        item.display_info = self.find_and_edit(info, maedit_entry[1], maedit_entry[2], look_col, maedit_entry[0])
-                        #print(item.display_info[0])
+                        new_table = self.find_and_edit(info, maedit_entry[1], maedit_entry[2], look_col, maedit_entry[0])
+                        #print(new_table[1])
+                        #print(item.display_info[1])
+                        
+                        item.display_info = new_table
+                       
                         item.changed = True
-
+                        del info
+                    del item
 
                 self.load_animation_to_middle(self.anim_bar.currentItem() )
         if one_time:
@@ -1346,6 +1361,7 @@ class GenEditor(QMainWindow, themed_window):
                         maedit_info.append(maedit_array)
                     i = i + 1
                 #print(maedit_info)
+                
                 self.maedit_from_bar(maedit_info, False, model_name)
                                  
     def handle_transform_regex( self, file_type, line):
@@ -1379,7 +1395,7 @@ class GenEditor(QMainWindow, themed_window):
                 this_transform.append(comp)
                 this_transform.append(op_code )
                 this_transform.append(m.group(4) )
-                print(this_transform)
+                #print(this_transform)
                 return this_transform
                      
         elif file_type in [".bpk", ".brk"]:
@@ -1410,7 +1426,7 @@ class GenEditor(QMainWindow, themed_window):
                 this_transform.append(comp)
                 this_transform.append(op_code )
                 this_transform.append(m.group(4) )
-                print(this_transform)
+                #print(this_transform)
                 return this_transform
             
         elif file_type in [".blk", ".bla", ".btp"]: #single - line stuff
@@ -1432,7 +1448,7 @@ class GenEditor(QMainWindow, themed_window):
                     this_transform.append("Weight")
                 this_transform.append(op_code )
                 this_transform.append(m.group(1) )
-                print(this_transform)
+                #print(this_transform)
                 return this_transform
         elif file_type == ".bva":
             regex = "(swap|set)\s*([01]*)"
@@ -1544,11 +1560,11 @@ class GenEditor(QMainWindow, themed_window):
                             new_val = int(round(new_val))
                         info[i][j] = str(new_val) 
             #print(info, name, values, look_col, exten)
-            for i in range(len(info)):
-                item = self.table_display.item(i, 0) 
+            for i in range(1, len(info)):
+                item = info[i][0] 
                 
-                #print(item.text(), name)
-                if item is not None and item.text().lower() == name.lower():
+                #print(item, name)
+                if item is not None and item.lower() == name.lower():
                     #single line animation
                     if len(values) == 1:
                         look_col += 1
