@@ -567,6 +567,11 @@ class GenEditor(QMainWindow, themed_window):
         if self.popout:
             self.workaroundr.hide()
 
+        #save stuff
+        self.save_unedited = False
+        save_unedited = configur.get('menu options',  'save_unedited'  )
+        self.save_unedited = save_unedited.lower() == "true"
+ 
         #specific editors
         show_create = configur.get('menu options',  'show_create_animation_maker'  )
         show_create = show_create.lower() == "true"
@@ -772,17 +777,20 @@ class GenEditor(QMainWindow, themed_window):
         if current_item.display_info != curr_display_info:
             current_item.changed = True
             current_item.display_info = curr_display_info
-        elif current_item.display_info != curr_header_info:
+        if current_item.display_info != curr_header_info:
             current_item.changed = True
             current_item.header_info = curr_header_info
         
         if current_item.filepath.endswith(".bck") and self.sounds_box is not None:
             current_item.sound_data = self.sounds_box.get_info()
+            
+        
         #current_item.save_animation()
         for i in range( self.anim_bar.topLevelItemCount() ):
-            
+            # read the of save_unedited
             item = self.anim_bar.topLevelItem(i);
-            item.save_animation(compress_dis = self.compression, save_all = True);
+
+            item.save_animation(compress_dis = self.compression, save_all = not self.save_unedited);
         
     def create_new(self, one_time = False):
         if self.popout and self.create_window is None:
