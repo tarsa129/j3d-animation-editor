@@ -80,7 +80,7 @@ class tree_item(QTreeWidgetItem):
         self.changed = False
     def convert_to_k(self):
         filepath = self.filepath[:-1] + "k"
-        info = j3d.fix_array(self.display_info)  
+        info = j3d.fix_array(self.header_info.copy(), self.display_info)  
         if self.filepath.endswith(".bca"):                     
             bck = j3d.sort_filepath(filepath, info)
         elif filepath.endswith(".bla"):             
