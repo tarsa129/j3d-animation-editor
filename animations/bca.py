@@ -346,8 +346,9 @@ class bca(j3d.basic_animation):
         anf1_size_offset = f.tell()
         f.write(b"EFGH")  # Placeholder for anf1 size
         j3d.write_uint8(f, self.loop_mode)
-        #j3d.write_sint8(f, self.anglescale)
-        j3d.write_sint8(f, -1)
+        #print(self.anglescale)
+        j3d.write_sint8(f, self.anglescale)
+        #j3d.write_sint8(f, -1)
         
         rotscale = (2.0**self.anglescale)*(180.0 / 32768.0)
         
@@ -398,6 +399,7 @@ class bca(j3d.basic_animation):
                 if len(anim.rotation[axis]) == 1:
                     comp = anim.rotation[axis][0]
                     #angle = ((comp.value+180) % 360) - 180
+                    #print (comp.value, rotscale, self.anglescale)
                     sequence = [comp.value/rotscale]
                     #print("seq", sequence)
                 else:
@@ -483,7 +485,8 @@ class bca(j3d.basic_animation):
     
     @classmethod
     def from_bck(cls, bck):
-        bca = cls(bck.loop_mode, bck.anglescale, bck.duration)
+        #print(bck.anglescale)
+        bca = cls(bck.loop_mode, 0, bck.duration)
         
         for joint_anim in bck.animations:
             new_bone_anim = bone_anim()
@@ -506,13 +509,17 @@ class bca(j3d.basic_animation):
             else:
                 new_bone_anim.scale["Z"] = joint_anim.scale["Z"]
                 
-            rotscale = (2.0**bck.anglescale)*(180.0 / 32768.0)
+            #rotscale = (2.0**bck.anglescale)*(180.0 / 32768.0)
+            
+            
             
             if len( joint_anim.rotation["X"] ) < bck.duration:  
-                val_array = interpolate( joint_anim.rotation["X"], joint_anim.tan_inter[3])
+                val_array = interpolate( joint_anim.rotation["X"] , joint_anim.tan_inter[3])
                 new_bone_anim.rotation["X"] = val_array
             else:
                 new_bone_anim.rotation["X"] = joint_anim.rotation["X"]
+                
+            #print(bck.anglescale,  joint_anim.rotation["X"], new_bone_anim.rotation["X"] )    
             #for entry in new_bone_anim.rotation["X"]:
                 #entry.convert_rotation(rotscale)
                 #pass
@@ -521,7 +528,7 @@ class bca(j3d.basic_animation):
                 val_array = interpolate( joint_anim.rotation["Y"], joint_anim.tan_inter[4])
                 new_bone_anim.rotation["Y"] = val_array
             else:
-                new_bone_anim.rotation["Y"] = joint_anim.rotation["Y"]            
+                new_bone_anim.rotation["Y"] = joint_anim.rotation["Y"]      
             #for entry in new_bone_anim.rotation["Y"]:
                 #entry.convert_rotation(rotscale)
                 #pass
@@ -530,7 +537,7 @@ class bca(j3d.basic_animation):
                 val_array = interpolate( joint_anim.rotation["Z"], joint_anim.tan_inter[5])
                 new_bone_anim.rotation["Z"] = val_array
             else:
-                new_bone_anim.rotation["Z"] = joint_anim.rotation["Z"]            
+                new_bone_anim.rotation["Z"] = joint_anim.rotation["Z"]        
 
             #for entry in new_bone_anim.rotation["Z"]:
                 #entry.convert_rotation(rotscale)   
