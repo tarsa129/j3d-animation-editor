@@ -469,7 +469,7 @@ def fix_array(header, info_old):
             info.pop(i)
         else:
             i += 1
-    print(info)
+    #print(info)
     # fix the header stuff
     for i in range( len( info[0]) ):
         if info[0][i] in loop_mode:
@@ -482,6 +482,11 @@ def fix_array(header, info_old):
         if str(info[1][i]).isnumeric():
             info[1][i] = "Frame " + info[1][i]
         
+    #oh dear
+    for i, row in enumerate(info):
+        for j, cell in enumerate(row):
+            if str(cell).startswith("#") or str(cell).startswith("//"):
+                info[i][j] = ""
             
     #print(info)
     return info 

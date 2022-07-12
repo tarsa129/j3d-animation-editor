@@ -1242,11 +1242,14 @@ class GenEditor(QMainWindow, themed_window):
         self.loop_box.setCurrentIndex( header_info[0] ) 
         self.duration_box.setText( str(header_info[1]) )
         
-        if header_info[2] == -1:
-            self.tantype_box.setDisabled(True)
+        if len(header_info) > 2:
+            if header_info[2] == -1:
+                self.tantype_box.setDisabled(True)
+            else:
+                self.tantype_box.setDisabled(False)
+                self.tantype_box.setCurrentIndex( header_info[2] )
         else:
-            self.tantype_box.setDisabled(False)
-            self.tantype_box.setCurrentIndex( header_info[2] )
+            self.tantype_box.setDisabled(True)
     
     def get_header(self):
         header_info = []

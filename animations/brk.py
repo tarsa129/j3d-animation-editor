@@ -301,7 +301,7 @@ class brk(j3d.basic_animation):
     
     @classmethod
     def from_table(cls, f, info):
-        brk = cls(int(info[0][0]), 0, int(info[0][1]), int(info[0][2]))
+        brk = cls(int(info[0][0]), int(info[0][1]), int(info[0][2]))
              
         keyframes = []
         for i in range(3, len( info[1] ) ):

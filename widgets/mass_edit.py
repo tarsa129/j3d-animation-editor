@@ -46,6 +46,9 @@ class maedit_window(QDialog, themed_window):
     def close_window(self):
         self.close()
     
+    def get_info(self):
+        return self.main_widget.get_info()
+    
     def close_window(self):
         return self.main_widget.get_info()
 class maedit_box(QWidget):

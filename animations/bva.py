@@ -166,7 +166,7 @@ class bva(j3d.basic_animation):
         
         
         
-        print(info)
+        #print(info)
         return info  
     
     @classmethod
@@ -187,7 +187,7 @@ class bva(j3d.basic_animation):
     
     @classmethod
     def from_table(cls, f, info):
-        bva = cls(int(info[0][1]), int(info[0][3]), int(info[0][5])  )
+        bva = cls(int(info[0][0]), int(info[0][1]), int(info[0][2])  )
 
 
         largest_duration = 0;
@@ -208,17 +208,19 @@ class bva(j3d.basic_animation):
         print("keyframes:")
         print (keyframes)
         
+        
+        
+        #fill in keyframes
         for i in range(2, len(info)):
-            for j in range (3, extent):
+            for j in range (2, extent):
                 if j >= len(info[i]):
                     info[i].append(info[i][j-1])
                 elif info[i][j] == "":
                     info[i][j] = info[i][j-1]
-        
+        print(info)
         for i in range( 2, len(info) ): #i is the index of the material in info
             current_duration = info[i][1]   
-            
-            
+                     
             current_duration = int(current_duration)
             largest_duration = max(largest_duration, current_duration )                 
             
@@ -231,24 +233,27 @@ class bva(j3d.basic_animation):
             
             for j in range( current_duration ): #for each frame
                 if j == 0:#for the first frame, just write the value
+                    #print("first frame")
                     frames.append(info[i][2]) 
                     last_value = info[i][2]
                     
                     next_kf += 1
-             
+                #j is greater than the last keyframe - should be invalid?
                 elif j > keyframes[-1]:
+                    #print("curr frame larger than largest keyframe")
                     frames.append(last_value)            
                 elif j != int(info[1][next_kf][6:]): #if not a keyframe, just write
                     frames.append(last_value)
+                    #print("not a keyframe, last value is ", last_value)
                 else: #if it is a keyframe       
                     
                     last_value = info[i][next_kf]
                     frames.append(last_value)
                     prev_kf = next_kf
-                    print("keyframe " + str(last_value))
+                    #print("keyframe " + str(last_value))
                     next_kf += 1
                      
-            print("frames:")
+            #print("frames:")
             print(frames)
             
             entry = VisibilityAnimation(info[i][0], "toadette", frames)
