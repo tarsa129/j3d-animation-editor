@@ -1654,7 +1654,7 @@ class GenEditor(QMainWindow, themed_window):
                 for cell in list:
                     
                     item = self.table_display.item(cell.row(), cell.column())
-                    frames_row = cell.row() == 1
+                    frames_row = cell.row() == 0
                     if isinstance(item, QTableWidgetItem):
                         if info[0] < 4:
                             try:
