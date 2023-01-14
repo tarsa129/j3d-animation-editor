@@ -302,8 +302,8 @@ class bck(j3d.basic_animation):
                 else:
                     new_bone_name = current_bone + "asdf"
                 new_bone.tan_inter[tan_inter_index] = tan_inter_type
-        
-        bck.anglescale = int( max_angle / 180) ;
+
+        bck.anglescale = int( max_angle / 180)
         
         for anim in bck.animations :
             for axis in {"X", "Y", "Z"} :
@@ -609,7 +609,7 @@ class bck(j3d.basic_animation):
                                 comp.value = comp.value + 360 * bck.anglescale
                             elif comp.value > 180 * bck.anglescale:
                                 comp.value = comp.value - 360 * bck.anglescale"""
-                            max_angle = max(max_angle, comp.value)
+                            max_angle = max( abs(max_angle) , abs(comp.value) )
                             current_anim.add_rotation(xyz, comp)
                             
                             #print("rot " + xyz + " " + str(keyframes[k-2]) + ", " + str( float(info[line + j][k])))
