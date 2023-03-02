@@ -243,13 +243,14 @@ class GenEditor(QMainWindow, themed_window):
         self.select_all_action = QAction("Select All Cells", self)
         self.select_all_action = QAction("Select All Cells", self)
         self.remove_dups_action = QAction("Remove Duplicate Frames", self)
-        self.flip_poster = QAction("Flip Poster-Like", self)
+        self.flip_poster = QAction("Edit Axis", self)
         
         self.copy_cells_action.triggered.connect(self.emit_copy_cells)
         self.paste_cells_action.triggered.connect(self.emit_paste_cells)
         self.clear_cells_action.triggered.connect(self.emit_clear_cells)
         self.select_all_action.triggered.connect(self.emit_select_all)
         self.remove_dups_action.triggered.connect(self.emit_remove_dups)
+        self.flip_poster.triggered.connect(self.emit_flip_axes)
         
         self.copy_cells_action.setShortcut("Ctrl+C")
         self.paste_cells_action.setShortcut("Ctrl+V")
@@ -281,10 +282,7 @@ class GenEditor(QMainWindow, themed_window):
         self.edit_menu.addAction(self.remove_row_here)
         self.edit_menu.addSeparator()
         self.edit_menu.addAction(self.remove_dups_action)
-        
-        
-        
-        
+        self.edit_menu.addAction(self.flip_poster)
         
         self.menubar.addAction(self.edit_menu.menuAction())
         
@@ -2103,7 +2101,7 @@ class GenEditor(QMainWindow, themed_window):
         row = self.table_display.currentRow()
         stop_row =  self.table_display.rowCount()
         found = False
-        while found == False and row > 1 and row < stop_row:
+        while found == False and row > 0 and row < stop_row:
             item = self.table_display.item(row, look_col)
             if item is not None and item.text().lower().startswith(start) and item.text().lower().endswith(end):
                 found = True
@@ -2127,11 +2125,13 @@ class GenEditor(QMainWindow, themed_window):
                 bot_row = self.table_display.currentRow()
                 if extension in [".bca", ".bck"]:
                     # look for scalex and to transz
-                    
+                    print("help?")
                     top_row = self.find_row(-1, look_col, "scale", "x:")
+                    print(top_row)
                     if top_row is None:
                         return 
                     bot_row = self.find_row(1, look_col, "trans", "z:" )
+                    print(bot_row)
                     if bot_row is None:
                         return
 
@@ -2367,6 +2367,10 @@ class GenEditor(QMainWindow, themed_window):
                                 curr_value = float(item.text())
                         except:
                             item.setText("")
+    def emit_flip_axes(self):  
+        if self.anim_bar.currentItem() is None:
+            return
+        
 
     # sound stuff - kill me
     def sounds_dialogue(self, one_time = False):
