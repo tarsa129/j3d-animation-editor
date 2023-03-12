@@ -121,7 +121,7 @@ class bpk(j3d.basic_animation):
                 values[comp].append(read_sint16(f))
               
         for i in range(color_anim_count):
-            f.seek(color_animation_offset + 0x1C*i)
+            f.seek(color_animation_offset + 0x18*i)
             name = stringtable.strings[i]
             anim = ColorAnimation.from_bpk(f, i, name, (
                 values["R"], values["G"], values["B"], values["A"]
