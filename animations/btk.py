@@ -1,4 +1,5 @@
 import struct 
+import math
 from collections import OrderedDict
 
 from animations.general_animation import *
@@ -349,6 +350,8 @@ class btk(j3d.basic_animation):
         print("keyframes")
         print (keyframes)
         
+        max_angle = 0
+        
         num_of_mats =  int ((len(info) - 2 ) / 9)#read all the values
              
         for i in range(num_of_mats): #for each material
@@ -380,11 +383,12 @@ class btk(j3d.basic_animation):
                             #print("scale " + uvw + " " + str(keyframes[k-4]) + ", " + str( float(info[line + j][k])))
                         elif j < 6:
                             current_anim.add_rotation(uvw, comp)
+                            max_angle = max( abs(max_angle) , abs(comp.value) )
                            # print("rot " + uvw + " " + str(keyframes[k-4]) + ", " + str( float(info[line + j][k])))
                         else:
                             current_anim.add_translation(uvw, comp)
                            # print("trans " + uvw + " " + str(keyframes[k-4]) + ", " + str( float(info[line + j][k])))
-            
+            btk.anglescale = math.ceil( abs(max_angle) / 180 )
             #calculate tangents
             for j in range(9):
                 uvw = "UVW"
